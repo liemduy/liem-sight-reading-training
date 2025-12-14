@@ -36,7 +36,7 @@
             --shadow-color: rgba(0, 0, 0, 0.1);
             --border-radius: 1rem;
             --header-font: 'Nunito', sans-serif;
-            --placeholder-color: #94a3b8; /* Slate 400 */
+            --placeholder-color: #94a3b8;
         }
 
         [data-theme="dark"] {
@@ -94,38 +94,31 @@
             --placeholder-color: #fecdd3;
         }
 
-        /* --- CHRISTMAS THEME (RE-DESIGNED) --- */
+        /* --- CHRISTMAS THEME --- */
         [data-theme="christmas"] {
-            --bg-color: #0f392b; /* Dark Pine Green */
+            --bg-color: #0f392b; 
             --bg-gradient: radial-gradient(circle at 50% -20%, #b45309 0%, #14532d 40%, #062c21 100%);
-            
-            --text-color: #fefce8; /* Cream for body text (Light) */
-            
-            --card-bg: #fffbeb; /* Warm Cream for Cards */
-            --card-text: #3f0e0e; /* Dark Red-Brown for text inside cards (High Contrast) */
-            
-            --primary-color: #b91c1c; /* Christmas Red */
-            --accent-color: #d97706; /* Gold */
-            
+            --text-color: #fefce8; 
+            --card-bg: #fffbeb; 
+            --card-text: #3f0e0e; 
+            --primary-color: #b91c1c; 
+            --accent-color: #d97706; 
             --shadow-color: rgba(0, 0, 0, 0.4);
             --border-radius: 16px;
-            --placeholder-color: #d1d5db; /* Gray for placeholders */
-            
-            --header-font: 'Mountains of Christmas', cursive;
+            --placeholder-color: #d1d5db;
+            --header-font: 'Nunito', sans-serif; 
         }
-        [data-theme="christmas"] .theme-card {
-            border: 2px solid #f59e0b; /* Gold Border */
-            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
-        }
+        [data-theme="christmas"] .logo-text { font-family: 'Mountains of Christmas', cursive; }
+        [data-theme="christmas"] .theme-card { border: 2px solid #f59e0b; box-shadow: 0 8px 30px rgba(0,0,0,0.3); }
         [data-theme="christmas"] .theme-btn-primary {
             background-color: #b91c1c;
-            border: 2px solid #f59e0b; /* Gold border button */
+            border: 2px solid #f59e0b;
             color: #fffbeb;
             font-family: 'Nunito', sans-serif;
             font-weight: 800;
         }
         [data-theme="christmas"] .active-tab {
-            background-color: #15803d !important; /* Green Tab */
+            background-color: #15803d !important;
             color: #fff !important;
             border: 2px solid #f59e0b !important;
         }
@@ -155,19 +148,14 @@
             border-radius: var(--border-radius);
             box-shadow: 0 10px 15px -3px var(--shadow-color), 0 4px 6px -2px var(--shadow-color);
         }
-        
         .theme-btn-primary { background-color: var(--primary-color); color: white; border-radius: var(--border-radius); }
         .theme-btn-primary:hover { filter: brightness(110%); transform: translateY(-1px); }
-        
         .theme-btn-accent { background-color: var(--accent-color); color: white; border-radius: var(--border-radius); }
         .theme-btn-accent:hover { filter: brightness(110%); transform: translateY(-1px); }
-        
         .theme-border { border-color: var(--primary-color); }
         
-        /* Font Application */
+        .logo-text { font-family: var(--header-font); }
         h1, h2 { font-family: var(--header-font); }
-        /* Fallback for complex text to Nunito */
-        p, span, div, button, select, input { font-family: 'Nunito', sans-serif; }
 
         .vf-stavenote { cursor: pointer; }
         .vf-stavenote:hover path, .vf-stavenote:hover rect { fill: var(--primary-color) !important; stroke: var(--primary-color) !important; }
@@ -197,7 +185,7 @@
     <nav class="theme-card rounded-none shadow-md p-3 sticky top-0 z-50 flex justify-center items-center w-full border-b theme-border border-b-2 sm:border-b-0">
         <div class="flex items-center gap-3">
             <i class="fas fa-music text-3xl" style="color: var(--primary-color)"></i>
-            <h1 class="text-2xl font-bold md:text-3xl tracking-tight">Liem's Harmony Hub</h1>
+            <h1 class="text-2xl font-bold md:text-3xl tracking-tight logo-text">Liem's Harmony Hub</h1>
             <i class="fas fa-snowflake text-2xl animate-pulse hidden" id="xmas-icon" style="color: #fbbf24"></i>
         </div>
     </nav>
@@ -225,9 +213,7 @@
 
     <script>
         const APP_NAME = "Liem's Harmony Hub";
-        
-        // --- CẤU HÌNH ---
-        const DEFAULT_THEME = 'christmas'; 
+        const DEFAULT_THEME = 'classic'; 
 
         const LANGUAGES = {
             vi: {
@@ -256,9 +242,9 @@
                     soundOn: "Sound On", soundOff: "Mute", soundType: "Sound"
                 }
             },
-            fr: { flag: "🇫🇷", name: "Français", modes: ["Clé de Sol", "Clé de Fa", "Grande Portée", "Notes", "Oreille", "Note Check", "Métronome"], ui: { level: "Niveau", next: "Suivant", result: "Résultat", listen: "Écouter", check: "Vérifier", start: "Démarrer", stop: "Arrêter", bpm: "BPM", notes: "Notes", time: "Temps", seconds: "s", detect: "Écoute...", library: "Notes", chords: "Accords", settings: "Paramètres", theme: "Thème", lang: "Langue", answer: "Réponse", tapToStart: "Appuyez pour commencer", sol: "Sol", fa: "Fa", do: "Do", re: "Ré", mi: "Mi", fa_note: "Fa", sol_note: "Sol", la: "La", si: "Si", soundOn: "Son activé", soundOff: "Muet", soundType: "Son" } },
-            zh: { flag: "🇨🇳", name: "Chinese", modes: ["高音谱号", "低音谱号", "大谱表", "音符", "练耳", "音准检查", "节拍器"], ui: { level: "等级", next: "下一个", result: "结果", listen: "听", check: "检查", start: "开始", stop: "停止", bpm: "BPM", notes: "音符", time: "时间", seconds: "秒", detect: "正在听...", library: "音符", chords: "和弦", settings: "设置", theme: "主题", lang: "语言", answer: "答案", tapToStart: "点击开始", sol: "Sol", fa: "Fa", do: "Do", re: "Re", mi: "Mi", fa_note: "Fa", sol_note: "Sol", la: "La", si: "Si", soundOn: "开音", soundOff: "静音", soundType: "声音" } },
-            th: { flag: "🇹🇭", name: "Thai", modes: ["กุญแจซอล", "กุญแจฟา", "บรรทัด 5 เส้น", "โน้ต", "ฝึกฟัง", "เช็คโน้ต", "เมโทรนอม"], ui: { level: "ระดับ", next: "ถัดไป", result: "เฉลย", listen: "ฟัง", check: "ตรวจ", start: "เริ่ม", stop: "หยุด", bpm: "BPM", notes: "โน้ต", time: "เวลา", seconds: "วิ", detect: "กำลังฟัง...", library: "โน้ต", chords: "คอร์ด", settings: "ตั้งค่า", theme: "ธีม", lang: "ภาษา", answer: "คำตอบ", tapToStart: "แตะเพื่อเริ่ม", sol: "Sol", fa: "Fa", do: "Do", re: "Re", mi: "Mi", fa_note: "Fa", sol_note: "Sol", la: "La", si: "Si", soundOn: "เปิดเสียง", soundOff: "ปิดเสียง", soundType: "เสียง" } },
+            fr: { flag: "🇫🇷", name: "Français", modes: ["Clé de Sol", "Clé de Fa", "Grande Portée", "Bibliothèque", "Oreille", "Note Check", "Métronome"], ui: { level: "Niveau", next: "Suivant", result: "Résultat", listen: "Écouter", check: "Vérifier", start: "Démarrer", stop: "Arrêter", bpm: "BPM", notes: "Notes", time: "Temps", seconds: "s", detect: "Écoute...", library: "Notes", chords: "Accords", settings: "Paramètres", theme: "Thème", lang: "Langue", answer: "Réponse", tapToStart: "Appuyez pour commencer", sol: "Sol", fa: "Fa", do: "Do", re: "Ré", mi: "Mi", fa_note: "Fa", sol_note: "Sol", la: "La", si: "Si", soundOn: "Son activé", soundOff: "Muet", soundType: "Son" } },
+            zh: { flag: "🇨🇳", name: "Chinese", modes: ["高音谱号", "低音谱号", "大谱表", "资料库", "练耳", "音准检查", "节拍器"], ui: { level: "等级", next: "下一个", result: "结果", listen: "听", check: "检查", start: "开始", stop: "停止", bpm: "BPM", notes: "音符", time: "时间", seconds: "秒", detect: "正在听...", library: "音符", chords: "和弦", settings: "设置", theme: "主题", lang: "语言", answer: "答案", tapToStart: "点击开始", sol: "Sol", fa: "Fa", do: "Do", re: "Re", mi: "Mi", fa_note: "Fa", sol_note: "Sol", la: "La", si: "Si", soundOn: "开音", soundOff: "静音", soundType: "声音" } },
+            th: { flag: "🇹🇭", name: "Thai", modes: ["กุญแจซอล", "กุญแจฟา", "บรรทัด 5 เส้น", "ห้องสมุด", "ฝึกฟัง", "เช็คโน้ต", "เมโทรนอม"], ui: { level: "ระดับ", next: "ถัดไป", result: "เฉลย", listen: "ฟัง", check: "ตรวจ", start: "เริ่ม", stop: "หยุด", bpm: "BPM", notes: "โน้ต", time: "เวลา", seconds: "วิ", detect: "กำลังฟัง...", library: "ห้องสมุด", chords: "คอร์ด", settings: "ตั้งค่า", theme: "ธีม", lang: "ภาษา", answer: "คำตอบ", tapToStart: "แตะเพื่อเริ่ม", sol: "Sol", fa: "Fa", do: "Do", re: "Re", mi: "Mi", fa_note: "Fa", sol_note: "Sol", la: "La", si: "Si", soundOn: "เปิดเสียง", soundOff: "ปิดเสียง", soundType: "เสียง" } },
         };
 
         const THEMES = [
@@ -424,9 +410,10 @@
                     answers = data.map(n => getNoteName(n.toneKey));
                 }
 
+                // REMOVED fixed min-heights to allow content to flow naturally, preventing overlaps
                 let html = `
-                    <div class="theme-card p-8 rounded-2xl shadow-xl w-full text-center border-t-4 theme-border">
-                        <div class="flex justify-between items-center mb-6">
+                    <div class="theme-card p-6 rounded-2xl shadow-xl w-full text-center border-t-4 theme-border flex flex-col relative">
+                        <div class="flex justify-between items-center mb-4">
                             <select id="level-select" onchange="state.level=parseInt(this.value); FLASHCARD_LOGIC.generateCard()" class="p-2 rounded-lg bg-[var(--bg-color)] border border-[var(--primary-color)] text-sm font-bold focus:outline-none">
                                 <option value="1" ${state.level===1?'selected':''}>Lvl 1 (1 Note)</option>
                                 <option value="2" ${state.level===2?'selected':''}>Lvl 2 (3 Notes)</option>
@@ -435,14 +422,26 @@
                             </select>
                             <span class="text-xs font-bold uppercase tracking-wider opacity-60">Tap note to play</span>
                         </div>
-                        <div id="flashcard-canvas" class="flex justify-center items-center bg-white rounded-xl p-4 mb-8 overflow-x-auto min-h-[220px] shadow-inner border border-gray-100"></div>
-                        <div class="min-h-[4rem] flex flex-col items-center justify-center mb-6">
-                            ${state.isRevealed 
-                                ? `<div class="flex flex-wrap gap-3 justify-center w-full px-4">${answers.map(a => `<span class="bg-[var(--primary-color)] text-white px-4 py-2 rounded-lg font-bold shadow-md text-lg transform transition hover:-translate-y-1">${a}</span>`).join('')}</div>`
-                                : `<button onclick="FLASHCARD_LOGIC.reveal()" class="theme-btn-accent px-8 py-3 rounded-full font-bold shadow-lg text-lg transform transition hover:scale-105 active:scale-95">${t.result}</button>`
-                            }
+                        
+                        <div class="flex flex-col justify-center items-center w-full">
+                            <div id="flashcard-canvas" class="flex justify-center items-center bg-white rounded-xl p-2 mb-4 overflow-x-auto shadow-inner border border-gray-100 w-full"></div>
+                            
+                            <!-- Answers Container - flexible height -->
+                            <div class="w-full mt-2 mb-4 min-h-[3rem] flex items-center justify-center">
+                                ${state.isRevealed 
+                                    ? `<div class="flex flex-wrap gap-2 justify-center animate-fade-in">${answers.map(a => `<span class="bg-[var(--primary-color)] text-white px-3 py-1 rounded-lg font-bold shadow-md text-base">${a}</span>`).join('')}</div>`
+                                    : `<div class="text-gray-300 italic opacity-0 h-0">...</div>`
+                                }
+                            </div>
                         </div>
-                        ${state.isRevealed ? `<button onclick="FLASHCARD_LOGIC.generateCard()" class="theme-btn-primary px-10 py-3 rounded-full text-xl font-bold shadow-xl transform transition hover:scale-105 active:scale-95 animate-bounce">${t.next} <i class="fas fa-arrow-right ml-2"></i></button>` : ''}
+
+                        <!-- Button Area -->
+                        <div class="flex items-center justify-center mt-2 mb-2">
+                            <button onclick="${state.isRevealed ? 'FLASHCARD_LOGIC.generateCard()' : 'FLASHCARD_LOGIC.reveal()'}" 
+                                class="${state.isRevealed ? 'theme-btn-primary' : 'theme-btn-accent'} px-10 py-3 rounded-full text-xl font-bold shadow-xl transform transition hover:scale-105 active:scale-95 w-48">
+                                ${state.isRevealed ? `${t.next} <i class="fas fa-arrow-right ml-2"></i>` : t.result}
+                            </button>
+                        </div>
                     </div>
                 `;
                 document.getElementById('app-container').innerHTML = html;
@@ -452,8 +451,12 @@
                 const { Renderer, Stave, StaveNote, Formatter, StaveConnector, Accidental, Beam } = Vex.Flow;
                 const count = Math.max(state.flashcardData.treble.length, state.flashcardData.bass.length);
                 const width = Math.max(320, count * 70 + 100);
+                
+                // Reduced height for grand staff to remove excess whitespace
+                const canvasHeight = state.mode === 2 ? 220 : 120;
+                
                 const renderer = new Renderer(div, Renderer.Backends.SVG);
-                renderer.resize(width, state.mode === 2 ? 280 : 160);
+                renderer.resize(width, canvasHeight);
                 const ctx = renderer.getContext();
                 
                 const makeNotes = (d, c) => d.map(n => {
@@ -464,8 +467,9 @@
                 });
 
                 if (state.mode === 2) {
-                    const st = new Stave(10, 20, width - 20).addClef('treble').setContext(ctx).draw();
-                    const sb = new Stave(10, 130, width - 20).addClef('bass').setContext(ctx).draw();
+                    // Adjusted Y positions for less whitespace
+                    const st = new Stave(10, 10, width - 20).addClef('treble').setContext(ctx).draw();
+                    const sb = new Stave(10, 110, width - 20).addClef('bass').setContext(ctx).draw();
                     new StaveConnector(st, sb).setType(StaveConnector.type.BRACE).setContext(ctx).draw();
                     new StaveConnector(st, sb).setType(StaveConnector.type.SINGLE_LEFT).setContext(ctx).draw();
                     new StaveConnector(st, sb).setType(StaveConnector.type.SINGLE_RIGHT).setContext(ctx).draw();
@@ -482,7 +486,8 @@
                     state.flashcardData.bass.forEach((n,i)=>addClick(svgs[state.flashcardData.treble.length+i], n.toneKey, n.duration));
                 } else {
                     const clef = state.mode === 0 ? 'treble' : 'bass';
-                    const st = new Stave(10, 20, width - 20).addClef(clef).setContext(ctx).draw();
+                    // Adjusted Y for single staff
+                    const st = new Stave(10, 10, width - 20).addClef(clef).setContext(ctx).draw();
                     const n = makeNotes(state.mode === 0 ? state.flashcardData.treble : state.flashcardData.bass, clef);
                     const beams = Beam.generateBeams(n);
                     Formatter.FormatAndDraw(ctx, st, n);
@@ -619,7 +624,7 @@
             render: () => {
                 const t = LANGUAGES[state.lang].ui;
                 document.getElementById('app-container').innerHTML = `
-                    <div class="theme-card p-8 rounded-2xl shadow-xl w-full text-center max-w-md border-t-4 theme-border">
+                    <div class="theme-card p-8 rounded-2xl shadow-xl w-full text-center max-w-md border-t-4 theme-border min-h-[450px] flex flex-col justify-between">
                         <h2 class="text-2xl font-bold mb-6">${t.ui && t.ui.modes ? t.modes[4] : 'Ear Training'}</h2>
                         <div class="mb-6 flex items-center justify-center gap-4">
                             <label class="font-bold opacity-70">${t.notes}:</label>
@@ -629,15 +634,25 @@
                                 <button onclick="EAR_LOGIC.changeCount(1)" class="w-10 h-10 rounded-full bg-white border border-[var(--primary-color)] text-[var(--primary-color)] font-bold hover:bg-[var(--primary-color)] hover:text-white transition shadow-sm flex items-center justify-center"><i class="fas fa-plus"></i></button>
                             </div>
                         </div>
-                        <div id="ear-canvas-container" class="bg-white rounded-xl p-4 min-h-[160px] flex items-center justify-center mb-6 shadow-inner border border-gray-200">
-                            ${!state.isRevealed ? `<i class="fas fa-headphones-alt text-6xl text-[var(--placeholder-color)] animate-pulse"></i>` : `<div id="ear-vexflow"></div>`}
+                        <div class="flex-grow flex flex-col justify-center">
+                            <div id="ear-canvas-container" class="bg-white rounded-xl p-4 mb-4 shadow-inner border border-gray-200 min-h-[160px] flex items-center justify-center">
+                                ${!state.isRevealed ? `<i class="fas fa-headphones-alt text-6xl text-[var(--placeholder-color)] animate-pulse"></i>` : `<div id="ear-vexflow"></div>`}
+                            </div>
+                            
+                            <div class="h-12 flex items-center justify-center mb-2">
+                                ${state.isRevealed 
+                                    ? `<div class="flex flex-wrap gap-2 justify-center animate-fade-in">${state.targetNotes.map(n => `<span class="bg-[var(--primary-color)] text-white px-3 py-1 rounded-lg font-bold shadow-sm text-base">${getNoteName(n)}</span>`).join('')}</div>`
+                                    : `<span class="text-3xl font-bold text-gray-400 opacity-50">? ? ?</span>`
+                                }
+                            </div>
                         </div>
-                        <div class="flex flex-wrap gap-2 justify-center mb-6 min-h-[3rem] items-center">
-                            ${state.isRevealed ? state.targetNotes.map(n => `<span class="bg-[var(--primary-color)] text-white px-3 py-1 rounded-lg font-bold shadow-sm text-xl animate-fade-in">${getNoteName(n)}</span>`).join('') : `<span class="text-3xl font-bold text-gray-400 opacity-50">? ? ?</span>`}
-                        </div>
-                        <div class="flex gap-4 justify-center">
+
+                        <div class="flex gap-4 justify-center h-16 items-center">
                             <button onclick="EAR_LOGIC.play()" class="theme-btn-accent px-8 py-3 rounded-full font-bold shadow-lg transform transition hover:scale-105 active:scale-95"><i class="fas fa-volume-up mr-2"></i> ${t.listen}</button>
-                            ${!state.isRevealed ? `<button onclick="EAR_LOGIC.reveal()" class="theme-btn-primary px-8 py-3 rounded-full font-bold shadow-lg transform transition hover:scale-105 active:scale-95">${t.result}</button>` : `<button onclick="EAR_LOGIC.newQuestion()" class="theme-btn-primary px-8 py-3 rounded-full font-bold shadow-lg transform transition hover:scale-105 active:scale-95">${t.next}</button>`}
+                            <button onclick="${state.isRevealed ? 'EAR_LOGIC.newQuestion()' : 'EAR_LOGIC.reveal()'}" 
+                                class="theme-btn-primary px-8 py-3 rounded-full font-bold shadow-lg transform transition hover:scale-105 active:scale-95 w-40">
+                                ${state.isRevealed ? t.next : t.result}
+                            </button>
                         </div>
                     </div>`;
                 if(state.isRevealed) {
