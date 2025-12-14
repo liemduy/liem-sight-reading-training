@@ -2,672 +2,605 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Liem Sight Reading Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liem's Harmony Hub</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/vexflow@4.2.2/releases/vexflow-min.js"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    fontFamily: {
-                        serif: ['"Playfair Display"', 'serif'],
-                        sans: ['"Inter"', 'sans-serif'],
-                    },
-                    colors: {
-                        // Custom colors if needed
-                    },
-                    boxShadow: {
-                        'glow': '0 0 20px rgba(79, 70, 229, 0.15)',
-                        'glow-red': '0 0 20px rgba(225, 29, 72, 0.15)',
-                        'card': '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
-                    }
-                }
-            }
-        }
-    </script>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
+    <!-- VexFlow (Music Notation) -->
+    <script src="https://cdn.jsdelivr.net/npm/vexflow@4.2.3/build/cjs/vexflow.js"></script>
+    <!-- Tone.js (Audio Synthesis) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+
     <style>
         body {
-            font-family: 'Inter', sans-serif;
-            -webkit-tap-highlight-color: transparent;
-            overscroll-behavior-y: none;
-            transition: background-color 0.4s ease, color 0.4s ease;
-        }
-
-        /* --- THEMES --- */
-        /* Classic (Default) */
-        body.theme-classic { background-color: #f8f5f2; color: #1a1a1a; }
-        .theme-classic .glass-panel { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(0,0,0,0.05); }
-        .theme-classic .accent-text { color: #8b5cf6; } 
-
-        /* Dark */
-        body.theme-dark { background-color: #0f172a; color: #f1f5f9; }
-        .theme-dark .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); }
-        .theme-dark .accent-text { color: #a78bfa; }
-        .theme-dark svg { filter: invert(1) hue-rotate(180deg) brightness(1.1); }
-
-        /* Ocean */
-        body.theme-ocean { background: linear-gradient(180deg, #ecfeff 0%, #cffafe 100%); color: #164e63; }
-        .theme-ocean .glass-panel { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(8px); border: 1px solid rgba(6, 182, 212, 0.2); box-shadow: 0 4px 20px -2px rgba(6, 182, 212, 0.1); }
-        .theme-ocean .accent-text { color: #0891b2; } 
-        .theme-ocean .control-pill { background: rgba(6, 182, 212, 0.1); border-color: rgba(6, 182, 212, 0.2); }
-        .theme-ocean .btn-primary { background-color: #0891b2 !important; box-shadow: 0 4px 14px 0 rgba(8, 145, 178, 0.39) !important; }
-
-        /* Christmas */
-        body.theme-christmas { background-color: #0f392b; color: #fff; background-image: radial-gradient(rgba(255,255,255,0.1) 1px, transparent 1px); background-size: 30px 30px; }
-        .theme-christmas .glass-panel { background: rgba(20, 83, 45, 0.85); backdrop-filter: blur(10px); border: 1px solid rgba(255,215,0,0.2); }
-        .theme-christmas .accent-text { color: #fbbf24; } 
-        .theme-christmas .btn-primary { background: #dc2626 !important; border-color: #b91c1c !important; }
-        
-        /* Snow Animation */
-        .snow-container { position: fixed; inset: 0; pointer-events: none; z-index: 0; display: none; }
-        body.theme-christmas .snow-container { display: block; }
-        .snowflake { position: absolute; color: white; animation: fall linear infinite; opacity: 0.7; }
-        @keyframes fall { to { transform: translateY(100vh); } }
-
-        /* --- COMPONENTS --- */
-        .canvas-container {
-            width: 100%; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center;
-            background: white; 
-            border-radius: 24px; 
-            overflow: hidden;
-            box-shadow: inset 0 2px 10px rgba(0,0,0,0.03);
-            border: 1px solid rgba(0,0,0,0.04);
-            flex: 1; 
-            min-height: 200px;
-            position: relative; z-index: 10;
-        }
-        .theme-dark .canvas-container { background: #1e293b; border-color: #334155; }
-        .canvas-container svg { width: 100% !important; height: auto !important; }
-
-        /* Lyric Style Answer */
-        .lyric-answer {
-            position: absolute;
-            bottom: 20px;
-            left: 0;
-            right: 0;
-            text-align: center;
-            pointer-events: none;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            z-index: 20;
+            font-family: 'Nunito', sans-serif;
+            transition: background-color 0.3s, color 0.3s;
         }
         
-        .lyric-badge {
-            display: inline-block;
-            background: rgba(255,255,255,0.95);
-            backdrop-filter: blur(4px);
-            padding: 8px 24px;
-            border-radius: 99px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            border: 1px solid rgba(0,0,0,0.05);
-            transform: translateY(10px);
-            opacity: 0;
-        }
-        .theme-dark .lyric-badge { background: rgba(30, 41, 59, 0.95); border-color: rgba(255,255,255,0.1); }
-        
-        .lyric-answer.visible .lyric-badge {
-            transform: translateY(0);
-            opacity: 1;
+        :root {
+            --bg-color: #f3f4f6;
+            --text-color: #1f2937;
+            --card-bg: #ffffff;
+            --primary-color: #3b82f6;
+            --accent-color: #10b981;
         }
 
-        .btn-mode {
-            position: relative; overflow: hidden; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            transform: translateZ(0);
-        }
-        .btn-mode:active { transform: scale(0.98); }
-        .btn-mode::after {
-            content: ''; position: absolute; inset: 0; 
-            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
-            transform: translateX(-100%); transition: 0.5s;
-        }
-        .btn-mode:hover::after { transform: translateX(100%); }
+        [data-theme="dark"] { --bg-color: #111827; --text-color: #f3f4f6; --card-bg: #1f2937; --primary-color: #60a5fa; --accent-color: #34d399; }
+        [data-theme="ocean"] { --bg-color: #e0f2fe; --text-color: #0c4a6e; --card-bg: #ffffff; --primary-color: #0284c7; --accent-color: #0ea5e9; }
+        [data-theme="coder"] { --bg-color: #000000; --text-color: #00ff00; --card-bg: #111111; --primary-color: #00ff00; --accent-color: #008f00; font-family: 'Courier New', monospace; }
+        [data-theme="love"] { --bg-color: #fff1f2; --text-color: #881337; --card-bg: #fff0f5; --primary-color: #e11d48; --accent-color: #fda4af; }
+        [data-theme="christmas"] { --bg-color: #0f3d0f; --text-color: #ffffff; --card-bg: #8b0000; --primary-color: #fbbf24; --accent-color: #ffffff; }
+        [data-theme="retro"] { --bg-color: #d7c9a8; --text-color: #5c4033; --card-bg: #fdf5e6; --primary-color: #8b4513; --accent-color: #cd853f; }
 
-        .control-pill {
-            background: rgba(0,0,0,0.05); border-radius: 999px; padding: 4px;
-            display: flex; align-items: center; gap: 4px; transition: 0.2s;
-        }
-        .theme-dark .control-pill, body.theme-christmas .control-pill { background: rgba(255,255,255,0.1); }
-        .control-pill:hover { transform: translateY(-1px); background: rgba(0,0,0,0.08); }
+        body { background-color: var(--bg-color); color: var(--text-color); }
+        .theme-card { background-color: var(--card-bg); color: var(--text-color); }
+        .theme-btn-primary { background-color: var(--primary-color); color: white; }
+        .theme-btn-accent { background-color: var(--accent-color); color: white; }
+        .theme-border { border-color: var(--primary-color); }
         
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .vf-stavenote { cursor: pointer; }
+        .vf-stavenote:hover path, .vf-stavenote:hover rect { fill: var(--primary-color) !important; stroke: var(--primary-color) !important; }
+        #notation-container canvas, #notation-container svg { max-width: 100%; height: auto; }
         
-        select { -webkit-appearance: none; appearance: none; background: transparent; border: none; outline: none; font-weight: 600; text-align: center; }
+        .nav-scroll::-webkit-scrollbar { height: 4px; }
+        .nav-scroll::-webkit-scrollbar-track { background: transparent; }
+        .nav-scroll::-webkit-scrollbar-thumb { background-color: var(--primary-color); border-radius: 20px; }
+        
+        .library-scroll::-webkit-scrollbar { width: 8px; }
+        .library-scroll::-webkit-scrollbar-track { background: transparent; }
+        .library-scroll::-webkit-scrollbar-thumb { background-color: var(--primary-color); border-radius: 20px; }
+
+        .metronome-dot { width: 20px; height: 20px; border-radius: 50%; background-color: #ccc; transition: background-color 0.1s; }
+        .metronome-dot.active { background-color: var(--primary-color); box-shadow: 0 0 10px var(--primary-color); }
     </style>
 </head>
-<body class="theme-classic h-[100dvh] flex flex-col overflow-hidden">
-
-    <div class="snow-container" id="snowEffect"></div>
+<body class="min-h-screen flex flex-col" data-theme="classic">
 
     <!-- Header -->
-    <header class="z-50 shrink-0 px-6 py-3 flex flex-col items-center justify-center relative">
-        <!-- Logo Area - Clickable to Home -->
-        <div class="text-center mb-3 relative cursor-pointer group" onclick="goHome()">
-            <h1 class="font-serif text-2xl md:text-3xl font-extrabold tracking-tight accent-text drop-shadow-sm group-hover:scale-105 transition-transform" data-i18n="appTitle">
-                Liem Sight Reading
-            </h1>
-            <div class="h-1 w-12 bg-current opacity-20 mx-auto mt-1 rounded-full group-hover:w-16 transition-all"></div>
-        </div>
-
-        <!-- Controls Bar -->
-        <div class="flex items-center gap-3 bg-white/50 dark:bg-black/20 backdrop-blur-md p-1 rounded-full shadow-sm border border-white/20">
-            <!-- Lang -->
-            <div class="control-pill px-3 cursor-pointer relative group">
-                <span class="text-xs">🌐</span>
-                <select id="langSelect" onchange="changeLanguage(this.value)" class="text-[10px] sm:text-xs uppercase cursor-pointer text-inherit w-full font-bold">
-                    <option value="vi">VIE</option>
-                    <option value="en">ENG</option>
-                    <option value="fr">FRA</option>
-                    <option value="es">ESP</option>
-                    <option value="th">THA</option>
-                </select>
+    <nav class="theme-card shadow-sm p-4 sticky top-0 z-50">
+        <div class="container mx-auto flex justify-center items-center">
+            <div class="flex items-center gap-2">
+                <i class="fas fa-music text-3xl" style="color: var(--primary-color)"></i>
+                <h1 class="text-2xl font-bold md:text-3xl tracking-tight">Liem's Harmony Hub</h1>
             </div>
-
-            <!-- Theme -->
-            <div class="control-pill px-3 cursor-pointer">
-                <span class="text-xs">🎨</span>
-                <select id="themeSelect" onchange="changeTheme(this.value)" class="text-[10px] sm:text-xs cursor-pointer text-inherit font-bold">
-                    <option value="classic">Classic</option>
-                    <option value="ocean">Ocean</option>
-                    <option value="dark">Dark</option>
-                    <option value="christmas">Noel</option>
-                </select>
-            </div>
-
-            <!-- Mute -->
-            <button onclick="toggleMute()" class="control-pill w-7 h-7 justify-center">
-                <svg id="icon-sound-on" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg>
-                <svg id="icon-sound-off" class="w-3.5 h-3.5 hidden" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z m10.657-9.657a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L18.828 9.414a1 1 0 010-1.414z M21.657 16.657a1 1 0 01-1.414 1.414l-4-4a1 1 0 011.414-1.414l4 4z"></path></svg>
-            </button>
         </div>
-    </header>
+    </nav>
+
+    <!-- Controls Bar -->
+    <div class="w-full bg-opacity-10 bg-gray-500 py-3 backdrop-blur-sm shadow-inner">
+        <div class="container mx-auto flex justify-center items-center gap-4 md:gap-8" id="controls-bar"></div>
+    </div>
 
     <!-- Main Content -->
-    <main class="flex-1 w-full max-w-lg mx-auto p-4 overflow-hidden relative z-10 flex flex-col">
+    <main class="flex-grow container mx-auto p-4 flex flex-col items-center">
         
-        <!-- Loading Error -->
-        <div id="error-msg" class="hidden absolute inset-0 z-50 flex flex-col items-center justify-center p-6 text-center text-red-500 bg-white/90 backdrop-blur rounded-2xl">
-            <p class="font-bold text-lg mb-2" data-i18n="errorTitle">⚠ Lỗi tải thư viện</p>
-            <p class="text-sm" data-i18n="errorMsg">Vui lòng kiểm tra mạng và tải lại trang (F5).</p>
-        </div>
-
-        <!-- 1. MENU SCREEN -->
-        <div id="menu-screen" class="flex flex-col gap-4 h-full justify-center pb-6">
-            <div class="text-center mb-2 opacity-60">
-                <p class="text-xs uppercase tracking-[0.2em] font-bold" data-i18n="selectMode">CHỌN CHẾ ĐỘ LUYỆN TẬP</p>
-            </div>
-
-            <!-- Treble -->
-            <button onclick="startMode('treble')" class="btn-mode glass-panel p-5 rounded-2xl shadow-card hover:shadow-glow flex items-center justify-between group">
-                <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">🎼</div>
-                    <div class="text-left">
-                        <h3 class="font-bold text-lg font-serif" data-i18n="modeTreble">Khoá Sol</h3>
-                        <p class="text-xs opacity-70 mt-0.5" data-i18n="descTreble">Tay phải</p>
-                    </div>
-                </div>
-                <div class="w-8 h-8 rounded-full border border-current opacity-20 flex items-center justify-center group-hover:opacity-100 group-hover:bg-indigo-500 group-hover:border-transparent group-hover:text-white transition-all">➜</div>
-            </button>
-
-            <!-- Bass -->
-            <button onclick="startMode('bass')" class="btn-mode glass-panel p-5 rounded-2xl shadow-card hover:shadow-glow-red flex items-center justify-between group">
-                <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-900/50 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">𝄢</div>
-                    <div class="text-left">
-                        <h3 class="font-bold text-lg font-serif" data-i18n="modeBass">Khoá Fa</h3>
-                        <p class="text-xs opacity-70 mt-0.5" data-i18n="descBass">Tay trái</p>
-                    </div>
-                </div>
-                <div class="w-8 h-8 rounded-full border border-current opacity-20 flex items-center justify-center group-hover:opacity-100 group-hover:bg-rose-500 group-hover:border-transparent group-hover:text-white transition-all">➜</div>
-            </button>
-
-            <!-- Grand -->
-            <button onclick="startMode('grand')" class="btn-mode glass-panel p-5 rounded-2xl shadow-card flex items-center justify-between group border-l-4 border-l-amber-400">
-                <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">🎹</div>
-                    <div class="text-left">
-                        <h3 class="font-bold text-lg font-serif" data-i18n="modeGrand">Grand Staff</h3>
-                        <p class="text-xs opacity-70 mt-0.5" data-i18n="descGrand">Kết hợp 2 tay</p>
-                    </div>
-                </div>
-                <div class="w-8 h-8 rounded-full border border-current opacity-20 flex items-center justify-center group-hover:opacity-100 group-hover:bg-amber-500 group-hover:border-transparent group-hover:text-white transition-all">➜</div>
-            </button>
-
-            <!-- Library Link -->
-            <button onclick="showLibrary()" class="glass-panel mt-4 py-4 px-6 rounded-xl flex items-center justify-center gap-3 hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
-                <span class="text-xl">📚</span>
-                <span class="font-semibold text-sm tracking-wide" data-i18n="library">Thư viện nốt nhạc</span>
+        <div id="start-overlay" class="fixed inset-0 bg-black bg-opacity-80 z-[100] flex flex-col items-center justify-center text-white text-center p-4">
+            <h2 class="text-3xl font-bold mb-4">Welcome to Harmony Hub</h2>
+            <p class="mb-6 max-w-md">Click Start to enable audio and begin your musical journey.</p>
+            <button id="init-audio-btn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-8 rounded-full text-xl shadow-lg transform transition hover:scale-105">
+                <i class="fas fa-play mr-2"></i> START
             </button>
         </div>
 
-        <!-- 2. GAME SCREEN -->
-        <div id="game-screen" class="hidden flex-col h-full w-full">
-            <!-- New Header -->
-            <div class="flex items-center mb-2 px-1 shrink-0 gap-3">
-                <button onclick="goHome()" class="p-2 rounded-xl bg-white/50 dark:bg-white/10 hover:bg-white dark:hover:bg-white/20 transition-colors shadow-sm group">
-                    <!-- Big Back Arrow Icon -->
-                    <svg class="w-6 h-6 text-slate-700 dark:text-slate-200 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"></path></svg>
-                </button>
-                <div class="font-bold text-xl font-serif accent-text tracking-tight" id="mode-title">Mode</div>
-            </div>
-
-            <!-- Music Canvas (Flexible Height) -->
-            <div class="canvas-container mb-2 shadow-xl" id="canvas-wrapper">
-                <div id="notation-output"></div>
-                
-                <!-- LYRIC STYLE ANSWER (Overlay inside canvas) -->
-                <div id="lyric-answer" class="lyric-answer">
-                    <div class="lyric-badge">
-                        <span class="text-2xl font-black font-serif accent-text mr-2" id="note-name">C4</span>
-                        <span class="text-lg font-bold opacity-80" id="note-detail">Đô</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Controls (Fixed Height at Bottom) -->
-            <div class="shrink-0 flex flex-col justify-end pb-safe pt-2">
-                <button id="action-btn" onclick="handleAction()" class="btn-primary w-full bg-slate-900 dark:bg-indigo-600 text-white font-bold text-lg py-3.5 rounded-2xl shadow-lg hover:shadow-2xl hover:-translate-y-1 active:translate-y-0 transition-all duration-200" data-i18n="btnShow">
-                    Hiện đáp án
-                </button>
-            </div>
+        <div class="w-full overflow-x-auto pb-4 mb-2 nav-scroll">
+            <div class="flex gap-3 min-w-max justify-center px-4" id="mode-tabs"></div>
         </div>
 
-        <!-- 3. LIBRARY SCREEN -->
-        <div id="library-screen" class="hidden flex-col h-full w-full">
-            <div class="flex justify-between items-center mb-2 px-2 shrink-0">
-                <button onclick="goHome()" class="text-sm font-semibold hover:opacity-70 transition-opacity flex items-center gap-1" data-i18n="menuBack">← Menu</button>
-                <h2 class="font-bold text-xl font-serif accent-text" data-i18n="library">Thư viện</h2>
-                <div class="w-12"></div>
-            </div>
-            
-            <div class="flex-1 overflow-y-auto no-scrollbar space-y-5 pb-6 pt-2 px-1" id="library-content">
-                <!-- Library items will be injected here -->
-            </div>
-        </div>
+        <div id="app-container" class="w-full max-w-4xl flex flex-col items-center mt-4"></div>
+
     </main>
 
+    <footer class="theme-card mt-auto py-6 text-center shadow-inner">
+        <p class="opacity-75">© 2024 Liem's Harmony Hub. Code with <i class="fas fa-heart text-red-500"></i> & Music.</p>
+    </footer>
+
     <script>
-        // --- LOGIC: Theme & Snow ---
-        function initTheme() {
-            const savedTheme = localStorage.theme || 'ocean'; 
-            document.getElementById('themeSelect').value = savedTheme;
-            changeTheme(savedTheme);
-            createSnow();
-        }
-
-        function changeTheme(themeName) {
-            document.body.className = `theme-${themeName} h-[100dvh] flex flex-col overflow-hidden`;
-            localStorage.theme = themeName;
-        }
-
-        function createSnow() {
-            const container = document.getElementById('snowEffect');
-            container.innerHTML = '';
-            for(let i=0; i<40; i++) {
-                const flake = document.createElement('div');
-                flake.className = 'snowflake text-white select-none';
-                flake.style.left = Math.random() * 100 + '%';
-                flake.style.animationDuration = (Math.random() * 5 + 5) + 's';
-                flake.style.animationDelay = Math.random() * 5 + 's';
-                flake.style.fontSize = (Math.random() * 10 + 8) + 'px';
-                flake.innerText = '❄';
-                container.appendChild(flake);
-            }
-        }
-
-        // --- I18N ---
-        const i18n = {
-            vi: { appTitle:"Liem Sight Reading", selectMode:"CHỌN CHẾ ĐỘ TẬP", modeTreble:"Khoá Sol", descTreble:"Tay phải (Treble)", modeBass:"Khoá Fa", descBass:"Tay trái (Bass)", modeGrand:"Grand Staff", descGrand:"Kết hợp 2 tay", library:"Thư viện nốt", menuBack:"Menu", answerLabel:"ĐÁP ÁN", btnShow:"Hiện đáp án", btnNext:"Câu tiếp theo", octave:"Quãng tám", errorTitle:"Lỗi tải", errorMsg:"Kiểm tra mạng (F5)" },
-            en: { appTitle:"Liem Sight Reading", selectMode:"PRACTICE MODE", modeTreble:"Treble Clef", descTreble:"Right Hand", modeBass:"Bass Clef", descBass:"Left Hand", modeGrand:"Grand Staff", descGrand:"Both Hands", library:"Library", menuBack:"Menu", answerLabel:"ANSWER", btnShow:"Show Answer", btnNext:"Next Question", octave:"Octave", errorTitle:"Error", errorMsg:"Check Network (F5)" },
-            fr: { appTitle:"Liem Lecture", selectMode:"MODE", modeTreble:"Clé de Sol", descTreble:"Main Droite", modeBass:"Clé de Fa", descBass:"Main Gauche", modeGrand:"Double", descGrand:"Deux Mains", library:"Bibliothèque", menuBack:"Menu", answerLabel:"RÉPONSE", btnShow:"Voir Réponse", btnNext:"Suivant", octave:"Octave", errorTitle:"Erreur", errorMsg:"Vérifier Connexion" },
-            es: { appTitle:"Liem Lectura", selectMode:"MODO", modeTreble:"Clave Sol", descTreble:"Mano Derecha", modeBass:"Clave Fa", descBass:"Mano Izquierda", modeGrand:"Gran Pent.", descGrand:"Ambas Manos", library:"Biblioteca", menuBack:"Menú", answerLabel:"RESPUESTA", btnShow:"Ver Respuesta", btnNext:"Siguiente", octave:"Octava", errorTitle:"Error", errorMsg:"Revisar Red" },
-            th: { appTitle:"Liem การอ่านโน้ต", selectMode:"โหมดฝึกฝน", modeTreble:"กุญแจซอล", descTreble:"มือขวา", modeBass:"กุญแจฟา", descBass:"มือซ้าย", modeGrand:"บรรทัด 5 เส้นใหญ่", descGrand:"สองมือ", library:"ห้องสมุด", menuBack:"เมนู", answerLabel:"คำตอบ", btnShow:"เฉลย", btnNext:"ข้อต่อไป", octave:"ออกเทฟ", errorTitle:"ผิดพลาด", errorMsg:"ตรวจสอบเน็ต" }
-        };
-
-        const noteLocales = {
-            vi: ["Đô", "Đô#", "Rê", "Rê#", "Mi", "Fa", "Fa#", "Sol", "Sol#", "La", "La#", "Si"],
-            en: ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"],
-            fr: ["Do", "Do#", "Ré", "Ré#", "Mi", "Fa", "Fa#", "Sol", "Sol#", "La", "La#", "Si"],
-            es: ["Do", "Do#", "Re", "Re#", "Mi", "Fa", "Fa#", "Sol", "Sol#", "La", "La#", "Si"],
-            th: ["โด", "โด#", "เร", "เร#", "มี", "ฟา", "ฟา#", "ซอล", "ซอล#", "ลา", "ลา#", "ที"]
-        };
-
-        let currentLang = localStorage.lang || 'vi';
+        const APP_NAME = "Liem's Harmony Hub";
         
-        // --- CORE SETUP ---
-        if (typeof Vex === 'undefined') {
-            document.getElementById('error-msg').classList.remove('hidden');
-            document.getElementById('menu-screen').classList.add('hidden');
+        // --- CẤU HÌNH ---
+        const DEFAULT_THEME = 'christmas'; 
+
+        const LANGUAGES = {
+            vi: {
+                flag: "🇻🇳", name: "Tiếng Việt",
+                modes: ["Khóa Sol", "Khóa Fa", "Hai khóa", "Thư viện", "Luyện tai", "Dò nốt", "Metronome"],
+                ui: {
+                    level: "Cấp độ", next: "Tiếp theo", result: "Kết quả", listen: "Nghe", check: "Kiểm tra",
+                    start: "Bắt đầu", stop: "Dừng", bpm: "Nhịp (BPM)", notes: "Số nốt", time: "Thời gian",
+                    seconds: "giây", detect: "Đang nghe...", library: "Thư viện", chords: "Hợp âm",
+                    settings: "Cài đặt", theme: "Giao diện", lang: "Ngôn ngữ", answer: "Đáp án",
+                    tapToStart: "Chạm để bắt đầu",
+                    sol: "Sol", fa: "Fa", do: "Đô", re: "Rê", mi: "Mi", fa_note: "Fa", sol_note: "Sol", la: "La", si: "Si",
+                    soundOn: "Bật tiếng", soundOff: "Tắt tiếng"
+                }
+            },
+            en: {
+                flag: "🇬🇧", name: "English",
+                modes: ["Treble Clef", "Bass Clef", "Grand Staff", "Library", "Ear Training", "Note Check", "Metronome"],
+                ui: {
+                    level: "Level", next: "Next", result: "Reveal", listen: "Listen", check: "Check",
+                    start: "Start", stop: "Stop", bpm: "BPM", notes: "Notes", time: "Time",
+                    seconds: "s", detect: "Listening...", library: "Library", chords: "Chords",
+                    settings: "Settings", theme: "Theme", lang: "Language", answer: "Answer",
+                    tapToStart: "Tap to Start",
+                    sol: "G", fa: "F", do: "C", re: "D", mi: "E", fa_note: "F", sol_note: "G", la: "A", si: "B",
+                    soundOn: "Sound On", soundOff: "Mute"
+                }
+            },
+             fr: { flag: "🇫🇷", name: "Français", modes: ["Clé de Sol", "Clé de Fa", "Grande Portée", "Bibliothèque", "Oreille", "Note Check", "Métronome"], ui: { level: "Niveau", next: "Suivant", result: "Résultat", listen: "Écouter", check: "Vérifier", start: "Démarrer", stop: "Arrêter", bpm: "BPM", notes: "Notes", time: "Temps", seconds: "s", detect: "Écoute...", library: "Bibliothèque", chords: "Accords", settings: "Paramètres", theme: "Thème", lang: "Langue", answer: "Réponse", tapToStart: "Appuyez pour commencer", sol: "Sol", fa: "Fa", do: "Do", re: "Ré", mi: "Mi", fa_note: "Fa", sol_note: "Sol", la: "La", si: "Si", soundOn: "Son activé", soundOff: "Muet" } },
+        };
+
+        const THEMES = [
+            { id: "classic", name: "Classic", icon: "fa-music" },
+            { id: "dark", name: "Dark", icon: "fa-moon" },
+            { id: "ocean", name: "Ocean", icon: "fa-water" },
+            { id: "coder", name: "Coder", icon: "fa-terminal" },
+            { id: "love", name: "Love", icon: "fa-heart" },
+            { id: "christmas", name: "Christmas", icon: "fa-tree" },
+            { id: "retro", name: "Retro", icon: "fa-coffee" }
+        ];
+
+        // Mapping VexFlow duration to Tone.js duration and time value (relative to quarter note)
+        // w=4 beats, h=2, q=1, 8=0.5, 16=0.25
+        const DURATION_MAP = {
+            'w': { tone: '1n', time: 4 },
+            'h': { tone: '2n', time: 2 },
+            'q': { tone: '4n', time: 1 },
+            '8': { tone: '8n', time: 0.5 },
+            '16': { tone: '16n', time: 0.25 }
+        };
+
+        let state = {
+            lang: 'vi', theme: DEFAULT_THEME, mode: 0, level: 1,
+            flashcardData: { treble: [], bass: [] }, 
+            isRevealed: false, audioEnabled: false, isMuted: false,
+            earTrainingNotes: 1, checkTime: 5, metronomeBpm: 60, metronomeActive: false
+        };
+
+        let synth;
+        let metronomeLoop;
+        let playbackTimeout;
+
+        // --- HELPERS ---
+        function stopSound() {
+            if (playbackTimeout) { clearTimeout(playbackTimeout); playbackTimeout = null; }
+            if (synth) {
+                try { synth.releaseAll(); synth.dispose(); } catch(e) {}
+                synth = new Tone.PolySynth(Tone.Synth).toDestination();
+                if (state.isMuted) Tone.Destination.mute = true;
+            }
         }
-        const VF = Vex.Flow;
-        let audioContext = null;
-        let isMuted = localStorage.muted === 'true';
 
-        // Init
-        document.getElementById('langSelect').value = currentLang;
-        initTheme();
-        updateTexts();
-        updateMuteUI();
-
-        // --- FUNCTIONS ---
-        function changeLanguage(lang) {
-            currentLang = lang;
-            localStorage.lang = lang;
-            updateTexts();
-            if (!document.getElementById('library-screen').classList.contains('hidden')) {
-                document.getElementById('library-content').innerHTML = ""; 
-                showLibrary();
-            }
-            if (currentNotes.length > 0 && document.getElementById('lyric-answer').classList.contains('visible')) {
-                 updateAnswerText(true);
-            }
-            if(mode) {
-                let titleKey = mode === 'treble' ? 'modeTreble' : mode === 'bass' ? 'modeBass' : 'modeGrand';
-                document.getElementById('mode-title').innerText = i18n[currentLang][titleKey];
-            }
+        function getNoteName(noteStr) { 
+            const toneMap = { 'C': 'do', 'D': 're', 'E': 'mi', 'F': 'fa_note', 'G': 'sol_note', 'A': 'la', 'B': 'si' };
+            const noteChar = noteStr.charAt(0);
+            const accidental = noteStr.includes('#') ? '#' : (noteStr.includes('b') ? 'b' : '');
+            const octave = noteStr.slice(-1);
+            return `${LANGUAGES[state.lang].ui[toneMap[noteChar]]}${accidental} ${octave}`;
         }
+        function rnd(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
 
-        function updateTexts() {
-            const texts = i18n[currentLang];
-            document.querySelectorAll('[data-i18n]').forEach(el => {
-                const key = el.getAttribute('data-i18n');
-                if (texts[key]) el.innerText = texts[key];
-            });
-            const btn = document.getElementById('action-btn');
-            if (btn.classList.contains('bg-emerald-500')) {
-                btn.innerText = texts.btnNext;
-            } else {
-                btn.innerText = texts.btnShow;
-            }
+        function playTone(note, durationVex) {
+            if (!state.audioEnabled || !synth) return;
+            const dur = DURATION_MAP[durationVex] ? DURATION_MAP[durationVex].tone : '8n';
+            synth.triggerAttackRelease(note, dur);
         }
-
-        function updateMuteUI() {
-            const on = document.getElementById('icon-sound-on');
-            const off = document.getElementById('icon-sound-off');
-            if(isMuted) { on.classList.add('hidden'); off.classList.remove('hidden'); }
-            else { on.classList.remove('hidden'); off.classList.add('hidden'); }
+        function playChord(notes) {
+            if (!state.audioEnabled || !synth) return;
+            synth.triggerAttackRelease(notes, "2n");
         }
 
         function toggleMute() {
-            isMuted = !isMuted;
-            localStorage.muted = isMuted;
-            updateMuteUI();
-            if (!isMuted) unlockAudio();
+            state.isMuted = !state.isMuted;
+            Tone.Destination.mute = state.isMuted;
+            renderControls(); 
         }
 
-        function unlockAudio() {
-            if (audioContext && audioContext.state === 'running') return;
-            const AudioContext = window.AudioContext || window.webkitAudioContext;
-            if (!audioContext) audioContext = new AudioContext();
-            if (audioContext.state === 'suspended') audioContext.resume();
-            
-            const buffer = audioContext.createBuffer(1, 1, 22050);
-            const source = audioContext.createBufferSource();
-            source.buffer = buffer;
-            source.connect(audioContext.destination);
-            source.start(0);
-            ['touchstart', 'click'].forEach(e => document.removeEventListener(e, unlockAudio));
-        }
-        ['touchstart', 'click'].forEach(e => document.addEventListener(e, unlockAudio, {once:true}));
-
-        function playFreq(freq) {
-            if (isMuted || !audioContext) return;
-            const osc = audioContext.createOscillator();
-            const gain = audioContext.createGain();
-            osc.type = 'triangle';
-            osc.frequency.setValueAtTime(freq, audioContext.currentTime);
-            gain.gain.setValueAtTime(0, audioContext.currentTime);
-            gain.gain.linearRampToValueAtTime(0.5, audioContext.currentTime + 0.05);
-            gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 1.2);
-            osc.connect(gain);
-            gain.connect(audioContext.destination);
-            osc.start();
-            osc.stop(audioContext.currentTime + 1.2);
+        // --- RENDER UI ---
+        function renderControls() {
+            const container = document.getElementById('controls-bar');
+            const soundBtn = `<button onclick="toggleMute()" class="flex items-center gap-2 px-4 py-2 rounded-full shadow-sm transition hover:scale-105 ${state.isMuted ? 'bg-gray-300 text-gray-600' : 'bg-[var(--primary-color)] text-white'}"><i class="fas ${state.isMuted ? 'fa-volume-mute' : 'fa-volume-up'}"></i></button>`;
+            const themeSelect = `<div class="relative group"><select onchange="state.theme=this.value;document.body.setAttribute('data-theme',this.value)" class="appearance-none bg-white border border-gray-300 hover:border-[var(--primary-color)] px-4 py-2 pr-8 rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] cursor-pointer text-gray-700">${THEMES.map(th => `<option value="${th.id}" ${state.theme===th.id?'selected':''}>${th.name}</option>`).join('')}</select><div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700"><i class="fas fa-palette text-xs"></i></div></div>`;
+            const langSelect = `<div class="relative"><select onchange="state.lang=this.value;initUI()" class="appearance-none bg-white border border-gray-300 hover:border-[var(--primary-color)] px-4 py-2 pr-8 rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] cursor-pointer text-gray-700 font-bold">${Object.keys(LANGUAGES).map(l => `<option value="${l}" ${state.lang===l?'selected':''}>${LANGUAGES[l].flag} ${l.toUpperCase()}</option>`).join('')}</select><div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700"><i class="fas fa-globe text-xs"></i></div></div>`;
+            container.innerHTML = soundBtn + themeSelect + langSelect;
         }
 
-        // --- DATA ---
-        const baseNoteNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-        const notes = [];
-        for (let i = 21; i <= 108; i++) {
-            const oct = Math.floor(i/12)-1;
-            const noteIdx = i%12;
-            const name = baseNoteNames[noteIdx];
-            notes.push({
-                midi: i, noteIdx: noteIdx, oct: oct,
-                sci: `${name}${oct}`, acc: name.includes("#"),
-                freq: 440 * Math.pow(2, (i-69)/12),
-                key: `${name.toLowerCase()}/${oct}`
-            });
+        function renderTabs() {
+            const t = LANGUAGES[state.lang];
+            const tabs = document.getElementById('mode-tabs');
+            tabs.innerHTML = t.modes.map((m, i) => `<button onclick="switchMode(${i})" class="whitespace-nowrap px-5 py-2.5 rounded-full text-sm font-bold shadow-sm transition hover:scale-105 border ${state.mode === i ? 'bg-[var(--primary-color)] text-white border-[var(--primary-color)]' : 'bg-white text-gray-600 border-gray-200 hover:border-[var(--primary-color)]'}">${m}</button>`).join('');
         }
 
-        let mode = null;
-        let currentNotes = [];
-        let revealed = false;
-        
-        // RANGES
-        const ranges = { 
-            treble: { min: 55, max: 84 }, 
-            bass: { min: 36, max: 65 }, 
-            gTreble: { min: 60, max: 84 }, 
-            gBass: { min: 36, max: 60 }    
-        };
-
-        function getRandomNote(min, max) {
-            const pool = notes.filter(n => n.midi >= min && n.midi <= max && !n.acc);
-            return pool[Math.floor(Math.random() * pool.length)];
+        function initUI() {
+            document.body.setAttribute('data-theme', state.theme);
+            renderControls(); renderTabs(); switchMode(state.mode); 
         }
 
-        // --- APP LOGIC ---
-        window.startMode = function(m) {
-            unlockAudio();
-            mode = m;
-            document.getElementById('menu-screen').classList.add('hidden');
-            document.getElementById('game-screen').classList.replace('hidden', 'flex');
-            
-            let titleKey = m === 'treble' ? 'modeTreble' : m === 'bass' ? 'modeBass' : 'modeGrand';
-            document.getElementById('mode-title').innerText = i18n[currentLang][titleKey];
-            
-            nextCard();
-        };
-
-        function updateAnswerText(onlyText = false) {
-             const n1 = noteLocales[currentLang][currentNotes[0].noteIdx];
-             const nameStr = currentNotes.length === 2 
-                ? `${currentNotes[0].sci} & ${currentNotes[1].sci}`
-                : currentNotes[0].sci;
-             const detailStr = currentNotes.length === 2
-                ? `${n1} - ${noteLocales[currentLang][currentNotes[1].noteIdx]}`
-                : `${n1}`;
-
-             if(!onlyText) {
-                 document.getElementById('note-name').innerHTML = nameStr;
-                 document.getElementById('note-detail').innerText = detailStr;
-             }
-        }
-
-        window.nextCard = function() {
-            revealed = false;
-            const btn = document.getElementById('action-btn');
-            const lyric = document.getElementById('lyric-answer');
-            
-            lyric.classList.remove('visible');
-            
-            btn.innerText = i18n[currentLang].btnShow;
-            btn.className = "w-full bg-slate-900 dark:bg-indigo-600 text-white font-bold text-lg py-3.5 rounded-2xl shadow-lg hover:shadow-xl transition-all mt-auto mb-2";
-
-            if (mode === 'grand') {
-                currentNotes = [getRandomNote(ranges.gTreble.min, ranges.gTreble.max), getRandomNote(ranges.gBass.min, ranges.gBass.max)];
-            } else {
-                const r = ranges[mode];
-                currentNotes = [getRandomNote(r.min, r.max)];
-            }
-            updateAnswerText();
-            // Timeout to allow DOM layout before rendering canvas
-            setTimeout(renderGameCanvas, 10);
-        };
-
-        window.handleAction = function() {
-            if (!revealed) {
-                revealed = true;
-                currentNotes.forEach(n => playFreq(n.freq));
+        // --- FLASHCARD LOGIC ---
+        const FLASHCARD_LOGIC = {
+            generateCard: () => {
+                stopSound();
+                const levelCounts = {1: 1, 2: 3, 3: 5, 4: 8};
+                const count = levelCounts[state.level];
+                state.flashcardData = { treble: [], bass: [] };
+                const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
                 
-                const lyric = document.getElementById('lyric-answer');
-                lyric.classList.add('visible');
-                
-                const btn = document.getElementById('action-btn');
-                btn.innerText = i18n[currentLang].btnNext;
-                btn.className = "w-full bg-emerald-500 text-white font-bold text-lg py-3.5 rounded-2xl shadow-glow transition-all mt-auto mb-2";
-            } else {
-                nextCard();
-            }
-        };
+                // Logic for mixing note durations
+                // Level 1: Simple (q, h, w) - mostly quarter for simplicity
+                // Level > 1: Mix q, 8, 16 to create beamable patterns
+                let durationPool = ['w', 'h', 'q'];
+                if (state.level > 1) durationPool = ['q', '8', '8', '16', '16', '16', '16']; // Weighted towards beamable notes
 
-        window.goHome = function() {
-            document.getElementById('game-screen').classList.add('hidden');
-            document.getElementById('game-screen').classList.remove('flex');
-            document.getElementById('library-screen').classList.add('hidden');
-            document.getElementById('library-screen').classList.remove('flex');
-            document.getElementById('menu-screen').classList.remove('hidden');
-        };
+                const generateNote = (clef) => {
+                    const minMidi = clef === 'treble' ? 60 : 40; 
+                    const maxMidi = clef === 'treble' ? 84 : 60;
+                    const midi = rnd(minMidi, maxMidi);
+                    const noteName = noteNames[midi % 12];
+                    const octave = Math.floor(midi / 12) - 1;
+                    return { key: `${noteName.toLowerCase()}/${octave}`, toneKey: `${noteName}${octave}`, midi, clef };
+                };
 
-        // --- RENDER GAME (OPTIMIZED SPACE) ---
-        function renderGameCanvas() {
-            const div = document.getElementById("notation-output");
-            div.innerHTML = "";
-            
-            // Dynamic width based on container, but fixed internal coordinate system
-            const refW = 500;
-            // Higher height for grand staff to avoid clipping
-            const refH = mode === 'grand' ? 420 : 300; 
-            
-            const renderer = new VF.Renderer(div, VF.Renderer.Backends.SVG);
-            renderer.resize(refW, refH);
-            const ctx = renderer.getContext();
-            
-            // Adjust ViewBox to fit content perfectly
-            ctx.setViewBox(0, 0, refW, refH);
-            
-            // Slightly reduced scale to fit everything comfortably
-            const scale = mode === 'grand' ? 1.2 : 1.4; 
-            ctx.scale(scale, scale); 
-            
-            const w = refW / scale; 
-            
-            // WIDER STAVE: Increased from 220 to 400 (or near max width)
-            const staveWidth = 350; 
-            const x = (w - staveWidth) / 2; // Center based on stave width
-            
-            // Centered Y positions
-            const startY = mode === 'grand' ? 50 : 80;
-            
-            if (mode === 'treble') {
-                const s = new VF.Stave(x, startY, staveWidth);
-                s.addClef("treble").setContext(ctx).draw();
-                drawNote(ctx, s, currentNotes[0], "treble");
-            } else if (mode === 'bass') {
-                const s = new VF.Stave(x, startY, staveWidth);
-                s.addClef("bass").setContext(ctx).draw();
-                drawNote(ctx, s, currentNotes[0], "bass");
-            } else if (mode === 'grand') {
-                const s1 = new VF.Stave(x, startY, staveWidth); 
-                const s2 = new VF.Stave(x, startY + 130, staveWidth); 
-                
-                s1.addClef("treble"); s2.addClef("bass");
-                
-                new VF.StaveConnector(s1, s2).setType(VF.StaveConnector.type.BRACE).setContext(ctx).draw();
-                new VF.StaveConnector(s1, s2).setType(VF.StaveConnector.type.SINGLE_LEFT).setContext(ctx).draw();
-                new VF.StaveConnector(s1, s2).setType(VF.StaveConnector.type.SINGLE_RIGHT).setContext(ctx).draw();
-                
-                s1.setContext(ctx).draw(); 
-                s2.setContext(ctx).draw();
-                
-                drawNote(ctx, s1, currentNotes[0], "treble");
-                drawNote(ctx, s2, currentNotes[1], "bass");
-            }
-        }
+                if (state.mode === 2) {
+                    for (let i = 0; i < count; i++) {
+                        // Sync duration for both hands to keep it clean visually for flashcards
+                        let dur = durationPool[rnd(0, durationPool.length - 1)];
+                        // If it's the last note, try to make it longer to "resolve"
+                        if (i === count - 1 && state.level > 1) dur = 'h'; 
+                        
+                        const tNote = generateNote('treble'); const bNote = generateNote('bass');
+                        tNote.duration = dur; bNote.duration = dur;
+                        state.flashcardData.treble.push(tNote); state.flashcardData.bass.push(bNote);
+                    }
+                } else {
+                    const clef = state.mode === 0 ? 'treble' : 'bass';
+                    for (let i = 0; i < count; i++) {
+                        let dur = durationPool[rnd(0, durationPool.length - 1)];
+                        if (i === count - 1 && state.level > 1) dur = 'h';
+                        const n = generateNote(clef); 
+                        n.duration = dur;
+                        state.flashcardData[clef].push(n);
+                    }
+                }
+                state.isRevealed = false; FLASHCARD_LOGIC.render();
+            },
+            render: () => {
+                const t = LANGUAGES[state.lang].ui;
+                let answers = [];
+                if (state.mode === 2) {
+                    state.flashcardData.treble.forEach((n, i) => {
+                        const b = state.flashcardData.bass[i];
+                        answers.push(`[${getNoteName(n.toneKey)} + ${getNoteName(b.toneKey)}]`);
+                    });
+                } else {
+                    const data = state.mode === 0 ? state.flashcardData.treble : state.flashcardData.bass;
+                    answers = data.map(n => getNoteName(n.toneKey));
+                }
 
-        function drawNote(ctx, stave, note, clef) {
-            const vn = new VF.StaveNote({clef: clef, keys: [note.key], duration: "w", auto_stem: true});
-            vn.setStyle({fillStyle: "black", strokeStyle: "black"});
-            const v = new VF.Voice({num_beats: 4, beat_value: 4}).addTickables([vn]);
-            // Format to center (width/2)
-            new VF.Formatter().joinVoices([v]).format([v], stave.getWidth() - 100); 
-            v.draw(ctx, stave);
-        }
-
-        // --- RENDER LIBRARY ---
-        window.showLibrary = function() {
-            unlockAudio();
-            document.getElementById('menu-screen').classList.add('hidden');
-            document.getElementById('library-screen').classList.replace('hidden', 'flex');
-            const container = document.getElementById('library-content');
-            if (container.children.length > 0) return; 
-
-            for (let oct = 1; oct <= 7; oct++) {
-                const octNotes = notes.filter(n => n.oct === oct && !n.acc);
-                if (octNotes.length === 0) continue;
-
-                const card = document.createElement('div');
-                card.className = "glass-panel rounded-2xl overflow-hidden mb-4";
-                
-                const titleKey = i18n[currentLang].octave;
-                card.innerHTML = `<div class="px-5 py-3 bg-black/5 dark:bg-white/5 border-b border-black/5 dark:border-white/5 font-serif font-bold text-lg opacity-80">${titleKey} ${oct}</div>`;
-                
-                const scrollWrap = document.createElement('div');
-                scrollWrap.className = "overflow-x-auto library-scroll py-2 flex justify-center library-canvas relative no-scrollbar";
-                const canvasDiv = document.createElement('div');
-                scrollWrap.appendChild(canvasDiv);
-                card.appendChild(scrollWrap);
-                container.appendChild(card);
-
-                // FIX: Wider canvas to fit last note (Si)
-                const width = 600; 
-                const height = 160; 
-                
-                const renderer = new VF.Renderer(canvasDiv, VF.Renderer.Backends.SVG);
-                renderer.resize(width, height);
+                let html = `
+                    <div class="theme-card p-6 rounded-xl shadow-lg w-full text-center">
+                        <div class="flex justify-between items-center mb-4">
+                            <select id="level-select" onchange="state.level=parseInt(this.value); FLASHCARD_LOGIC.generateCard()" class="p-2 rounded border bg-transparent">
+                                <option value="1" ${state.level===1?'selected':''}>Lvl 1 (1 Note)</option>
+                                <option value="2" ${state.level===2?'selected':''}>Lvl 2 (3 Notes)</option>
+                                <option value="3" ${state.level===3?'selected':''}>Lvl 3 (5 Notes)</option>
+                                <option value="4" ${state.level===4?'selected':''}>Lvl 4 (8 Notes)</option>
+                            </select>
+                            <span class="text-sm opacity-60">Click notes to play</span>
+                        </div>
+                        <div id="flashcard-canvas" class="flex justify-center items-center bg-white rounded p-2 mb-6 overflow-x-auto min-h-[200px]"></div>
+                        <div class="min-h-[4rem] flex flex-col items-center justify-center mb-4">
+                            ${state.isRevealed 
+                                ? `<div class="flex flex-wrap gap-2 justify-center w-full px-4">${answers.map(a => `<span class="bg-[var(--primary-color)] text-white px-4 py-2 rounded-lg font-bold shadow-sm text-lg">${a}</span>`).join('')}</div>`
+                                : `<button onclick="FLASHCARD_LOGIC.reveal()" class="theme-btn-accent px-6 py-2 rounded-full font-bold shadow">${t.result}</button>`
+                            }
+                        </div>
+                        ${state.isRevealed ? `<button onclick="FLASHCARD_LOGIC.generateCard()" class="theme-btn-primary px-8 py-3 rounded-full text-xl font-bold shadow-lg transform transition hover:scale-105">${t.next} <i class="fas fa-arrow-right ml-2"></i></button>` : ''}
+                    </div>
+                `;
+                document.getElementById('app-container').innerHTML = html;
+                const div = document.getElementById('flashcard-canvas');
+                if (!div) return;
+                div.innerHTML = '';
+                const { Renderer, Stave, StaveNote, Formatter, StaveConnector, Accidental, Beam } = Vex.Flow;
+                const count = Math.max(state.flashcardData.treble.length, state.flashcardData.bass.length);
+                const width = Math.max(320, count * 70 + 100);
+                const renderer = new Renderer(div, Renderer.Backends.SVG);
+                renderer.resize(width, state.mode === 2 ? 280 : 160);
                 const ctx = renderer.getContext();
                 
-                let clef = "treble"; let staveY = 30; 
-                if (oct < 4) { clef = "bass"; staveY = 40; } 
-                else if (oct >= 6) { staveY = 70; }
+                const makeNotes = (d, c) => d.map(n => {
+                    const note = new StaveNote({ clef: c, keys: [n.key], duration: n.duration, auto_stem: true });
+                    if(n.key.includes('#')) note.addModifier(new Accidental('#'));
+                    if(n.key.includes('b') && n.key[0] !== 'b') note.addModifier(new Accidental('b'));
+                    return note;
+                });
 
-                const stave = new VF.Stave(10, staveY, width - 20);
-                stave.addClef(clef).setContext(ctx).draw();
-
-                const vfNotes = octNotes.map(n => new VF.StaveNote({clef: clef, keys: [n.key], duration: "q", auto_stem: true}));
-                const voice = new VF.Voice({num_beats: vfNotes.length, beat_value: 4}).addTickables(vfNotes);
-                
-                // Formatter: Spread notes evenly
-                new VF.Formatter().joinVoices([voice]).format([voice], width - 50);
-                voice.draw(ctx, stave);
-
-                vfNotes.forEach((vn, i) => {
-                    const n = octNotes[i];
-                    const x = vn.getAbsoluteX();
-                    const btn = document.createElement('button');
-                    const locName = noteLocales[currentLang][n.noteIdx];
-                    btn.className = "absolute top-0 h-full w-12 hover:bg-indigo-500/10 flex flex-col justify-end items-center pb-2 transition-colors";
-                    // Center button relative to note head
-                    btn.style.left = (x - 20) + "px"; 
-                    btn.innerHTML = `<span class="text-[10px] font-bold text-slate-600 bg-white/90 px-1.5 py-0.5 rounded-full shadow-sm font-sans transition-all">${locName}</span>`;
+                if (state.mode === 2) {
+                    const st = new Stave(10, 20, width - 20).addClef('treble').setContext(ctx).draw();
+                    const sb = new Stave(10, 130, width - 20).addClef('bass').setContext(ctx).draw();
+                    new StaveConnector(st, sb).setType(StaveConnector.type.BRACE).setContext(ctx).draw();
+                    new StaveConnector(st, sb).setType(StaveConnector.type.SINGLE_LEFT).setContext(ctx).draw();
+                    new StaveConnector(st, sb).setType(StaveConnector.type.SINGLE_RIGHT).setContext(ctx).draw();
                     
-                    btn.onclick = () => {
-                        playFreq(n.freq);
-                        const span = btn.firstElementChild;
-                        span.classList.add('bg-indigo-500', 'text-white', 'scale-110');
-                        setTimeout(() => span.classList.remove('bg-indigo-500', 'text-white', 'scale-110'), 200);
-                    };
-                    scrollWrap.appendChild(btn);
+                    const tn = makeNotes(state.flashcardData.treble, 'treble');
+                    const bn = makeNotes(state.flashcardData.bass, 'bass');
+                    
+                    // Auto Beam
+                    const beamsT = Beam.generateBeams(tn);
+                    const beamsB = Beam.generateBeams(bn);
+
+                    const fmt = new Formatter();
+                    fmt.joinVoices([new Vex.Flow.Voice({num_beats:4,beat_value:4}).setMode(Vex.Flow.Voice.Mode.SOFT).addTickables(tn)]).format([new Vex.Flow.Voice({num_beats:4,beat_value:4}).setMode(Vex.Flow.Voice.Mode.SOFT).addTickables(tn)], width - 50);
+                    
+                    tn.forEach(n => n.setStave(st).setContext(ctx).draw());
+                    beamsT.forEach(b => b.setContext(ctx).draw());
+
+                    fmt.format([new Vex.Flow.Voice({num_beats:4,beat_value:4}).setMode(Vex.Flow.Voice.Mode.SOFT).addTickables(bn)], width - 50);
+                    bn.forEach(n => n.setStave(sb).setContext(ctx).draw());
+                    beamsB.forEach(b => b.setContext(ctx).draw());
+
+                    const svgs = div.querySelectorAll('.vf-stavenote');
+                    state.flashcardData.treble.forEach((n,i)=>addClick(svgs[i], n.toneKey, n.duration));
+                    state.flashcardData.bass.forEach((n,i)=>addClick(svgs[state.flashcardData.treble.length+i], n.toneKey, n.duration));
+                } else {
+                    const clef = state.mode === 0 ? 'treble' : 'bass';
+                    const st = new Stave(10, 20, width - 20).addClef(clef).setContext(ctx).draw();
+                    const n = makeNotes(state.mode === 0 ? state.flashcardData.treble : state.flashcardData.bass, clef);
+                    
+                    const beams = Beam.generateBeams(n);
+                    
+                    Formatter.FormatAndDraw(ctx, st, n);
+                    beams.forEach(b => b.setContext(ctx).draw());
+
+                    const svgs = div.querySelectorAll('.vf-stavenote');
+                    n.forEach((note, i) => addClick(svgs[i], state.flashcardData[state.mode === 0 ? 'treble' : 'bass'][i].toneKey, state.flashcardData[state.mode === 0 ? 'treble' : 'bass'][i].duration));
+                }
+            },
+            reveal: () => {
+                stopSound();
+                state.isRevealed = true;
+                FLASHCARD_LOGIC.render();
+                const now = Tone.now();
+                
+                // Play Sequence Logic considering Durations
+                let currentTime = now;
+                const bpm = 100; // Fixed BPM for playback
+                const beatTime = 60 / bpm; // Time for one Quarter note
+
+                const getDurTime = (durChar) => {
+                    return DURATION_MAP[durChar].time * beatTime;
+                };
+                const getToneDur = (durChar) => {
+                    return DURATION_MAP[durChar].tone;
+                }
+
+                if (state.mode === 2) {
+                    state.flashcardData.treble.forEach((t, i) => {
+                        const b = state.flashcardData.bass[i];
+                        const durationTime = getDurTime(t.duration);
+                        const toneDuration = getToneDur(t.duration);
+                        
+                        synth.triggerAttackRelease([t.toneKey, b.toneKey], toneDuration, currentTime);
+                        currentTime += durationTime;
+                    });
+                } else {
+                    const data = state.mode === 0 ? state.flashcardData.treble : state.flashcardData.bass;
+                    data.forEach((n, i) => {
+                        const durationTime = getDurTime(n.duration);
+                        const toneDuration = getToneDur(n.duration);
+                        
+                        synth.triggerAttackRelease(n.toneKey, toneDuration, currentTime);
+                        currentTime += durationTime;
+                    });
+                }
+            }
+        };
+
+        function addClick(el, tone, durationVex) {
+            if(!el) return;
+            el.style.cursor = 'pointer';
+            el.onclick = (e) => { 
+                e.stopPropagation(); 
+                playTone(tone, durationVex || '8'); 
+                const p=el.querySelectorAll('path,rect'); p.forEach(x=>x.style.fill='var(--accent-color)'); setTimeout(()=>p.forEach(x=>x.style.fill=''),300); 
+            };
+        }
+
+        // --- LIBRARY LOGIC ---
+        const LIBRARY_LOGIC = {
+            render: () => {
+                const t = LANGUAGES[state.lang].ui;
+                document.getElementById('app-container').innerHTML = `
+                    <div class="grid md:grid-cols-2 gap-4 w-full h-[80vh]">
+                        <div class="theme-card p-4 rounded-xl shadow overflow-y-auto library-scroll">
+                            <h2 class="text-xl font-bold mb-4 sticky top-0 bg-[var(--card-bg)] pb-2 border-b border-[var(--primary-color)]">${t.library} (88 Keys)</h2>
+                            <div id="notes-lib-content" class="space-y-6"></div>
+                        </div>
+                        <div class="theme-card p-4 rounded-xl shadow overflow-y-auto library-scroll">
+                            <h2 class="text-xl font-bold mb-4 sticky top-0 bg-[var(--card-bg)] pb-2 border-b border-[var(--primary-color)]">${t.chords}</h2>
+                            <div id="chords-lib-content" class="space-y-6"></div>
+                        </div>
+                    </div>`;
+                setTimeout(LIBRARY_LOGIC.fillContent, 100);
+            },
+            fillContent: () => {
+                const nDiv = document.getElementById('notes-lib-content');
+                if(!nDiv) return;
+                for (let o = 0; o <= 8; o++) {
+                    const id = `lib-oct-${o}`;
+                    let lst = ['C','D','E','F','G','A','B'];
+                    if(o===0) lst=['A','B']; if(o===8) lst=['C'];
+                    const clef = o < 4 ? 'bass' : 'treble';
+                    const w = document.createElement('div');
+                    w.innerHTML = `<h3 class="font-bold text-sm text-[var(--primary-color)]">Octave ${o} (${clef})</h3><div id="${id}" class="bg-white rounded p-2 overflow-x-auto cursor-pointer mb-4 border border-gray-200"></div>`;
+                    nDiv.appendChild(w);
+                    const notes = lst.map(n => ({ key: `${n.toLowerCase()}/${o}`, toneKey: `${n}${o}`, duration: 'q', midi: 0 }));
+                    renderNotation(id, notes, clef, 600, 0.85);
+                }
+                const cDiv = document.getElementById('chords-lib-content');
+                if(!cDiv) return;
+                ['C','D','E','F','G','A','B'].forEach(r => {
+                    [{t:'M',s:'Major'},{t:'m',s:'Minor'}].forEach(v => {
+                        const id = `chord-${r}-${v.t}`;
+                        const w = document.createElement('div');
+                        w.className = "flex items-center gap-4 bg-[var(--bg-color)] p-2 rounded hover:brightness-95 transition cursor-pointer mb-2";
+                        const d = getChordKeys(r, v.t);
+                        w.onclick = () => playChord(d.tones);
+                        w.innerHTML = `<div class="font-bold w-24 text-sm">${r} ${v.s}</div><div id="${id}" class="bg-white rounded"></div>`;
+                        cDiv.appendChild(w);
+                        renderChord(id, d.keys);
+                    });
                 });
             }
+        };
+
+        function getChordKeys(r, t) {
+            const m = {
+                'C':{M:['c/4','e/4','g/4'],m:['c/4','eb/4','g/4']}, 'D':{M:['d/4','f#/4','a/4'],m:['d/4','f/4','a/4']}, 'E':{M:['e/4','g#/4','b/4'],m:['e/4','g/4','b/4']},
+                'F':{M:['f/4','a/4','c/5'],m:['f/4','ab/4','c/5']}, 'G':{M:['g/4','b/4','d/5'],m:['g/4','bb/4','d/5']}, 'A':{M:['a/4','c#/5','e/5'],m:['a/4','c/5','e/5']},
+                'B':{M:['b/4','d#/5','f#/5'],m:['b/4','d/5','f#/5']}
+            };
+            const tm = {
+                'C':{M:['C4','E4','G4'],m:['C4','Eb4','G4']}, 'D':{M:['D4','F#4','A4'],m:['D4','F4','A4']}, 'E':{M:['E4','G#4','B4'],m:['E4','G4','B4']},
+                'F':{M:['F4','A4','C5'],m:['F4','Ab4','C5']}, 'G':{M:['G4','B4','D5'],m:['G4','Bb4','D5']}, 'A':{M:['A4','C#5','E5'],m:['A4','C5','E5']},
+                'B':{M:['B4','D#5','F#5'],m:['B4','D5','F#5']}
+            };
+            return { keys: m[r][t], tones: tm[r][t] };
         }
+
+        function renderNotation(eid, data, clef, w, s) {
+            const div = document.getElementById(eid); if(!div) return; div.innerHTML='';
+            const r = new Vex.Flow.Renderer(div, Vex.Flow.Renderer.Backends.SVG);
+            r.resize(w, 250 * s); const ctx = r.getContext(); ctx.scale(s, s);
+            const st = new Vex.Flow.Stave(10, 50, w - 20).addClef(clef).setContext(ctx).draw();
+            const n = data.map(d => {
+                const note = new Vex.Flow.StaveNote({clef, keys:[d.key], duration:d.duration, auto_stem:true});
+                if(d.key.includes('#')) note.addModifier(new Vex.Flow.Accidental('#'));
+                if(d.key.includes('b') && d.key[0]!=='b') note.addModifier(new Vex.Flow.Accidental('b'));
+                return note;
+            });
+            Vex.Flow.Formatter.FormatAndDraw(ctx, st, n);
+            const svgs = div.querySelectorAll('.vf-stavenote');
+            data.forEach((d,i) => addClick(svgs[i], d.toneKey, d.duration));
+        }
+
+        function renderChord(eid, keys) {
+            const div = document.getElementById(eid); if(!div) return;
+            const r = new Vex.Flow.Renderer(div, Vex.Flow.Renderer.Backends.SVG);
+            r.resize(250, 150); const ctx = r.getContext(); ctx.scale(0.55, 0.55);
+            const st = new Vex.Flow.Stave(0, 30, 240).addClef('treble').setContext(ctx).draw();
+            const n = new Vex.Flow.StaveNote({clef:'treble',keys,duration:'w'});
+            keys.forEach((k,i)=>{
+                if(k.includes('#')) n.addModifier(new Vex.Flow.Accidental('#'),i);
+                if(k.includes('b') && k[0]!=='b') n.addModifier(new Vex.Flow.Accidental('b'),i);
+            });
+            st.setNoteStartX(st.getNoteStartX()+20);
+            Vex.Flow.Formatter.FormatAndDraw(ctx, st, [n]);
+        }
+
+        // --- EAR LOGIC ---
+        const EAR_LOGIC = {
+            targetNotes: [],
+            render: () => {
+                const t = LANGUAGES[state.lang].ui;
+                document.getElementById('app-container').innerHTML = `
+                    <div class="theme-card p-8 rounded-xl shadow-lg w-full text-center max-w-md">
+                        <h2 class="text-2xl font-bold mb-6">${t.ui && t.ui.modes ? t.modes[4] : 'Ear Training'}</h2>
+                        <div class="mb-6 flex items-center justify-center gap-2">
+                            <label>${t.notes}:</label>
+                            <input type="number" min="1" max="10" value="${state.earTrainingNotes}" onchange="let v=parseInt(this.value);if(isNaN(v)||v<1)v=1;if(v>10)v=10;state.earTrainingNotes=v;this.value=v;EAR_LOGIC.newQuestion()" class="border rounded p-2 w-16 text-center text-black">
+                        </div>
+                        <div id="ear-canvas-container" class="bg-[var(--bg-color)] rounded-xl p-4 min-h-[160px] flex items-center justify-center mb-6 shadow-inner">
+                            ${!state.isRevealed ? `<i class="fas fa-music text-6xl text-[var(--text-color)] opacity-50"></i>` : `<div id="ear-vexflow"></div>`}
+                        </div>
+                        <div class="flex flex-wrap gap-2 justify-center mb-4 min-h-[3rem] items-center">
+                            ${state.isRevealed ? state.targetNotes.map(n => `<span class="bg-[var(--primary-color)] text-white px-3 py-1 rounded-lg font-bold shadow-sm text-xl">${getNoteName(n)}</span>`).join('') : `<span class="text-3xl font-bold text-gray-300">? ? ?</span>`}
+                        </div>
+                        <div class="flex gap-4 justify-center">
+                            <button onclick="EAR_LOGIC.play()" class="theme-btn-accent px-6 py-3 rounded-full font-bold shadow"><i class="fas fa-volume-up mr-2"></i> ${t.listen}</button>
+                            ${!state.isRevealed ? `<button onclick="EAR_LOGIC.reveal()" class="theme-btn-primary px-6 py-3 rounded-full font-bold shadow">${t.result}</button>` : `<button onclick="EAR_LOGIC.newQuestion()" class="theme-btn-primary px-6 py-3 rounded-full font-bold shadow">${t.next}</button>`}
+                        </div>
+                    </div>`;
+                if(state.isRevealed) {
+                    const no = state.targetNotes.map(s => ({ key: `${s.charAt(0).toLowerCase()}${s.includes('#')?'#':s.includes('b')?'b':''}/${s.slice(-1)}`, toneKey: s, duration:'q', midi:0 }));
+                    renderNotation('ear-vexflow', no, 'treble', 350, 0.9);
+                }
+                if(state.targetNotes.length===0) EAR_LOGIC.newQuestion();
+            },
+            newQuestion: () => {
+                stopSound(); state.targetNotes = [];
+                const pool = ['C4','D4','E4','F4','G4','A4','B4','C5'];
+                for(let i=0; i<state.earTrainingNotes; i++) state.targetNotes.push(pool[rnd(0, pool.length-1)]);
+                state.isRevealed = false; EAR_LOGIC.render(); playbackTimeout = setTimeout(() => EAR_LOGIC.play(), 500);
+            },
+            play: () => { const now = Tone.now(); state.targetNotes.forEach((n,i) => synth.triggerAttackRelease(n, "8n", now + i * 0.6)); },
+            reveal: () => { state.isRevealed = true; EAR_LOGIC.render(); }
+        };
+
+        const CHECK_LOGIC = {
+            isListening: false, detectedNotes: [], timer: null, timeLeft: 0,
+            render: () => {
+                const t = LANGUAGES[state.lang].ui;
+                document.getElementById('app-container').innerHTML = `<div class="theme-card p-6 rounded-xl shadow-lg w-full text-center max-w-lg"><h2 class="text-2xl font-bold mb-4">Note Checking</h2><div class="mb-6"><label class="block mb-2 font-bold">${t.time}:</label><div class="flex gap-2 justify-center">${[1,3,5,7,10].map(s=>`<button onclick="state.checkTime=${s};CHECK_LOGIC.render()" class="px-3 py-1 rounded border ${state.checkTime===s?'bg-[var(--primary-color)] text-white':''}">${s}s</button>`).join('')}</div></div><div class="min-h-[100px] flex items-center justify-center bg-[var(--bg-color)] rounded mb-6 text-2xl font-mono p-4">${CHECK_LOGIC.isListening ? `<span class="animate-pulse text-red-500"><i class="fas fa-microphone"></i> ${CHECK_LOGIC.timeLeft}s</span>` : (CHECK_LOGIC.detectedNotes.length?CHECK_LOGIC.detectedNotes.join(", "):"Ready")}</div><button onclick="CHECK_LOGIC.startListening()" ${CHECK_LOGIC.isListening?'disabled':''} class="theme-btn-primary px-8 py-4 rounded-full text-xl font-bold shadow-lg disabled:opacity-50">${CHECK_LOGIC.isListening?t.detect:`<i class="fas fa-microphone mr-2"></i> ${t.start}`}</button></div>`;
+            },
+            startListening: async () => {
+                if(!state.audioEnabled) { alert("Please click Start first."); return; }
+                CHECK_LOGIC.isListening=true; CHECK_LOGIC.timeLeft=state.checkTime; CHECK_LOGIC.detectedNotes=[]; CHECK_LOGIC.render();
+                try {
+                    const st = await navigator.mediaDevices.getUserMedia({audio:true});
+                    const ac = new (window.AudioContext||window.webkitAudioContext)();
+                    const an = ac.createAnalyser(); an.fftSize=2048; ac.createMediaStreamSource(st).connect(an);
+                    const detect = () => {
+                        if(!CHECK_LOGIC.isListening) return;
+                        const b = new Float32Array(an.fftSize); an.getFloatTimeDomainData(b);
+                        const n = autoCorrelate(b, ac.sampleRate);
+                        if(n && n!=='-' && CHECK_LOGIC.detectedNotes[CHECK_LOGIC.detectedNotes.length-1]!==n) CHECK_LOGIC.detectedNotes.push(n);
+                        requestAnimationFrame(detect);
+                    }; detect();
+                    CHECK_LOGIC.timer = setInterval(() => {
+                        CHECK_LOGIC.timeLeft--; CHECK_LOGIC.render();
+                        if(CHECK_LOGIC.timeLeft<=0) { CHECK_LOGIC.isListening=false; clearInterval(CHECK_LOGIC.timer); st.getTracks().forEach(t=>t.stop()); ac.close(); CHECK_LOGIC.detectedNotes=[...new Set(CHECK_LOGIC.detectedNotes)]; CHECK_LOGIC.render(); }
+                    }, 1000);
+                } catch(e) { alert("Microphone Error"); CHECK_LOGIC.isListening=false; CHECK_LOGIC.render(); }
+            }
+        };
+
+        function autoCorrelate(b, r) {
+            let s=b.length, rms=0; for(let i=0;i<s;i++) rms+=b[i]*b[i]; if(Math.sqrt(rms/s)<0.01) return '-';
+            let r1=0,r2=s-1; for(let i=0;i<s/2;i++) if(Math.abs(b[i])<0.2){r1=i;break;} for(let i=1;i<s/2;i++) if(Math.abs(b[s-i])<0.2){r2=s-i;break;}
+            b=b.slice(r1,r2); s=b.length; let c=new Array(s).fill(0); for(let i=0;i<s;i++) for(let j=0;j<s-i;j++) c[i]+=b[j]*b[j+i];
+            let d=0; while(c[d]>c[d+1]) d++; let max=-1,t0=-1; for(let i=d;i<s;i++) if(c[i]>max){max=c[i];t0=i;}
+            if(t0===-1) return '-';
+            let f = r/t0; const nn=["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+            const n = Math.round(12*(Math.log(f/440)/Math.log(2))+69); return (n<21||n>108)?null:nn[n%12];
+        }
+
+        const METRO_LOGIC = {
+            countdown: 0,
+            render: () => {
+                const t = LANGUAGES[state.lang].ui;
+                document.getElementById('app-container').innerHTML = `<div class="theme-card p-8 rounded-xl shadow-lg w-full text-center max-w-sm"><h2 class="text-2xl font-bold mb-6">${t.ui && t.ui.modes ? t.modes[6] : 'Metronome'}</h2><div class="mb-8"><div class="text-6xl font-bold font-mono mb-2 text-[var(--primary-color)]">${state.metronomeBpm}</div><div class="text-sm opacity-60">BPM</div><input type="range" min="40" max="200" value="${state.metronomeBpm}" oninput="state.metronomeBpm=this.value;METRO_LOGIC.render()" class="w-full mt-4 accent-[var(--primary-color)]"></div><div class="flex justify-center gap-4 mb-8">${[1,2,3,4].map(i=>`<div id="metro-dot-${i}" class="metronome-dot"></div>`).join('')}</div>${METRO_LOGIC.countdown>0?`<div class="text-4xl font-bold text-red-500 mb-4">${METRO_LOGIC.countdown}</div>`:''}<button onclick="METRO_LOGIC.toggle()" class="${state.metronomeActive?'bg-red-500':'theme-btn-primary'} text-white px-8 py-4 rounded-full text-xl font-bold shadow-lg w-full transition">${state.metronomeActive?`<i class="fas fa-stop"></i> ${t.stop}`:`<i class="fas fa-play"></i> ${t.start}`}</button></div>`;
+            },
+            toggle: () => {
+                if(state.metronomeActive) { Tone.Transport.stop(); if(metronomeLoop) metronomeLoop.stop(); state.metronomeActive=false; METRO_LOGIC.render(); }
+                else { if(!state.audioEnabled) return alert("Start Audio First"); let c=5; METRO_LOGIC.countdown=c; state.metronomeActive=true; METRO_LOGIC.render(); const i = setInterval(()=>{c--; METRO_LOGIC.countdown=c; METRO_LOGIC.render(); if(c===0){clearInterval(i);METRO_LOGIC.startTone();}},1000); }
+            },
+            startTone: () => {
+                Tone.Transport.bpm.value = state.metronomeBpm; let b=0; const s=new Tone.MembraneSynth().toDestination();
+                metronomeLoop = new Tone.Loop(t=>{ s.triggerAttackRelease(b===0?"C2":"C1","32n",t); Tone.Draw.schedule(()=>{document.querySelectorAll('.metronome-dot').forEach(d=>d.classList.remove('active'));document.getElementById(`metro-dot-${b+1}`)?.classList.add('active');},t); b=(b+1)%4; },"4n").start(0); Tone.Transport.start();
+            }
+        };
+
+        function switchMode(i) { stopSound(); state.mode=i; renderTabs(); if(state.metronomeActive) METRO_LOGIC.toggle(); if(CHECK_LOGIC.isListening) {CHECK_LOGIC.isListening=false; if(CHECK_LOGIC.timer) clearInterval(CHECK_LOGIC.timer);} if(i<=2) FLASHCARD_LOGIC.generateCard(); else if(i===3) LIBRARY_LOGIC.render(); else if(i===4) EAR_LOGIC.newQuestion(); else if(i===5) CHECK_LOGIC.render(); else if(i===6) METRO_LOGIC.render(); }
+
+        document.getElementById('init-audio-btn').onclick = async () => { await Tone.start(); state.audioEnabled = true; document.getElementById('start-overlay').style.display='none'; synth = new Tone.PolySynth(Tone.Synth).toDestination(); initUI(); };
+        
+        // Start without audio initially to render UI
+        initUI();
     </script>
 </body>
 </html>
