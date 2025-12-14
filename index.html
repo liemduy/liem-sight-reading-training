@@ -2,7 +2,8 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- FIX: Chặn zoom trên mobile để trải nghiệm giống App -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Liem's Harmony Hub</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -22,8 +23,16 @@
             background: var(--bg-gradient, var(--bg-color));
             color: var(--text-color);
             min-height: 100vh;
+            /* FIX: Chặn hành vi double-tap zoom trên toàn trang */
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent; /* Bỏ highlight màu xanh khi tap trên iOS */
         }
         
+        /* FIX: Áp dụng chặn zoom cho tất cả các phần tử tương tác */
+        button, input, select, a, .vf-stavenote {
+            touch-action: manipulation;
+        }
+
         :root {
             /* --- CLASSIC (Default) --- */
             --bg-color: #f8fafc;
@@ -148,10 +157,13 @@
             border-radius: var(--border-radius);
             box-shadow: 0 10px 15px -3px var(--shadow-color), 0 4px 6px -2px var(--shadow-color);
         }
+        
         .theme-btn-primary { background-color: var(--primary-color); color: white; border-radius: var(--border-radius); }
         .theme-btn-primary:hover { filter: brightness(110%); transform: translateY(-1px); }
+        
         .theme-btn-accent { background-color: var(--accent-color); color: white; border-radius: var(--border-radius); }
         .theme-btn-accent:hover { filter: brightness(110%); transform: translateY(-1px); }
+        
         .theme-border { border-color: var(--primary-color); }
         
         .logo-text { font-family: var(--header-font); }
@@ -177,6 +189,12 @@
         input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         
         .sticky-header { background-color: var(--card-bg); border-bottom: 2px solid var(--primary-color); z-index: 20; }
+        
+        /* FIX: Class để cố định chiều rộng nút, tránh bị phình khi đổi text */
+        .fixed-action-btn {
+            min-width: 220px; /* Chiều rộng cố định cho nút chính */
+            white-space: nowrap; /* Không xuống dòng */
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col" data-theme="classic">
@@ -220,7 +238,7 @@
                 flag: "🇻🇳", name: "Tiếng Việt",
                 modes: ["Khóa Sol", "Khóa Fa", "Hai khóa", "Thư viện", "Luyện tai", "Dò nốt", "Metronome"],
                 ui: {
-                    level: "Cấp độ", next: "NEXT", result: "Kết quả", listen: "Nghe", check: "Kiểm tra",
+                    level: "Cấp độ", next: "Tiếp theo", result: "Kết quả", listen: "Nghe", check: "Kiểm tra",
                     start: "Bắt đầu", stop: "Dừng", bpm: "Nhịp (BPM)", notes: "Số nốt", time: "Thời gian",
                     seconds: "giây", detect: "Đang nghe...", library: "Nốt", chords: "Hợp âm",
                     settings: "Cài đặt", theme: "Giao diện", lang: "Ngôn ngữ", answer: "Đáp án",
@@ -244,7 +262,7 @@
             },
             fr: { flag: "🇫🇷", name: "Français", modes: ["Clé de Sol", "Clé de Fa", "Grande Portée", "Bibliothèque", "Oreille", "Note Check", "Métronome"], ui: { level: "Niveau", next: "Suivant", result: "Résultat", listen: "Écouter", check: "Vérifier", start: "Démarrer", stop: "Arrêter", bpm: "BPM", notes: "Notes", time: "Temps", seconds: "s", detect: "Écoute...", library: "Notes", chords: "Accords", settings: "Paramètres", theme: "Thème", lang: "Langue", answer: "Réponse", tapToStart: "Appuyez pour commencer", sol: "Sol", fa: "Fa", do: "Do", re: "Ré", mi: "Mi", fa_note: "Fa", sol_note: "Sol", la: "La", si: "Si", soundOn: "Son activé", soundOff: "Muet", soundType: "Son" } },
             zh: { flag: "🇨🇳", name: "Chinese", modes: ["高音谱号", "低音谱号", "大谱表", "资料库", "练耳", "音准检查", "节拍器"], ui: { level: "等级", next: "下一个", result: "结果", listen: "听", check: "检查", start: "开始", stop: "停止", bpm: "BPM", notes: "音符", time: "时间", seconds: "秒", detect: "正在听...", library: "音符", chords: "和弦", settings: "设置", theme: "主题", lang: "语言", answer: "答案", tapToStart: "点击开始", sol: "Sol", fa: "Fa", do: "Do", re: "Re", mi: "Mi", fa_note: "Fa", sol_note: "Sol", la: "La", si: "Si", soundOn: "开音", soundOff: "静音", soundType: "声音" } },
-            th: { flag: "🇹🇭", name: "Thai", modes: ["กุญแจซอล", "กุญแจฟา", "บรรทัด 5 เส้น", "ห้องสมุด", "ฝึกฟัง", "เช็คโน้ต", "เมโทรนอม"], ui: { level: "ระดับ", next: "ถัดไป", result: "เฉลย", listen: "ฟัง", check: "ตรวจ", start: "เริ่ม", stop: "หยุด", bpm: "BPM", notes: "โน้ต", time: "เวลา", seconds: "วิ", detect: "กำลังฟัง...", library: "ห้องสมุด", chords: "คอร์ด", settings: "ตั้งค่า", theme: "ธีม", lang: "ภาษา", answer: "คำตอบ", tapToStart: "แตะเพื่อเริ่ม", sol: "Sol", fa: "Fa", do: "Do", re: "Re", mi: "Mi", fa_note: "Fa", sol_note: "Sol", la: "La", si: "Si", soundOn: "เปิดเสียง", soundOff: "ปิดเสียง", soundType: "เสียง" } },
+            th: { flag: "🇹🇭", name: "Thai", modes: ["กุญแจซอล", "กุญแจฟา", "บรรทัด 5 เส้น", "ห้องสมุด", "ฝึกฟัง", "เช็คโน้ต", "เมโทรนอม"], ui: { level: "ระดับ", next: "ถัดไป", result: "เฉลย", listen: "ฟัง", check: "ตรวจ", start: "เริ่ม", stop: "หยุด", bpm: "BPM", notes: "โน้ต", time: "เวลา", seconds: "วิ", detect: "กำลังฟัง...", library: "โน้ต", chords: "คอร์ด", settings: "ตั้งค่า", theme: "ธีม", lang: "ภาษา", answer: "คำตอบ", tapToStart: "แตะเพื่อเริ่ม", sol: "Sol", fa: "Fa", do: "Do", re: "Re", mi: "Mi", fa_note: "Fa", sol_note: "Sol", la: "La", si: "Si", soundOn: "เปิดเสียง", soundOff: "ปิดเสียง", soundType: "เสียง" } },
         };
 
         const THEMES = [
@@ -410,7 +428,6 @@
                     answers = data.map(n => getNoteName(n.toneKey));
                 }
 
-                // REMOVED fixed min-heights to allow content to flow naturally, preventing overlaps
                 let html = `
                     <div class="theme-card p-6 rounded-2xl shadow-xl w-full text-center border-t-4 theme-border flex flex-col relative">
                         <div class="flex justify-between items-center mb-4">
@@ -435,10 +452,10 @@
                             </div>
                         </div>
 
-                        <!-- Button Area -->
+                        <!-- Button Area with fixed min-width class -->
                         <div class="flex items-center justify-center mt-2 mb-2">
                             <button onclick="${state.isRevealed ? 'FLASHCARD_LOGIC.generateCard()' : 'FLASHCARD_LOGIC.reveal()'}" 
-                                class="${state.isRevealed ? 'theme-btn-primary' : 'theme-btn-accent'} px-10 py-3 rounded-full text-xl font-bold shadow-xl transform transition hover:scale-105 active:scale-95 w-48">
+                                class="${state.isRevealed ? 'theme-btn-primary' : 'theme-btn-accent'} px-10 py-3 rounded-full text-xl font-bold shadow-xl transform transition hover:scale-105 active:scale-95 fixed-action-btn">
                                 ${state.isRevealed ? `${t.next} <i class="fas fa-arrow-right ml-2"></i>` : t.result}
                             </button>
                         </div>
@@ -452,7 +469,6 @@
                 const count = Math.max(state.flashcardData.treble.length, state.flashcardData.bass.length);
                 const width = Math.max(320, count * 70 + 100);
                 
-                // Reduced height for grand staff to remove excess whitespace
                 const canvasHeight = state.mode === 2 ? 220 : 120;
                 
                 const renderer = new Renderer(div, Renderer.Backends.SVG);
@@ -467,7 +483,6 @@
                 });
 
                 if (state.mode === 2) {
-                    // Adjusted Y positions for less whitespace
                     const st = new Stave(10, 10, width - 20).addClef('treble').setContext(ctx).draw();
                     const sb = new Stave(10, 110, width - 20).addClef('bass').setContext(ctx).draw();
                     new StaveConnector(st, sb).setType(StaveConnector.type.BRACE).setContext(ctx).draw();
@@ -486,7 +501,6 @@
                     state.flashcardData.bass.forEach((n,i)=>addClick(svgs[state.flashcardData.treble.length+i], n.toneKey, n.duration));
                 } else {
                     const clef = state.mode === 0 ? 'treble' : 'bass';
-                    // Adjusted Y for single staff
                     const st = new Stave(10, 10, width - 20).addClef(clef).setContext(ctx).draw();
                     const n = makeNotes(state.mode === 0 ? state.flashcardData.treble : state.flashcardData.bass, clef);
                     const beams = Beam.generateBeams(n);
@@ -650,8 +664,8 @@
                         <div class="flex gap-4 justify-center h-16 items-center">
                             <button onclick="EAR_LOGIC.play()" class="theme-btn-accent px-8 py-3 rounded-full font-bold shadow-lg transform transition hover:scale-105 active:scale-95"><i class="fas fa-volume-up mr-2"></i> ${t.listen}</button>
                             <button onclick="${state.isRevealed ? 'EAR_LOGIC.newQuestion()' : 'EAR_LOGIC.reveal()'}" 
-                                class="theme-btn-primary px-8 py-3 rounded-full font-bold shadow-lg transform transition hover:scale-105 active:scale-95 w-40">
-                                ${state.isRevealed ? t.next : t.result}
+                                class="theme-btn-primary px-8 py-3 rounded-full font-bold shadow-lg transform transition hover:scale-105 active:scale-95 w-40 fixed-action-btn">
+                                ${state.isRevealed ? `${t.next} <i class="fas fa-arrow-right ml-2"></i>` : t.result}
                             </button>
                         </div>
                     </div>`;
@@ -683,7 +697,7 @@
             isListening: false, detectedNotes: [], timer: null, timeLeft: 0,
             render: () => {
                 const t = LANGUAGES[state.lang].ui;
-                document.getElementById('app-container').innerHTML = `<div class="theme-card p-8 rounded-2xl shadow-xl w-full text-center max-w-lg border-t-4 theme-border"><h2 class="text-2xl font-bold mb-6">${t.ui && t.ui.modes ? t.modes[5] : 'Note Checking'}</h2><div class="mb-6"><label class="block mb-2 font-bold opacity-80">${t.time}:</label><div class="flex gap-2 justify-center">${[1,3,5,7,10].map(s=>`<button onclick="state.checkTime=${s};CHECK_LOGIC.render()" class="px-4 py-2 rounded-full border border-[var(--primary-color)] transition ${state.checkTime===s?'bg-[var(--primary-color)] text-white shadow-md':'text-[var(--card-text)] hover:bg-gray-200'}">${s}s</button>`).join('')}</div></div><div class="min-h-[120px] flex items-center justify-center bg-[var(--bg-color)] text-[var(--text-color)] rounded-xl mb-8 text-3xl font-mono p-4 border border-dashed border-[var(--primary-color)]">${CHECK_LOGIC.isListening ? `<span class="animate-pulse text-red-500 font-bold"><i class="fas fa-microphone mr-2"></i> ${CHECK_LOGIC.timeLeft}s</span>` : (CHECK_LOGIC.detectedNotes.length?`<span class="text-[var(--primary-color)] font-bold">${CHECK_LOGIC.detectedNotes.map(n => getNoteName(n)).join(", ")}</span>`:"Ready")}</div><button onclick="CHECK_LOGIC.startListening()" ${CHECK_LOGIC.isListening?'disabled':''} class="theme-btn-primary px-10 py-4 rounded-full text-xl font-bold shadow-xl disabled:opacity-50 transform transition hover:scale-105 active:scale-95">${CHECK_LOGIC.isListening?t.detect:`<i class="fas fa-microphone mr-2"></i> ${t.start}`}</button></div>`;
+                document.getElementById('app-container').innerHTML = `<div class="theme-card p-8 rounded-2xl shadow-xl w-full text-center max-w-lg border-t-4 theme-border"><h2 class="text-2xl font-bold mb-6">${t.ui && t.ui.modes ? t.modes[5] : 'Note Checking'}</h2><div class="mb-6"><label class="block mb-2 font-bold opacity-80">${t.time}:</label><div class="flex gap-2 justify-center">${[1,3,5,7,10].map(s=>`<button onclick="state.checkTime=${s};CHECK_LOGIC.render()" class="px-4 py-2 rounded-full border border-[var(--primary-color)] transition ${state.checkTime===s?'bg-[var(--primary-color)] text-white shadow-md':'text-[var(--card-text)] hover:bg-gray-200'}">${s}s</button>`).join('')}</div></div><div class="min-h-[120px] flex items-center justify-center bg-[var(--bg-color)] text-[var(--text-color)] rounded-xl mb-8 text-3xl font-mono p-4 border border-dashed border-[var(--primary-color)]">${CHECK_LOGIC.isListening ? `<span class="animate-pulse text-red-500 font-bold"><i class="fas fa-microphone mr-2"></i> ${CHECK_LOGIC.timeLeft}s</span>` : (CHECK_LOGIC.detectedNotes.length?`<span class="text-[var(--primary-color)] font-bold">${CHECK_LOGIC.detectedNotes.map(n => getNoteName(n)).join(", ")}</span>`:"Ready")}</div><button onclick="CHECK_LOGIC.startListening()" ${CHECK_LOGIC.isListening?'disabled':''} class="theme-btn-primary px-10 py-4 rounded-full text-xl font-bold shadow-xl disabled:opacity-50 transform transition hover:scale-105 active:scale-95 fixed-action-btn">${CHECK_LOGIC.isListening?t.detect:`<i class="fas fa-microphone mr-2"></i> ${t.start}`}</button></div>`;
             },
             startListening: async () => {
                 if(!state.audioEnabled) { alert("Please click Start first."); return; }
