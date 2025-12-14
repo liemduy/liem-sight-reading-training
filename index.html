@@ -12,160 +12,243 @@
             theme: {
                 extend: {
                     fontFamily: {
-                        serif: ['Georgia', 'Cambria', '"Times New Roman"', 'Times', 'serif'],
-                        sans: ['"Segoe UI"', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+                        serif: ['"Playfair Display"', 'Georgia', 'Cambria', 'serif'],
+                        sans: ['"Inter"', 'system-ui', 'sans-serif'],
+                        musical: ['"Times New Roman"', 'serif'] // Font riêng cho nốt nhạc/tiêu đề cổ điển
                     },
                     colors: {
-                        paper: '#fdfbf7', 
-                        ink: '#2d3748',
-                        dark: { bg: '#111827', card: '#1f2937', text: '#e5e7eb', border: '#374151' }
+                        // Classic Theme
+                        paper: '#f9f7f1',
+                        ink: '#2b2b2b',
+                        
+                        // Christmas Theme
+                        xmasRed: '#c41e3a',
+                        xmasGreen: '#165b33',
+                        xmasGold: '#ffbf00',
+
+                        // Ocean Theme
+                        oceanDeep: '#0f172a',
+                        oceanBlue: '#3b82f6',
+                        oceanLight: '#e0f2fe'
+                    },
+                    animation: {
+                        'snow': 'snow 10s linear infinite',
+                    },
+                    keyframes: {
+                        snow: {
+                            '0%': { transform: 'translateY(-10px)', opacity: '0' },
+                            '50%': { opacity: '1' },
+                            '100%': { transform: 'translateY(100vh)', opacity: '0' }
+                        }
                     }
                 }
             }
         }
     </script>
+    <!-- Google Fonts for better typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Inter', sans-serif;
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
             overscroll-behavior-y: none;
+            transition: background-color 0.5s ease, color 0.5s ease;
         }
-        .font-musical { font-family: Georgia, 'Times New Roman', Times, serif; }
+
+        /* --- THEME SPECIFIC STYLES --- */
+        
+        /* 1. Classic (Default) */
+        body.theme-classic { background-color: #f9f7f1; color: #2b2b2b; }
+        .theme-classic header { background: linear-gradient(to bottom, #2b2b2b, #1a1a1a); }
+        .theme-classic .btn-action { background-color: #2b2b2b; color: #fff; }
+        
+        /* 2. Dark */
+        body.theme-dark { background-color: #111827; color: #e5e7eb; }
+        .theme-dark header { background-color: #000; border-bottom: 1px solid #333; }
+        .theme-dark .canvas-wrapper { background-color: #1f2937; border-color: #374151; }
+        .theme-dark svg { filter: invert(1) hue-rotate(180deg) brightness(1.2); }
+        .theme-dark .btn-card { background-color: #1f2937; border-color: #374151; }
+
+        /* 3. Ocean */
+        body.theme-ocean { background-color: #f0f9ff; color: #0c4a6e; }
+        .theme-ocean header { background: linear-gradient(135deg, #0f172a 0%, #334155 100%); }
+        .theme-ocean .canvas-wrapper { border: 2px solid #bae6fd; box-shadow: 0 4px 15px -3px rgba(14, 165, 233, 0.2); }
+        .theme-ocean .btn-action { background: linear-gradient(to right, #0284c7, #2563eb); }
+        .theme-ocean .btn-card:hover { border-color: #38bdf8; background-color: #f0f9ff; }
+
+        /* 4. Christmas */
+        body.theme-christmas { background-color: #fff0f0; color: #165b33; background-image: radial-gradient(#d1d5db 1px, transparent 1px); background-size: 20px 20px; }
+        .theme-christmas header { 
+            background: linear-gradient(to right, #165b33, #0b2e19); 
+            border-bottom: 4px solid #c41e3a; 
+            position: relative;
+        }
+        .theme-christmas .canvas-wrapper { border: 2px solid #165b33; box-shadow: 0 0 15px rgba(22, 91, 51, 0.2); }
+        .theme-christmas .btn-action { background-color: #c41e3a; border-bottom: 4px solid #991b1b; }
+        .theme-christmas .btn-action:active { border-bottom: 0; transform: translateY(4px); }
+        
+        /* Snow Effect for Christmas */
+        .snow-overlay { pointer-events: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 50; display: none; }
+        body.theme-christmas .snow-overlay { display: block; }
+        .snowflake { position: absolute; top: -10px; color: #fff; animation: snow 10s linear infinite; }
+        
+        /* Common Components */
         .canvas-wrapper {
             width: 100%; display: flex; justify-content: center; align-items: center;
-            background: white; border-radius: 12px; overflow: hidden;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), inset 0 0 40px rgba(0,0,0,0.02);
-            border: 1px solid rgba(0,0,0,0.05); aspect-ratio: 16/10; max-height: 300px; position: relative;
+            background: white; border-radius: 16px; overflow: hidden;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            border: 1px solid rgba(0,0,0,0.05); aspect-ratio: 16/10; max-height: 280px; position: relative;
         }
-        .dark .canvas-wrapper { background: #1f2937; border-color: #374151; box-shadow: none; }
         .canvas-wrapper svg, .library-canvas svg { width: 100% !important; height: auto !important; display: block; }
-        .dark .canvas-wrapper svg, .dark .library-canvas svg { filter: invert(1) hue-rotate(180deg) brightness(1.2) contrast(0.9); }
+
         .library-scroll { -webkit-overflow-scrolling: touch; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        
-        /* Custom Select Styling */
-        .lang-select {
-            background-color: rgba(255,255,255,0.1);
-            color: #fff;
+
+        .control-btn {
+            background: rgba(255,255,255,0.1);
             border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 6px;
-            padding: 2px 4px;
-            font-size: 0.8rem;
-            outline: none;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
             cursor: pointer;
         }
-        .lang-select option { background-color: #1e293b; color: #fff; }
+        .control-btn:hover { background: rgba(255,255,255,0.2); }
+        .control-btn select { background: transparent; color: white; outline: none; border: none; font-weight: 600; cursor: pointer; appearance: none; }
+        .control-btn select option { color: #000; }
+
+        .theme-label-text { font-family: 'Playfair Display', serif; }
     </style>
 </head>
-<body class="h-[100dvh] flex flex-col text-ink bg-paper dark:bg-dark-bg dark:text-dark-text overflow-hidden transition-colors duration-500">
+<body class="theme-classic h-[100dvh] flex flex-col overflow-hidden">
 
-    <!-- Header (Redesigned) -->
-    <header class="bg-gradient-to-r from-slate-900 to-slate-800 dark:from-black dark:to-gray-900 text-white px-3 py-3 shadow-lg z-10 shrink-0 flex justify-between items-center relative overflow-hidden">
-        <!-- Background Pattern -->
-        <div class="absolute inset-0 opacity-5 pointer-events-none" style="background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, #fff 10px, #fff 12px);"></div>
+    <!-- Christmas Snow Layer -->
+    <div class="snow-overlay" id="snowContainer"></div>
+
+    <!-- Header (Redesigned: 2 Rows) -->
+    <header class="text-white pt-4 pb-3 shadow-xl z-20 shrink-0 flex flex-col items-center gap-3">
         
-        <!-- Title Area -->
-        <div class="flex items-center gap-2 min-w-0 z-10">
-            <!-- Hide icon on small screens to save space -->
-            <span class="text-2xl shrink-0 hidden sm:block shadow-sm">🎹</span>
-            <h1 class="text-base sm:text-xl font-bold font-musical tracking-wide text-amber-50 truncate drop-shadow-md leading-none pt-1" data-i18n="appTitle">Liem Sight Reading</h1>
+        <!-- Row 1: Title (Solemn & Full Width) -->
+        <div class="w-full text-center relative px-4">
+            <!-- Decorative line left/right (visible on larger screens) -->
+            <div class="hidden sm:block absolute top-1/2 left-4 right-4 h-px bg-white/20 -z-0"></div>
+            
+            <h1 class="text-2xl md:text-3xl font-bold font-serif tracking-wide text-amber-50 inline-block bg-inherit px-4 relative z-10" style="text-shadow: 0 2px 4px rgba(0,0,0,0.3);">
+                <span class="opacity-80 text-xl mr-2">🎹</span>
+                <span data-i18n="appTitle">Liem Sight Reading</span>
+            </h1>
         </div>
-        
-        <!-- Controls Area -->
-        <div class="flex items-center gap-1.5 sm:gap-2 shrink-0 z-10">
-            <!-- Language Selector -->
-            <select id="langSelect" onchange="changeLanguage(this.value)" class="lang-select font-sans font-bold hover:bg-white/20 transition-colors text-xs sm:text-sm py-1">
-                <option value="vi">🇻🇳 VI</option>
-                <option value="en">🇺🇸 EN</option>
-                <option value="fr">🇫🇷 FR</option>
-                <option value="es">🇪🇸 ES</option>
-                <option value="th">🇹🇭 TH</option>
-            </select>
 
-            <!-- Divider -->
-            <div class="h-6 w-px bg-white/20 mx-0.5"></div>
+        <!-- Row 2: Controls (Buttons below) -->
+        <div class="flex items-center gap-3 z-10">
+            
+            <!-- 1. Language -->
+            <div class="control-btn" title="Ngôn ngữ">
+                <span class="text-lg">🌐</span>
+                <select id="langSelect" onchange="changeLanguage(this.value)">
+                    <option value="vi">Việt Nam</option>
+                    <option value="en">English</option>
+                    <option value="fr">Français</option>
+                    <option value="es">Español</option>
+                    <option value="th">ไทย</option>
+                </select>
+            </div>
 
-            <button onclick="toggleMute()" class="p-1.5 rounded-full hover:bg-white/10 active:bg-white/20 transition-colors text-amber-50/90 hover:text-amber-50">
-                <svg id="icon-sound-on" class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg>
-                <svg id="icon-sound-off" class="w-5 h-5 sm:w-6 sm:h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z m10.657-9.657a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L18.828 9.414a1 1 0 010-1.414z M21.657 16.657a1 1 0 01-1.414 1.414l-4-4a1 1 0 011.414-1.414l4 4z"></path><line x1="1" y1="1" x2="23" y2="23" stroke="currentColor" stroke-width="2"></line></svg>
-            </button>
-            <button onclick="toggleDarkMode()" class="p-1.5 rounded-full hover:bg-white/10 active:bg-white/20 transition-colors text-amber-50/90 hover:text-amber-50">
-                <svg id="icon-sun" class="w-5 h-5 sm:w-6 sm:h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-                <svg id="icon-moon" class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+            <!-- 2. Theme Selector -->
+            <div class="control-btn" title="Giao diện">
+                <span class="text-lg">🎨</span>
+                <select id="themeSelect" onchange="changeTheme(this.value)">
+                    <option value="classic">Classic</option>
+                    <option value="dark">Dark</option>
+                    <option value="ocean">Ocean</option>
+                    <option value="christmas">Noel 🎄</option>
+                </select>
+            </div>
+
+            <!-- 3. Mute Toggle -->
+            <button onclick="toggleMute()" class="control-btn" style="padding: 6px 10px;" title="Âm thanh">
+                <svg id="icon-sound-on" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg>
+                <svg id="icon-sound-off" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z m10.657-9.657a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L18.828 9.414a1 1 0 010-1.414z M21.657 16.657a1 1 0 01-1.414 1.414l-4-4a1 1 0 011.414-1.414l4 4z"></path><line x1="1" y1="1" x2="23" y2="23" stroke="currentColor" stroke-width="2"></line></svg>
             </button>
         </div>
     </header>
 
-    <main class="flex-1 flex flex-col p-4 max-w-md mx-auto w-full gap-4 overflow-hidden relative">
+    <main class="flex-1 flex flex-col p-4 max-w-md mx-auto w-full gap-4 overflow-hidden relative z-0">
         <!-- Error Message -->
-        <div id="error-msg" class="hidden absolute inset-0 bg-white/95 dark:bg-dark-bg/95 z-50 flex flex-col items-center justify-center p-6 text-center text-red-600 backdrop-blur-sm">
-            <p class="font-bold text-xl mb-2 font-musical" data-i18n="errorTitle">⚠ Lỗi tải thư viện</p>
+        <div id="error-msg" class="hidden absolute inset-0 bg-white/95 z-50 flex flex-col items-center justify-center p-6 text-center text-red-600 backdrop-blur-sm rounded-xl">
+            <p class="font-bold text-xl mb-2 font-serif" data-i18n="errorTitle">⚠ Lỗi tải thư viện</p>
             <p data-i18n="errorMsg">Vui lòng kiểm tra mạng và tải lại trang (F5).</p>
         </div>
 
         <!-- MENU SCREEN -->
         <div id="menu-screen" class="flex flex-col gap-4 h-full justify-center overflow-y-auto pb-4 px-1">
-            <div class="text-center mb-2">
-                <p class="text-sm uppercase tracking-widest text-gray-500 dark:text-gray-400 font-semibold" data-i18n="selectMode">Chọn chế độ luyện tập</p>
+            <div class="text-center mb-1">
+                <div class="inline-block w-12 h-1 bg-gray-300 dark:bg-gray-600 rounded-full mb-4"></div>
+                <p class="text-sm uppercase tracking-widest opacity-60 font-semibold" data-i18n="selectMode">Chọn chế độ luyện tập</p>
             </div>
 
-            <button onclick="startMode('treble')" class="btn bg-white dark:bg-dark-card border border-gray-200 dark:border-dark-border p-5 rounded-xl shadow-sm hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-700 flex items-center justify-between group transition-all duration-300 relative overflow-hidden">
-                <div class="absolute w-1 h-full left-0 top-0 bg-indigo-500 rounded-l-xl"></div>
+            <!-- Mode Buttons with Theme Support -->
+            <button onclick="startMode('treble')" class="btn-card bg-white border p-5 rounded-2xl shadow-sm hover:shadow-lg flex items-center justify-between group transition-all duration-300 relative overflow-hidden">
+                <div class="absolute w-1.5 h-full left-0 top-0 bg-indigo-500"></div>
                 <div class="text-left pl-3">
-                    <h3 class="font-bold text-xl font-musical text-gray-800 dark:text-gray-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors" data-i18n="modeTreble">Khoá Sol</h3>
-                    <p class="text-sm text-gray-500 dark:text-gray-400" data-i18n="descTreble">Treble Clef • Tay phải</p>
+                    <h3 class="font-bold text-xl font-serif group-hover:text-indigo-600 transition-colors" data-i18n="modeTreble">Khoá Sol</h3>
+                    <p class="text-sm opacity-60" data-i18n="descTreble">Treble Clef • Tay phải</p>
                 </div>
-                <span class="text-4xl opacity-80 group-hover:scale-110 transition-transform duration-300">🎼</span>
+                <span class="text-4xl opacity-80 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300">🎼</span>
             </button>
 
-            <button onclick="startMode('bass')" class="btn bg-white dark:bg-dark-card border border-gray-200 dark:border-dark-border p-5 rounded-xl shadow-sm hover:shadow-md hover:border-rose-300 dark:hover:border-rose-700 flex items-center justify-between group transition-all duration-300 relative overflow-hidden">
-                <div class="absolute w-1 h-full left-0 top-0 bg-rose-500 rounded-l-xl"></div>
+            <button onclick="startMode('bass')" class="btn-card bg-white border p-5 rounded-2xl shadow-sm hover:shadow-lg flex items-center justify-between group transition-all duration-300 relative overflow-hidden">
+                <div class="absolute w-1.5 h-full left-0 top-0 bg-rose-500"></div>
                 <div class="text-left pl-3">
-                    <h3 class="font-bold text-xl font-musical text-gray-800 dark:text-gray-100 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors" data-i18n="modeBass">Khoá Fa</h3>
-                    <p class="text-sm text-gray-500 dark:text-gray-400" data-i18n="descBass">Bass Clef • Tay trái</p>
+                    <h3 class="font-bold text-xl font-serif group-hover:text-rose-600 transition-colors" data-i18n="modeBass">Khoá Fa</h3>
+                    <p class="text-sm opacity-60" data-i18n="descBass">Bass Clef • Tay trái</p>
                 </div>
-                <span class="text-4xl opacity-80 group-hover:scale-110 transition-transform duration-300">𝄢</span>
+                <span class="text-4xl opacity-80 group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-300">𝄢</span>
             </button>
 
-            <button onclick="startMode('grand')" class="btn bg-white dark:bg-dark-card border border-gray-200 dark:border-dark-border p-5 rounded-xl shadow-sm hover:shadow-md hover:border-purple-300 dark:hover:border-purple-700 flex items-center justify-between group transition-all duration-300 relative overflow-hidden">
-                <div class="absolute w-1 h-full left-0 top-0 bg-purple-500 rounded-l-xl"></div>
+            <button onclick="startMode('grand')" class="btn-card bg-white border p-5 rounded-2xl shadow-sm hover:shadow-lg flex items-center justify-between group transition-all duration-300 relative overflow-hidden">
+                <div class="absolute w-1.5 h-full left-0 top-0 bg-purple-500"></div>
                 <div class="text-left pl-3">
-                    <h3 class="font-bold text-xl font-musical text-gray-800 dark:text-gray-100 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors" data-i18n="modeGrand">Grand Staff</h3>
-                    <p class="text-sm text-gray-500 dark:text-gray-400" data-i18n="descGrand">Kết hợp 2 tay</p>
+                    <h3 class="font-bold text-xl font-serif group-hover:text-purple-600 transition-colors" data-i18n="modeGrand">Grand Staff</h3>
+                    <p class="text-sm opacity-60" data-i18n="descGrand">Kết hợp 2 tay</p>
                 </div>
                 <span class="text-4xl opacity-80 group-hover:scale-110 transition-transform duration-300">🎹</span>
             </button>
 
-            <button onclick="showLibrary()" class="btn bg-slate-800 dark:bg-slate-700 text-amber-50 p-4 rounded-xl shadow-lg mt-4 flex items-center justify-center gap-2 hover:bg-slate-700 dark:hover:bg-slate-600 border border-slate-700 dark:border-slate-600 transition-all">
-                <span>📚</span> <span class="font-bold tracking-wide" data-i18n="library">Thư viện nốt nhạc</span>
+            <button onclick="showLibrary()" class="btn-action bg-gray-800 text-white p-4 rounded-2xl shadow-lg mt-4 flex items-center justify-center gap-2 hover:bg-gray-700 transition-all font-semibold tracking-wide">
+                <span>📚</span> <span data-i18n="library">Thư viện nốt nhạc</span>
             </button>
         </div>
 
         <!-- GAME SCREEN -->
         <div id="game-screen" class="hidden flex-col h-full w-full">
-            <div class="flex justify-between items-center mb-3 shrink-0">
-                <button onclick="goHome()" class="text-sm font-semibold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 px-4 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 shadow-sm transition-colors" data-i18n="menuBack">
+            <div class="flex justify-between items-center mb-4 shrink-0">
+                <button onclick="goHome()" class="text-sm font-semibold bg-white/50 border px-4 py-2 rounded-lg hover:bg-white transition-colors" data-i18n="menuBack">
                     ← Menu
                 </button>
-                <div class="font-bold text-xl font-musical text-slate-800 dark:text-slate-200" id="mode-title" data-i18n="modeLabel">Chế độ</div>
+                <div class="font-bold text-xl font-serif" id="mode-title" data-i18n="modeLabel">Chế độ</div>
                 <div class="w-16"></div> 
             </div>
 
-            <div class="canvas-wrapper mb-3" id="canvas-wrapper">
+            <div class="canvas-wrapper mb-4" id="canvas-wrapper">
                 <div id="notation-output"></div>
             </div>
 
             <div class="flex-1 flex flex-col justify-end gap-2 pb-safe">
-                <div id="answer-box" class="flex-1 flex flex-col items-center justify-center opacity-0 transition-opacity duration-300">
-                    <p class="text-gray-400 text-xs uppercase tracking-widest font-bold mb-1" data-i18n="answerLabel">Đáp án</p>
-                    <div class="bg-white dark:bg-slate-800 px-8 py-4 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 text-center min-w-[200px]">
-                        <h2 class="text-5xl font-black font-musical text-slate-800 dark:text-white mb-1" id="note-name">C4</h2>
-                        <p class="text-lg text-indigo-600 dark:text-indigo-400 font-semibold" id="note-detail">Đô trung</p>
+                <div id="answer-box" class="flex-1 flex flex-col items-center justify-center opacity-0 transition-opacity duration-300 scale-95">
+                    <p class="text-xs uppercase tracking-widest font-bold mb-2 opacity-50" data-i18n="answerLabel">Đáp án</p>
+                    <div class="bg-white/80 dark:bg-black/20 backdrop-blur-sm px-10 py-5 rounded-2xl border border-gray-100/50 text-center min-w-[200px] shadow-sm">
+                        <h2 class="text-5xl font-black font-serif mb-1" id="note-name">C4</h2>
+                        <p class="text-lg font-semibold opacity-80" id="note-detail">Đô trung</p>
                     </div>
                 </div>
-                <button id="action-btn" onclick="handleAction()" class="btn w-full bg-slate-900 dark:bg-indigo-600 text-white font-bold text-xl py-4 rounded-2xl shadow-lg hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] transition-all mt-auto mb-2 border-b-4 border-slate-950 dark:border-indigo-800 active:border-b-0 active:translate-y-1" data-i18n="btnShow">
+                <button id="action-btn" onclick="handleAction()" class="btn-action bg-gray-900 text-white font-bold text-xl py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all mt-auto mb-2" data-i18n="btnShow">
                     Hiện đáp án
                 </button>
             </div>
@@ -174,10 +257,10 @@
         <!-- LIBRARY SCREEN -->
         <div id="library-screen" class="hidden flex-col h-full w-full">
             <div class="flex justify-between items-center mb-4 shrink-0">
-                <button onclick="goHome()" class="text-sm font-semibold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 px-4 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 shadow-sm transition-colors" data-i18n="menuBack">
+                <button onclick="goHome()" class="text-sm font-semibold bg-white/50 border px-4 py-2 rounded-lg hover:bg-white transition-colors" data-i18n="menuBack">
                     ← Menu
                 </button>
-                <h2 class="font-bold text-xl font-musical dark:text-gray-200" data-i18n="library">Thư viện</h2>
+                <h2 class="font-bold text-xl font-serif" data-i18n="library">Thư viện</h2>
                 <div class="w-16"></div>
             </div>
             <div class="flex-1 overflow-y-auto library-scroll space-y-4 px-1 pb-4" id="library-content"></div>
@@ -185,6 +268,31 @@
     </main>
 
     <script>
+        // --- THEME MANAGEMENT ---
+        function initTheme() {
+            const savedTheme = localStorage.theme || 'classic';
+            document.getElementById('themeSelect').value = savedTheme;
+            changeTheme(savedTheme);
+            
+            // Create snow flakes
+            const snowContainer = document.getElementById('snowContainer');
+            for(let i=0; i<30; i++) {
+                const flake = document.createElement('div');
+                flake.className = 'snowflake';
+                flake.style.left = Math.random() * 100 + '%';
+                flake.style.animationDelay = Math.random() * 5 + 's';
+                flake.style.opacity = Math.random();
+                flake.style.fontSize = (Math.random() * 10 + 10) + 'px';
+                flake.innerText = '❄';
+                snowContainer.appendChild(flake);
+            }
+        }
+
+        function changeTheme(themeName) {
+            document.body.className = `theme-${themeName} h-[100dvh] flex flex-col overflow-hidden`;
+            localStorage.theme = themeName;
+        }
+
         // --- I18N CONFIGURATION ---
         const i18n = {
             vi: {
@@ -289,22 +397,21 @@
         let audioContext = null;
         let isMuted = localStorage.muted === 'true';
 
-        // Initialize UI
+        // Initialize
         document.getElementById('langSelect').value = currentLang;
+        initTheme();
         updateTexts();
 
         function changeLanguage(lang) {
             currentLang = lang;
             localStorage.lang = lang;
             updateTexts();
-            // Refresh library if visible to update button labels
             if (!document.getElementById('library-screen').classList.contains('hidden')) {
-                document.getElementById('library-content').innerHTML = ""; // Clear
-                showLibrary(); // Re-render
+                document.getElementById('library-content').innerHTML = ""; 
+                showLibrary();
             }
-            // Update current answer if visible
             if (currentNotes.length > 0 && document.getElementById('answer-box').style.opacity !== '0') {
-                 updateAnswerText(true); // Helper to update just the text
+                 updateAnswerText(true);
             }
         }
 
@@ -314,10 +421,8 @@
                 const key = el.getAttribute('data-i18n');
                 if (texts[key]) el.innerText = texts[key];
             });
-            
-            // Update button dynamic state
             const btn = document.getElementById('action-btn');
-            if (btn.classList.contains('bg-emerald-600')) {
+            if (btn.classList.contains('bg-emerald-600') || btn.classList.contains('bg-green-600')) {
                 btn.innerText = texts.btnNext;
             } else {
                 btn.innerText = texts.btnShow;
@@ -340,14 +445,6 @@
             if (!isMuted) unlockAudio();
         }
         updateMuteUI();
-
-        function toggleDarkMode() {
-            const isDark = document.documentElement.classList.toggle('dark');
-            document.getElementById('icon-sun').classList.toggle('hidden', !isDark);
-            document.getElementById('icon-moon').classList.toggle('hidden', isDark);
-            localStorage.theme = isDark ? 'dark' : 'light';
-        }
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) toggleDarkMode();
 
         function unlockAudio() {
             if (audioContext && audioContext.state === 'running') return;
@@ -379,21 +476,16 @@
             osc.stop(audioContext.currentTime + 1.2);
         }
 
-        // --- DATA ---
-        // Base Note Names (Fixed C Major) for logic
+        // --- DATA & LOGIC ---
         const baseNoteNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-        
         const notes = [];
         for (let i = 21; i <= 108; i++) {
             const oct = Math.floor(i/12)-1;
             const noteIdx = i%12;
             const name = baseNoteNames[noteIdx];
             notes.push({
-                midi: i, 
-                noteIdx: noteIdx, // Store index to retrieve localized name later
-                oct: oct,
-                sci: `${name}${oct}`,
-                acc: name.includes("#"),
+                midi: i, noteIdx: noteIdx, oct: oct,
+                sci: `${name}${oct}`, acc: name.includes("#"),
                 freq: 440 * Math.pow(2, (i-69)/12),
                 key: `${name.toLowerCase()}/${oct}`
             });
@@ -414,17 +506,13 @@
             mode = m;
             document.getElementById('menu-screen').classList.add('hidden');
             document.getElementById('game-screen').classList.replace('hidden', 'flex');
-            
-            // Update Title based on Lang
             let titleKey = m === 'treble' ? 'modeTreble' : m === 'bass' ? 'modeBass' : 'modeGrand';
             document.getElementById('mode-title').innerText = i18n[currentLang][titleKey];
-            
             nextCard();
         };
 
         function updateAnswerText(onlyText = false) {
              const note1Name = getLocalizedNote(currentNotes[0].noteIdx);
-             
              if (currentNotes.length === 2) {
                 const note2Name = getLocalizedNote(currentNotes[1].noteIdx);
                 if(!onlyText) document.getElementById('note-name').innerHTML = `<span class="text-3xl">${currentNotes[0].sci}</span> & <span class="text-3xl">${currentNotes[1].sci}</span>`;
@@ -439,9 +527,11 @@
             revealed = false;
             const btn = document.getElementById('action-btn');
             document.getElementById('answer-box').style.opacity = '0';
+            document.getElementById('answer-box').classList.add('scale-95');
             
             btn.innerText = i18n[currentLang].btnShow;
-            btn.className = "btn w-full bg-slate-900 dark:bg-indigo-600 text-white font-bold text-xl py-4 rounded-2xl shadow-lg hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] transition-all mt-auto mb-2 border-b-4 border-slate-950 dark:border-indigo-800 active:border-b-0 active:translate-y-1";
+            // Reset to Neutral style (depends on Theme)
+            btn.className = "btn-action bg-gray-900 text-white font-bold text-xl py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all mt-auto mb-2";
 
             if (mode === 'grand') {
                 currentNotes = [getRandomNote(ranges.gTreble.min, ranges.gTreble.max), getRandomNote(ranges.gBass.min, ranges.gBass.max)];
@@ -449,8 +539,6 @@
                 const r = ranges[mode];
                 currentNotes = [getRandomNote(r.min, r.max)];
             }
-
-            // Prepare answer (text hidden)
             updateAnswerText();
             renderGameCanvas();
         };
@@ -460,10 +548,12 @@
                 revealed = true;
                 currentNotes.forEach(n => playFreq(n.freq));
                 document.getElementById('answer-box').style.opacity = '1';
+                document.getElementById('answer-box').classList.remove('scale-95');
                 const btn = document.getElementById('action-btn');
                 
                 btn.innerText = i18n[currentLang].btnNext;
-                btn.className = "btn w-full bg-emerald-600 text-white font-bold text-xl py-4 rounded-2xl shadow-lg hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] transition-all mt-auto mb-2 border-b-4 border-emerald-800 active:border-b-0 active:translate-y-1";
+                // Green success style
+                btn.className = "btn-action bg-emerald-600 text-white font-bold text-xl py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all mt-auto mb-2";
             } else {
                 nextCard();
             }
@@ -477,19 +567,17 @@
             document.getElementById('menu-screen').classList.remove('hidden');
         };
 
-        // --- RENDERING GAME ---
+        // --- RENDER GAME ---
         function renderGameCanvas() {
             const div = document.getElementById("notation-output");
             div.innerHTML = "";
-            const refWidth = 500; 
-            const refHeight = 300; 
+            const refWidth = 500; const refHeight = 300; 
             const renderer = new VF.Renderer(div, VF.Renderer.Backends.SVG);
             renderer.resize(refWidth, refHeight);
             const ctx = renderer.getContext();
             ctx.setViewBox(0, 0, refWidth, refHeight);
             ctx.scale(1.5, 1.5); 
-            const w = refWidth / 1.5; 
-            const x = (w - 200) / 2;
+            const w = refWidth / 1.5; const x = (w - 200) / 2;
             
             if (mode === 'treble') {
                 const stave = new VF.Stave(x, 50, 200);
@@ -500,8 +588,7 @@
                 stave.addClef("bass").setContext(ctx).draw();
                 drawNote(ctx, stave, currentNotes[0], "bass");
             } else if (mode === 'grand') {
-                const s1 = new VF.Stave(x, 20, 200);
-                const s2 = new VF.Stave(x, 110, 200);
+                const s1 = new VF.Stave(x, 20, 200); const s2 = new VF.Stave(x, 110, 200);
                 s1.addClef("treble"); s2.addClef("bass");
                 new VF.StaveConnector(s1, s2).setType(VF.StaveConnector.type.BRACE).setContext(ctx).draw();
                 new VF.StaveConnector(s1, s2).setType(VF.StaveConnector.type.SINGLE_LEFT).setContext(ctx).draw();
@@ -520,7 +607,7 @@
             v.draw(ctx, stave);
         }
 
-        // --- RENDERING LIBRARY ---
+        // --- RENDER LIBRARY ---
         window.showLibrary = function() {
             unlockAudio();
             document.getElementById('menu-screen').classList.add('hidden');
@@ -534,44 +621,29 @@
 
                 const card = document.createElement('div');
                 card.className = "bg-white dark:bg-dark-card rounded-xl shadow-sm border border-gray-200 dark:border-dark-border";
-                // Localize Octave title
                 const octaveTitle = i18n[currentLang].octave;
-                card.innerHTML = `<div class="px-4 py-3 bg-gray-50 dark:bg-slate-800/50 border-b border-gray-100 dark:border-dark-border font-bold font-musical text-lg dark:text-gray-200 text-indigo-900">${octaveTitle} ${oct}</div>`;
+                card.innerHTML = `<div class="px-4 py-3 bg-gray-50 dark:bg-slate-800/50 border-b border-gray-100 dark:border-dark-border font-bold font-serif text-lg dark:text-gray-200 opacity-80">${octaveTitle} ${oct}</div>`;
                 
                 const scrollWrap = document.createElement('div');
                 scrollWrap.className = "overflow-x-auto library-scroll py-2 flex justify-center library-canvas relative no-scrollbar";
-                
                 const canvasDiv = document.createElement('div');
                 scrollWrap.appendChild(canvasDiv);
                 card.appendChild(scrollWrap);
                 container.appendChild(card);
 
-                const width = 400; 
-                const height = 160; 
-                
+                const width = 400; const height = 160; 
                 const renderer = new VF.Renderer(canvasDiv, VF.Renderer.Backends.SVG);
                 renderer.resize(width, height);
                 const ctx = renderer.getContext();
                 
-                let clef = "treble";
-                let staveY = 30; 
-                
-                if (oct < 4) {
-                    clef = "bass";
-                    staveY = 40; 
-                } else if (oct >= 6) {
-                    staveY = 70; 
-                }
+                let clef = "treble"; let staveY = 30; 
+                if (oct < 4) { clef = "bass"; staveY = 40; } 
+                else if (oct >= 6) { staveY = 70; }
 
                 const stave = new VF.Stave(10, staveY, width - 20);
                 stave.addClef(clef).setContext(ctx).draw();
 
-                const vfNotes = octNotes.map(n => {
-                    return new VF.StaveNote({
-                        clef: clef, keys: [n.key], duration: "q", auto_stem: true
-                    });
-                });
-
+                const vfNotes = octNotes.map(n => new VF.StaveNote({clef: clef, keys: [n.key], duration: "q", auto_stem: true}));
                 const voice = new VF.Voice({num_beats: vfNotes.length, beat_value: 4}).addTickables(vfNotes);
                 new VF.Formatter().joinVoices([voice]).format([voice], width - 60);
                 voice.draw(ctx, stave);
@@ -580,11 +652,10 @@
                     const n = octNotes[i];
                     const x = vn.getAbsoluteX();
                     const btn = document.createElement('button');
-                    const localizedName = getLocalizedNote(n.noteIdx); // Get localized name dynamically
-                    
+                    const localizedName = getLocalizedNote(n.noteIdx);
                     btn.className = "absolute top-0 h-full w-10 hover:bg-black/5 flex flex-col justify-end items-center pb-2";
                     btn.style.left = (x - 15) + "px";
-                    btn.innerHTML = `<span class="text-xs font-bold text-slate-700 bg-white/95 px-1.5 py-0.5 rounded shadow-sm border border-gray-200 font-sans whitespace-nowrap">${localizedName}</span>`;
+                    btn.innerHTML = `<span class="text-xs font-bold text-slate-700 bg-white/95 px-1.5 py-0.5 rounded shadow-sm border border-gray-200 font-sans whitespace-nowrap transition-colors">${localizedName}</span>`;
                     btn.onclick = () => {
                         playFreq(n.freq);
                         const span = btn.firstElementChild;
