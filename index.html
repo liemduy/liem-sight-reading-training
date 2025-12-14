@@ -13,89 +13,190 @@
     <!-- Font Awesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Fira+Code:wght@400;600&family=Mountains+of+Christmas:wght@700&display=swap" rel="stylesheet">
 
     <style>
         body {
             font-family: 'Nunito', sans-serif;
-            transition: background-color 0.3s, color 0.3s;
+            transition: background 0.5s ease, color 0.3s ease;
+            background: var(--bg-gradient, var(--bg-color));
+            color: var(--text-color);
+            min-height: 100vh;
         }
         
         :root {
-            --bg-color: #f3f4f6;
-            --text-color: #1f2937;
-            --card-bg: #ffffff;
+            /* Default Classic */
+            --bg-color: #f8fafc;
+            --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            --text-color: #1e293b;
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --card-text: #1e293b;
             --primary-color: #3b82f6;
             --accent-color: #10b981;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --border-radius: 1rem;
+            --border-width: 0px;
         }
 
-        [data-theme="dark"] { --bg-color: #111827; --text-color: #f3f4f6; --card-bg: #1f2937; --primary-color: #60a5fa; --accent-color: #34d399; }
-        [data-theme="ocean"] { --bg-color: #e0f2fe; --text-color: #0c4a6e; --card-bg: #ffffff; --primary-color: #0284c7; --accent-color: #0ea5e9; }
-        [data-theme="coder"] { --bg-color: #000000; --text-color: #00ff00; --card-bg: #111111; --primary-color: #00ff00; --accent-color: #008f00; font-family: 'Courier New', monospace; }
-        [data-theme="love"] { --bg-color: #fff1f2; --text-color: #881337; --card-bg: #fff0f5; --primary-color: #e11d48; --accent-color: #fda4af; }
-        [data-theme="christmas"] { --bg-color: #0f3d0f; --text-color: #ffffff; --card-bg: #8b0000; --primary-color: #fbbf24; --accent-color: #ffffff; }
-        [data-theme="retro"] { --bg-color: #d7c9a8; --text-color: #5c4033; --card-bg: #fdf5e6; --primary-color: #8b4513; --accent-color: #cd853f; }
+        [data-theme="dark"] {
+            --bg-color: #0f172a;
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            --text-color: #e2e8f0;
+            --card-bg: rgba(30, 41, 59, 0.95);
+            --card-text: #e2e8f0;
+            --primary-color: #8b5cf6;
+            --accent-color: #2dd4bf;
+            --shadow-color: rgba(0, 0, 0, 0.5);
+        }
 
-        body { background-color: var(--bg-color); color: var(--text-color); }
-        .theme-card { background-color: var(--card-bg); color: var(--text-color); }
-        .theme-btn-primary { background-color: var(--primary-color); color: white; }
-        .theme-btn-accent { background-color: var(--accent-color); color: white; }
+        [data-theme="ocean"] {
+            --bg-color: #e0f2fe;
+            --bg-gradient: linear-gradient(to bottom, #0ea5e9, #e0f2fe);
+            --text-color: #0c4a6e;
+            --card-bg: rgba(255, 255, 255, 0.9);
+            --card-text: #0c4a6e;
+            --primary-color: #0284c7;
+            --accent-color: #0369a1;
+            --shadow-color: rgba(14, 165, 233, 0.2);
+        }
+
+        [data-theme="coder"] {
+            --bg-color: #000000;
+            --bg-gradient: repeating-linear-gradient(0deg, transparent, transparent 1px, #001100 1px, #001100 2px);
+            --text-color: #00ff41;
+            --card-bg: #0d0d0d;
+            --card-text: #00ff41;
+            --primary-color: #00ff41;
+            --accent-color: #008f11;
+            --shadow-color: rgba(0, 255, 65, 0.2);
+            --border-radius: 0px;
+            --border-width: 1px;
+            font-family: 'Fira Code', 'Courier New', monospace;
+        }
+        [data-theme="coder"] .theme-card { border: 1px solid var(--primary-color); box-shadow: 0 0 10px var(--shadow-color); }
+        [data-theme="coder"] .theme-btn-primary { background-color: transparent; border: 1px solid var(--primary-color); color: var(--primary-color); }
+        [data-theme="coder"] .theme-btn-primary:hover { background-color: var(--primary-color); color: black; box-shadow: 0 0 15px var(--primary-color); }
+
+        [data-theme="love"] {
+            --bg-color: #fff1f2;
+            --bg-gradient: radial-gradient(circle, #ffe4e6 0%, #fda4af 100%);
+            --text-color: #881337;
+            --card-bg: rgba(255, 255, 255, 0.9);
+            --card-text: #881337;
+            --primary-color: #e11d48;
+            --accent-color: #fb7185;
+            --shadow-color: rgba(225, 29, 72, 0.2);
+            --border-radius: 1.5rem;
+        }
+
+        /* --- CHRISTMAS THEME FIXED --- */
+        [data-theme="christmas"] {
+            --bg-color: #064e3b; /* Darker Green Background */
+            --bg-gradient: radial-gradient(circle at center, #166534 0%, #064e3b 100%);
+            --text-color: #fefce8; /* Light Yellow/Cream for body text */
+            --card-bg: rgba(255, 252, 245, 0.98); /* Cream White Cards */
+            --card-text: #14532d; /* Dark Green Text INSIDE cards */
+            --primary-color: #b91c1c; /* Deep Red */
+            --accent-color: #d97706; /* Amber/Gold */
+            --shadow-color: rgba(0, 0, 0, 0.4);
+            --border-radius: 16px;
+        }
+        [data-theme="christmas"] h1, [data-theme="christmas"] .theme-btn-primary { 
+            font-family: 'Mountains of Christmas', cursive; 
+            letter-spacing: 1px; 
+        }
+        [data-theme="christmas"] .theme-card { 
+            border: 3px solid #d97706; /* Gold Border */
+            color: var(--card-text); /* Force dark text in cards */
+        }
+        /* Fix input colors for Christmas */
+        [data-theme="christmas"] select, [data-theme="christmas"] input {
+            color: #14532d;
+            background-color: #fffbeb;
+            border-color: #b91c1c;
+        }
+
+        [data-theme="retro"] {
+            --bg-color: #d7c9a8;
+            --bg-gradient: url('https://www.transparenttextures.com/patterns/aged-paper.png'), linear-gradient(#e6d5b8, #d7c9a8);
+            --text-color: #4a3b32;
+            --card-bg: #fdf6e3;
+            --card-text: #4a3b32;
+            --primary-color: #b58900;
+            --accent-color: #cb4b16;
+            --shadow-color: rgba(74, 59, 50, 0.2);
+            --border-radius: 2px;
+        }
+
+        .theme-card { 
+            background-color: var(--card-bg); 
+            color: var(--card-text); /* Use specific card text color var */
+            border-radius: var(--border-radius);
+            box-shadow: 0 10px 15px -3px var(--shadow-color), 0 4px 6px -2px var(--shadow-color);
+            backdrop-filter: blur(10px);
+        }
+        
+        .theme-btn-primary { background-color: var(--primary-color); color: white; border-radius: var(--border-radius); }
+        .theme-btn-primary:hover { filter: brightness(110%); }
+        .theme-btn-accent { background-color: var(--accent-color); color: white; border-radius: var(--border-radius); }
+        .theme-btn-accent:hover { filter: brightness(110%); }
         .theme-border { border-color: var(--primary-color); }
         
         .vf-stavenote { cursor: pointer; }
         .vf-stavenote:hover path, .vf-stavenote:hover rect { fill: var(--primary-color) !important; stroke: var(--primary-color) !important; }
         #notation-container canvas, #notation-container svg { max-width: 100%; height: auto; }
         
-        .nav-scroll::-webkit-scrollbar { height: 4px; }
-        .nav-scroll::-webkit-scrollbar-track { background: transparent; }
-        .nav-scroll::-webkit-scrollbar-thumb { background-color: var(--primary-color); border-radius: 20px; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
         .library-scroll::-webkit-scrollbar { width: 8px; }
         .library-scroll::-webkit-scrollbar-track { background: transparent; }
         .library-scroll::-webkit-scrollbar-thumb { background-color: var(--primary-color); border-radius: 20px; }
 
         .metronome-dot { width: 20px; height: 20px; border-radius: 50%; background-color: #ccc; transition: background-color 0.1s; }
-        .metronome-dot.active { background-color: var(--primary-color); box-shadow: 0 0 10px var(--primary-color); }
+        .metronome-dot.active { background-color: var(--primary-color); box-shadow: 0 0 15px var(--primary-color); }
+        
+        select { color: var(--card-text); background-color: var(--card-bg); border: 1px solid var(--primary-color); }
     </style>
 </head>
 <body class="min-h-screen flex flex-col" data-theme="classic">
 
     <!-- Header -->
-    <nav class="theme-card shadow-sm p-4 sticky top-0 z-50">
-        <div class="container mx-auto flex justify-center items-center">
-            <div class="flex items-center gap-2">
-                <i class="fas fa-music text-3xl" style="color: var(--primary-color)"></i>
-                <h1 class="text-2xl font-bold md:text-3xl tracking-tight">Liem's Harmony Hub</h1>
-            </div>
+    <nav class="theme-card rounded-none shadow-md p-3 sticky top-0 z-50 flex justify-center items-center w-full border-b theme-border border-b-2 sm:border-b-0">
+        <div class="flex items-center gap-3">
+            <i class="fas fa-music text-3xl" style="color: var(--primary-color)"></i>
+            <h1 class="text-xl font-bold md:text-3xl tracking-tight">Liem's Harmony Hub</h1>
+            <i class="fas fa-snowflake text-2xl animate-pulse hidden" id="xmas-icon" style="color: var(--accent-color)"></i>
         </div>
     </nav>
 
     <!-- Controls Bar -->
-    <div class="w-full bg-opacity-10 bg-gray-500 py-3 backdrop-blur-sm shadow-inner">
-        <div class="container mx-auto flex justify-center items-center gap-4 md:gap-8" id="controls-bar"></div>
+    <div class="w-full py-4">
+        <div class="container mx-auto flex justify-center items-center gap-4 md:gap-6 flex-wrap" id="controls-bar"></div>
     </div>
 
     <!-- Main Content -->
     <main class="flex-grow container mx-auto p-4 flex flex-col items-center">
         
-        <div id="start-overlay" class="fixed inset-0 bg-black bg-opacity-80 z-[100] flex flex-col items-center justify-center text-white text-center p-4">
-            <h2 class="text-3xl font-bold mb-4">Welcome to Harmony Hub</h2>
-            <p class="mb-6 max-w-md">Click Start to enable audio and begin your musical journey.</p>
-            <button id="init-audio-btn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-8 rounded-full text-xl shadow-lg transform transition hover:scale-105">
+        <div id="start-overlay" class="fixed inset-0 bg-black bg-opacity-90 z-[100] flex flex-col items-center justify-center text-white text-center p-4">
+            <h2 class="text-4xl font-bold mb-4 text-[var(--primary-color)]">Welcome to Harmony Hub</h2>
+            <p class="mb-8 max-w-md text-lg opacity-90">Click Start to enable audio and begin your musical journey.</p>
+            <button id="init-audio-btn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-10 rounded-full text-xl shadow-2xl transform transition hover:scale-105">
                 <i class="fas fa-play mr-2"></i> START
             </button>
         </div>
 
-        <div class="w-full overflow-x-auto pb-4 mb-2 nav-scroll">
+        <!-- Menu Tabs -->
+        <div class="w-full overflow-x-auto pb-4 pt-2 mb-2 no-scrollbar">
             <div class="flex gap-3 min-w-max justify-center px-4" id="mode-tabs"></div>
         </div>
 
-        <div id="app-container" class="w-full max-w-4xl flex flex-col items-center mt-4"></div>
+        <div id="app-container" class="w-full max-w-5xl flex flex-col items-center mt-2"></div>
 
     </main>
 
-    <footer class="theme-card mt-auto py-6 text-center shadow-inner">
-        <p class="opacity-75">© 2024 Liem's Harmony Hub. Code with <i class="fas fa-heart text-red-500"></i> & Music.</p>
+    <footer class="theme-card rounded-none mt-auto py-4 text-center text-sm font-semibold w-full">
+        <p class="opacity-80">© 2024 Liem's Harmony Hub. Design with <i class="fas fa-heart text-[var(--primary-color)]"></i> for Music Lovers.</p>
     </footer>
 
     <script>
@@ -115,7 +216,7 @@
                     settings: "Cài đặt", theme: "Giao diện", lang: "Ngôn ngữ", answer: "Đáp án",
                     tapToStart: "Chạm để bắt đầu",
                     sol: "Sol", fa: "Fa", do: "Đô", re: "Rê", mi: "Mi", fa_note: "Fa", sol_note: "Sol", la: "La", si: "Si",
-                    soundOn: "Bật tiếng", soundOff: "Tắt tiếng"
+                    soundOn: "Bật tiếng", soundOff: "Tắt tiếng", soundType: "Âm thanh"
                 }
             },
             en: {
@@ -128,24 +229,33 @@
                     settings: "Settings", theme: "Theme", lang: "Language", answer: "Answer",
                     tapToStart: "Tap to Start",
                     sol: "G", fa: "F", do: "C", re: "D", mi: "E", fa_note: "F", sol_note: "G", la: "A", si: "B",
-                    soundOn: "Sound On", soundOff: "Mute"
+                    soundOn: "Sound On", soundOff: "Mute", soundType: "Sound"
                 }
             },
-             fr: { flag: "🇫🇷", name: "Français", modes: ["Clé de Sol", "Clé de Fa", "Grande Portée", "Bibliothèque", "Oreille", "Note Check", "Métronome"], ui: { level: "Niveau", next: "Suivant", result: "Résultat", listen: "Écouter", check: "Vérifier", start: "Démarrer", stop: "Arrêter", bpm: "BPM", notes: "Notes", time: "Temps", seconds: "s", detect: "Écoute...", library: "Bibliothèque", chords: "Accords", settings: "Paramètres", theme: "Thème", lang: "Langue", answer: "Réponse", tapToStart: "Appuyez pour commencer", sol: "Sol", fa: "Fa", do: "Do", re: "Ré", mi: "Mi", fa_note: "Fa", sol_note: "Sol", la: "La", si: "Si", soundOn: "Son activé", soundOff: "Muet" } },
+            fr: { flag: "🇫🇷", name: "Français", modes: ["Clé de Sol", "Clé de Fa", "Grande Portée", "Bibliothèque", "Oreille", "Note Check", "Métronome"], ui: { level: "Niveau", next: "Suivant", result: "Résultat", listen: "Écouter", check: "Vérifier", start: "Démarrer", stop: "Arrêter", bpm: "BPM", notes: "Notes", time: "Temps", seconds: "s", detect: "Écoute...", library: "Bibliothèque", chords: "Accords", settings: "Paramètres", theme: "Thème", lang: "Langue", answer: "Réponse", tapToStart: "Appuyez pour commencer", sol: "Sol", fa: "Fa", do: "Do", re: "Ré", mi: "Mi", fa_note: "Fa", sol_note: "Sol", la: "La", si: "Si", soundOn: "Son activé", soundOff: "Muet", soundType: "Son" } },
+            zh: { flag: "🇨🇳", name: "Chinese", modes: ["高音谱号", "低音谱号", "大谱表", "资料库", "练耳", "音准检查", "节拍器"], ui: { level: "等级", next: "下一个", result: "结果", listen: "听", check: "检查", start: "开始", stop: "停止", bpm: "BPM", notes: "音符", time: "时间", seconds: "秒", detect: "正在听...", library: "资料库", chords: "和弦", settings: "设置", theme: "主题", lang: "语言", answer: "答案", tapToStart: "点击开始", sol: "Sol", fa: "Fa", do: "Do", re: "Re", mi: "Mi", fa_note: "Fa", sol_note: "Sol", la: "La", si: "Si", soundOn: "开音", soundOff: "静音", soundType: "声音" } },
+            th: { flag: "🇹🇭", name: "Thai", modes: ["กุญแจซอล", "กุญแจฟา", "บรรทัด 5 เส้น", "ห้องสมุด", "ฝึกฟัง", "เช็คโน้ต", "เมโทรนอม"], ui: { level: "ระดับ", next: "ถัดไป", result: "เฉลย", listen: "ฟัง", check: "ตรวจ", start: "เริ่ม", stop: "หยุด", bpm: "BPM", notes: "โน้ต", time: "เวลา", seconds: "วิ", detect: "กำลังฟัง...", library: "ห้องสมุด", chords: "คอร์ด", settings: "ตั้งค่า", theme: "ธีม", lang: "ภาษา", answer: "คำตอบ", tapToStart: "แตะเพื่อเริ่ม", sol: "Sol", fa: "Fa", do: "Do", re: "Re", mi: "Mi", fa_note: "Fa", sol_note: "Sol", la: "La", si: "Si", soundOn: "เปิดเสียง", soundOff: "ปิดเสียง", soundType: "เสียง" } },
         };
 
         const THEMES = [
             { id: "classic", name: "Classic", icon: "fa-music" },
             { id: "dark", name: "Dark", icon: "fa-moon" },
             { id: "ocean", name: "Ocean", icon: "fa-water" },
-            { id: "coder", name: "Coder", icon: "fa-terminal" },
+            { id: "coder", name: "Coder (Matrix)", icon: "fa-terminal" },
             { id: "love", name: "Love", icon: "fa-heart" },
             { id: "christmas", name: "Christmas", icon: "fa-tree" },
             { id: "retro", name: "Retro", icon: "fa-coffee" }
         ];
 
-        // Mapping VexFlow duration to Tone.js duration and time value (relative to quarter note)
-        // w=4 beats, h=2, q=1, 8=0.5, 16=0.25
+        const METRO_SOUNDS = [
+            { id: 'wood', name: 'Woodblock (Mõ)' },
+            { id: 'tick', name: 'Tick (Tích tắc)' },
+            { id: 'click', name: 'Digital (Điện tử)' },
+            { id: 'drop', name: 'Drop (Giọt nước)' },
+            { id: 'drum', name: 'Drum (Trống)' },
+            { id: 'bell', name: 'Bell (Chuông)' }
+        ];
+
         const DURATION_MAP = {
             'w': { tone: '1n', time: 4 },
             'h': { tone: '2n', time: 2 },
@@ -158,7 +268,8 @@
             lang: 'vi', theme: DEFAULT_THEME, mode: 0, level: 1,
             flashcardData: { treble: [], bass: [] }, 
             isRevealed: false, audioEnabled: false, isMuted: false,
-            earTrainingNotes: 1, checkTime: 5, metronomeBpm: 60, metronomeActive: false
+            earTrainingNotes: 1, checkTime: 5, 
+            metronomeBpm: 60, metronomeActive: false, metroSound: 'tick'
         };
 
         let synth;
@@ -203,20 +314,25 @@
         // --- RENDER UI ---
         function renderControls() {
             const container = document.getElementById('controls-bar');
-            const soundBtn = `<button onclick="toggleMute()" class="flex items-center gap-2 px-4 py-2 rounded-full shadow-sm transition hover:scale-105 ${state.isMuted ? 'bg-gray-300 text-gray-600' : 'bg-[var(--primary-color)] text-white'}"><i class="fas ${state.isMuted ? 'fa-volume-mute' : 'fa-volume-up'}"></i></button>`;
-            const themeSelect = `<div class="relative group"><select onchange="state.theme=this.value;document.body.setAttribute('data-theme',this.value)" class="appearance-none bg-white border border-gray-300 hover:border-[var(--primary-color)] px-4 py-2 pr-8 rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] cursor-pointer text-gray-700">${THEMES.map(th => `<option value="${th.id}" ${state.theme===th.id?'selected':''}>${th.name}</option>`).join('')}</select><div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700"><i class="fas fa-palette text-xs"></i></div></div>`;
-            const langSelect = `<div class="relative"><select onchange="state.lang=this.value;initUI()" class="appearance-none bg-white border border-gray-300 hover:border-[var(--primary-color)] px-4 py-2 pr-8 rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] cursor-pointer text-gray-700 font-bold">${Object.keys(LANGUAGES).map(l => `<option value="${l}" ${state.lang===l?'selected':''}>${LANGUAGES[l].flag} ${l.toUpperCase()}</option>`).join('')}</select><div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700"><i class="fas fa-globe text-xs"></i></div></div>`;
+            const soundBtn = `<button onclick="toggleMute()" class="theme-card px-4 py-2 flex items-center justify-center transition hover:scale-105" title="${state.isMuted ? 'Unmute' : 'Mute'}"><i class="fas ${state.isMuted ? 'fa-volume-mute text-gray-400' : 'fa-volume-up text-[var(--primary-color)]'} text-lg"></i></button>`;
+            
+            const themeSelect = `<div class="relative group theme-card rounded-full px-2"><select onchange="state.theme=this.value;initUI()" class="appearance-none bg-transparent border-none py-2 pl-3 pr-8 focus:outline-none cursor-pointer font-medium text-sm w-36">${THEMES.map(th => `<option value="${th.id}" ${state.theme===th.id?'selected':''}>${th.name}</option>`).join('')}</select><div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[var(--primary-color)]"><i class="fas fa-palette"></i></div></div>`;
+            
+            const langSelect = `<div class="relative group theme-card rounded-full px-2"><select onchange="state.lang=this.value;initUI()" class="appearance-none bg-transparent border-none py-2 pl-3 pr-8 focus:outline-none cursor-pointer font-medium text-sm w-36">${Object.keys(LANGUAGES).map(l => `<option value="${l}" ${state.lang===l?'selected':''}>${LANGUAGES[l].flag} ${l.toUpperCase()}</option>`).join('')}</select><div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[var(--primary-color)]"><i class="fas fa-globe"></i></div></div>`;
+            
             container.innerHTML = soundBtn + themeSelect + langSelect;
         }
 
         function renderTabs() {
             const t = LANGUAGES[state.lang];
             const tabs = document.getElementById('mode-tabs');
-            tabs.innerHTML = t.modes.map((m, i) => `<button onclick="switchMode(${i})" class="whitespace-nowrap px-5 py-2.5 rounded-full text-sm font-bold shadow-sm transition hover:scale-105 border ${state.mode === i ? 'bg-[var(--primary-color)] text-white border-[var(--primary-color)]' : 'bg-white text-gray-600 border-gray-200 hover:border-[var(--primary-color)]'}">${m}</button>`).join('');
+            tabs.innerHTML = t.modes.map((m, i) => `<button onclick="switchMode(${i})" class="whitespace-nowrap px-6 py-3 rounded-full text-sm font-bold shadow-md transition hover:scale-105 ${state.mode === i ? 'theme-btn-primary shadow-lg ring-2 ring-offset-2 ring-[var(--primary-color)]' : 'theme-card hover:text-[var(--primary-color)]'}">${m}</button>`).join('');
         }
 
         function initUI() {
             document.body.setAttribute('data-theme', state.theme);
+            const xmasIcon = document.getElementById('xmas-icon');
+            if(state.theme === 'christmas') { xmasIcon.classList.remove('hidden'); } else { xmasIcon.classList.add('hidden'); }
             renderControls(); renderTabs(); switchMode(state.mode); 
         }
 
@@ -229,11 +345,8 @@
                 state.flashcardData = { treble: [], bass: [] };
                 const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
                 
-                // Logic for mixing note durations
-                // Level 1: Simple (q, h, w) - mostly quarter for simplicity
-                // Level > 1: Mix q, 8, 16 to create beamable patterns
                 let durationPool = ['w', 'h', 'q'];
-                if (state.level > 1) durationPool = ['q', '8', '8', '16', '16', '16', '16']; // Weighted towards beamable notes
+                if (state.level > 1) durationPool = ['q', '8', '8', '16', '16', '16', '16'];
 
                 const generateNote = (clef) => {
                     const minMidi = clef === 'treble' ? 60 : 40; 
@@ -246,11 +359,8 @@
 
                 if (state.mode === 2) {
                     for (let i = 0; i < count; i++) {
-                        // Sync duration for both hands to keep it clean visually for flashcards
                         let dur = durationPool[rnd(0, durationPool.length - 1)];
-                        // If it's the last note, try to make it longer to "resolve"
                         if (i === count - 1 && state.level > 1) dur = 'h'; 
-                        
                         const tNote = generateNote('treble'); const bNote = generateNote('bass');
                         tNote.duration = dur; bNote.duration = dur;
                         state.flashcardData.treble.push(tNote); state.flashcardData.bass.push(bNote);
@@ -260,8 +370,7 @@
                     for (let i = 0; i < count; i++) {
                         let dur = durationPool[rnd(0, durationPool.length - 1)];
                         if (i === count - 1 && state.level > 1) dur = 'h';
-                        const n = generateNote(clef); 
-                        n.duration = dur;
+                        const n = generateNote(clef); n.duration = dur;
                         state.flashcardData[clef].push(n);
                     }
                 }
@@ -281,24 +390,24 @@
                 }
 
                 let html = `
-                    <div class="theme-card p-6 rounded-xl shadow-lg w-full text-center">
-                        <div class="flex justify-between items-center mb-4">
-                            <select id="level-select" onchange="state.level=parseInt(this.value); FLASHCARD_LOGIC.generateCard()" class="p-2 rounded border bg-transparent">
+                    <div class="theme-card p-8 rounded-2xl shadow-xl w-full text-center border-t-4 theme-border">
+                        <div class="flex justify-between items-center mb-6">
+                            <select id="level-select" onchange="state.level=parseInt(this.value); FLASHCARD_LOGIC.generateCard()" class="p-2 rounded-lg bg-[var(--bg-color)] border border-[var(--primary-color)] text-sm font-bold focus:outline-none">
                                 <option value="1" ${state.level===1?'selected':''}>Lvl 1 (1 Note)</option>
                                 <option value="2" ${state.level===2?'selected':''}>Lvl 2 (3 Notes)</option>
                                 <option value="3" ${state.level===3?'selected':''}>Lvl 3 (5 Notes)</option>
                                 <option value="4" ${state.level===4?'selected':''}>Lvl 4 (8 Notes)</option>
                             </select>
-                            <span class="text-sm opacity-60">Click notes to play</span>
+                            <span class="text-xs font-bold uppercase tracking-wider opacity-60">Tap note to play</span>
                         </div>
-                        <div id="flashcard-canvas" class="flex justify-center items-center bg-white rounded p-2 mb-6 overflow-x-auto min-h-[200px]"></div>
-                        <div class="min-h-[4rem] flex flex-col items-center justify-center mb-4">
+                        <div id="flashcard-canvas" class="flex justify-center items-center bg-white rounded-xl p-4 mb-8 overflow-x-auto min-h-[220px] shadow-inner border border-gray-100"></div>
+                        <div class="min-h-[4rem] flex flex-col items-center justify-center mb-6">
                             ${state.isRevealed 
-                                ? `<div class="flex flex-wrap gap-2 justify-center w-full px-4">${answers.map(a => `<span class="bg-[var(--primary-color)] text-white px-4 py-2 rounded-lg font-bold shadow-sm text-lg">${a}</span>`).join('')}</div>`
-                                : `<button onclick="FLASHCARD_LOGIC.reveal()" class="theme-btn-accent px-6 py-2 rounded-full font-bold shadow">${t.result}</button>`
+                                ? `<div class="flex flex-wrap gap-3 justify-center w-full px-4">${answers.map(a => `<span class="bg-[var(--primary-color)] text-white px-4 py-2 rounded-lg font-bold shadow-md text-lg transform transition hover:-translate-y-1">${a}</span>`).join('')}</div>`
+                                : `<button onclick="FLASHCARD_LOGIC.reveal()" class="theme-btn-accent px-8 py-3 rounded-full font-bold shadow-lg text-lg transform transition hover:scale-105 active:scale-95">${t.result}</button>`
                             }
                         </div>
-                        ${state.isRevealed ? `<button onclick="FLASHCARD_LOGIC.generateCard()" class="theme-btn-primary px-8 py-3 rounded-full text-xl font-bold shadow-lg transform transition hover:scale-105">${t.next} <i class="fas fa-arrow-right ml-2"></i></button>` : ''}
+                        ${state.isRevealed ? `<button onclick="FLASHCARD_LOGIC.generateCard()" class="theme-btn-primary px-10 py-3 rounded-full text-xl font-bold shadow-xl transform transition hover:scale-105 active:scale-95 animate-bounce">${t.next} <i class="fas fa-arrow-right ml-2"></i></button>` : ''}
                     </div>
                 `;
                 document.getElementById('app-container').innerHTML = html;
@@ -325,24 +434,14 @@
                     new StaveConnector(st, sb).setType(StaveConnector.type.BRACE).setContext(ctx).draw();
                     new StaveConnector(st, sb).setType(StaveConnector.type.SINGLE_LEFT).setContext(ctx).draw();
                     new StaveConnector(st, sb).setType(StaveConnector.type.SINGLE_RIGHT).setContext(ctx).draw();
-                    
                     const tn = makeNotes(state.flashcardData.treble, 'treble');
                     const bn = makeNotes(state.flashcardData.bass, 'bass');
-                    
-                    // Auto Beam
-                    const beamsT = Beam.generateBeams(tn);
-                    const beamsB = Beam.generateBeams(bn);
-
+                    const beamsT = Beam.generateBeams(tn); const beamsB = Beam.generateBeams(bn);
                     const fmt = new Formatter();
                     fmt.joinVoices([new Vex.Flow.Voice({num_beats:4,beat_value:4}).setMode(Vex.Flow.Voice.Mode.SOFT).addTickables(tn)]).format([new Vex.Flow.Voice({num_beats:4,beat_value:4}).setMode(Vex.Flow.Voice.Mode.SOFT).addTickables(tn)], width - 50);
-                    
-                    tn.forEach(n => n.setStave(st).setContext(ctx).draw());
-                    beamsT.forEach(b => b.setContext(ctx).draw());
-
+                    tn.forEach(n => n.setStave(st).setContext(ctx).draw()); beamsT.forEach(b => b.setContext(ctx).draw());
                     fmt.format([new Vex.Flow.Voice({num_beats:4,beat_value:4}).setMode(Vex.Flow.Voice.Mode.SOFT).addTickables(bn)], width - 50);
-                    bn.forEach(n => n.setStave(sb).setContext(ctx).draw());
-                    beamsB.forEach(b => b.setContext(ctx).draw());
-
+                    bn.forEach(n => n.setStave(sb).setContext(ctx).draw()); beamsB.forEach(b => b.setContext(ctx).draw());
                     const svgs = div.querySelectorAll('.vf-stavenote');
                     state.flashcardData.treble.forEach((n,i)=>addClick(svgs[i], n.toneKey, n.duration));
                     state.flashcardData.bass.forEach((n,i)=>addClick(svgs[state.flashcardData.treble.length+i], n.toneKey, n.duration));
@@ -350,12 +449,9 @@
                     const clef = state.mode === 0 ? 'treble' : 'bass';
                     const st = new Stave(10, 20, width - 20).addClef(clef).setContext(ctx).draw();
                     const n = makeNotes(state.mode === 0 ? state.flashcardData.treble : state.flashcardData.bass, clef);
-                    
                     const beams = Beam.generateBeams(n);
-                    
                     Formatter.FormatAndDraw(ctx, st, n);
                     beams.forEach(b => b.setContext(ctx).draw());
-
                     const svgs = div.querySelectorAll('.vf-stavenote');
                     n.forEach((note, i) => addClick(svgs[i], state.flashcardData[state.mode === 0 ? 'treble' : 'bass'][i].toneKey, state.flashcardData[state.mode === 0 ? 'treble' : 'bass'][i].duration));
                 }
@@ -365,25 +461,17 @@
                 state.isRevealed = true;
                 FLASHCARD_LOGIC.render();
                 const now = Tone.now();
-                
-                // Play Sequence Logic considering Durations
                 let currentTime = now;
-                const bpm = 100; // Fixed BPM for playback
-                const beatTime = 60 / bpm; // Time for one Quarter note
-
-                const getDurTime = (durChar) => {
-                    return DURATION_MAP[durChar].time * beatTime;
-                };
-                const getToneDur = (durChar) => {
-                    return DURATION_MAP[durChar].tone;
-                }
+                const bpm = 100; 
+                const beatTime = 60 / bpm; 
+                const getDurTime = (d) => DURATION_MAP[d].time * beatTime;
+                const getToneDur = (d) => DURATION_MAP[d].tone;
 
                 if (state.mode === 2) {
                     state.flashcardData.treble.forEach((t, i) => {
                         const b = state.flashcardData.bass[i];
                         const durationTime = getDurTime(t.duration);
                         const toneDuration = getToneDur(t.duration);
-                        
                         synth.triggerAttackRelease([t.toneKey, b.toneKey], toneDuration, currentTime);
                         currentTime += durationTime;
                     });
@@ -392,7 +480,6 @@
                     data.forEach((n, i) => {
                         const durationTime = getDurTime(n.duration);
                         const toneDuration = getToneDur(n.duration);
-                        
                         synth.triggerAttackRelease(n.toneKey, toneDuration, currentTime);
                         currentTime += durationTime;
                     });
@@ -403,11 +490,7 @@
         function addClick(el, tone, durationVex) {
             if(!el) return;
             el.style.cursor = 'pointer';
-            el.onclick = (e) => { 
-                e.stopPropagation(); 
-                playTone(tone, durationVex || '8'); 
-                const p=el.querySelectorAll('path,rect'); p.forEach(x=>x.style.fill='var(--accent-color)'); setTimeout(()=>p.forEach(x=>x.style.fill=''),300); 
-            };
+            el.onclick = (e) => { e.stopPropagation(); playTone(tone, durationVex || '8'); const p=el.querySelectorAll('path,rect'); p.forEach(x=>x.style.fill='var(--accent-color)'); setTimeout(()=>p.forEach(x=>x.style.fill=''),300); };
         }
 
         // --- LIBRARY LOGIC ---
@@ -415,13 +498,13 @@
             render: () => {
                 const t = LANGUAGES[state.lang].ui;
                 document.getElementById('app-container').innerHTML = `
-                    <div class="grid md:grid-cols-2 gap-4 w-full h-[80vh]">
-                        <div class="theme-card p-4 rounded-xl shadow overflow-y-auto library-scroll">
-                            <h2 class="text-xl font-bold mb-4 sticky top-0 bg-[var(--card-bg)] pb-2 border-b border-[var(--primary-color)]">${t.library} (88 Keys)</h2>
-                            <div id="notes-lib-content" class="space-y-6"></div>
+                    <div class="grid md:grid-cols-2 gap-6 w-full h-[80vh]">
+                        <div class="theme-card p-6 rounded-2xl shadow-xl overflow-y-auto library-scroll">
+                            <h2 class="text-2xl font-bold mb-6 sticky top-0 bg-[var(--card-bg)] pb-4 border-b-2 theme-border z-10 flex items-center gap-2"><i class="fas fa-book-open text-[var(--primary-color)]"></i> ${t.library}</h2>
+                            <div id="notes-lib-content" class="space-y-8"></div>
                         </div>
-                        <div class="theme-card p-4 rounded-xl shadow overflow-y-auto library-scroll">
-                            <h2 class="text-xl font-bold mb-4 sticky top-0 bg-[var(--card-bg)] pb-2 border-b border-[var(--primary-color)]">${t.chords}</h2>
+                        <div class="theme-card p-6 rounded-2xl shadow-xl overflow-y-auto library-scroll">
+                            <h2 class="text-2xl font-bold mb-6 sticky top-0 bg-[var(--card-bg)] pb-4 border-b-2 theme-border z-10 flex items-center gap-2"><i class="fas fa-guitar text-[var(--primary-color)]"></i> ${t.chords}</h2>
                             <div id="chords-lib-content" class="space-y-6"></div>
                         </div>
                     </div>`;
@@ -432,11 +515,10 @@
                 if(!nDiv) return;
                 for (let o = 0; o <= 8; o++) {
                     const id = `lib-oct-${o}`;
-                    let lst = ['C','D','E','F','G','A','B'];
-                    if(o===0) lst=['A','B']; if(o===8) lst=['C'];
+                    let lst = ['C','D','E','F','G','A','B']; if(o===0) lst=['A','B']; if(o===8) lst=['C'];
                     const clef = o < 4 ? 'bass' : 'treble';
                     const w = document.createElement('div');
-                    w.innerHTML = `<h3 class="font-bold text-sm text-[var(--primary-color)]">Octave ${o} (${clef})</h3><div id="${id}" class="bg-white rounded p-2 overflow-x-auto cursor-pointer mb-4 border border-gray-200"></div>`;
+                    w.innerHTML = `<h3 class="font-bold text-md text-[var(--primary-color)] mb-2 uppercase tracking-wide">Octave ${o} (${clef})</h3><div id="${id}" class="bg-white rounded-xl p-2 overflow-x-auto cursor-pointer border border-gray-200 shadow-sm hover:shadow-md transition"></div>`;
                     nDiv.appendChild(w);
                     const notes = lst.map(n => ({ key: `${n.toLowerCase()}/${o}`, toneKey: `${n}${o}`, duration: 'q', midi: 0 }));
                     renderNotation(id, notes, clef, 600, 0.85);
@@ -447,10 +529,10 @@
                     [{t:'M',s:'Major'},{t:'m',s:'Minor'}].forEach(v => {
                         const id = `chord-${r}-${v.t}`;
                         const w = document.createElement('div');
-                        w.className = "flex items-center gap-4 bg-[var(--bg-color)] p-2 rounded hover:brightness-95 transition cursor-pointer mb-2";
+                        w.className = "flex flex-col sm:flex-row items-center gap-4 bg-[var(--bg-color)] p-3 rounded-xl hover:brightness-95 transition cursor-pointer border border-transparent hover:border-[var(--primary-color)]";
                         const d = getChordKeys(r, v.t);
                         w.onclick = () => playChord(d.tones);
-                        w.innerHTML = `<div class="font-bold w-24 text-sm">${r} ${v.s}</div><div id="${id}" class="bg-white rounded"></div>`;
+                        w.innerHTML = `<div class="font-bold w-full sm:w-24 text-center sm:text-left text-lg text-[var(--text-color)]">${r} ${v.s}</div><div id="${id}" class="bg-white rounded-lg flex-grow w-full sm:w-auto shadow-sm"></div>`;
                         cDiv.appendChild(w);
                         renderChord(id, d.keys);
                     });
@@ -459,16 +541,8 @@
         };
 
         function getChordKeys(r, t) {
-            const m = {
-                'C':{M:['c/4','e/4','g/4'],m:['c/4','eb/4','g/4']}, 'D':{M:['d/4','f#/4','a/4'],m:['d/4','f/4','a/4']}, 'E':{M:['e/4','g#/4','b/4'],m:['e/4','g/4','b/4']},
-                'F':{M:['f/4','a/4','c/5'],m:['f/4','ab/4','c/5']}, 'G':{M:['g/4','b/4','d/5'],m:['g/4','bb/4','d/5']}, 'A':{M:['a/4','c#/5','e/5'],m:['a/4','c/5','e/5']},
-                'B':{M:['b/4','d#/5','f#/5'],m:['b/4','d/5','f#/5']}
-            };
-            const tm = {
-                'C':{M:['C4','E4','G4'],m:['C4','Eb4','G4']}, 'D':{M:['D4','F#4','A4'],m:['D4','F4','A4']}, 'E':{M:['E4','G#4','B4'],m:['E4','G4','B4']},
-                'F':{M:['F4','A4','C5'],m:['F4','Ab4','C5']}, 'G':{M:['G4','B4','D5'],m:['G4','Bb4','D5']}, 'A':{M:['A4','C#5','E5'],m:['A4','C5','E5']},
-                'B':{M:['B4','D#5','F#5'],m:['B4','D5','F#5']}
-            };
+            const m = { 'C':{M:['c/4','e/4','g/4'],m:['c/4','eb/4','g/4']}, 'D':{M:['d/4','f#/4','a/4'],m:['d/4','f/4','a/4']}, 'E':{M:['e/4','g#/4','b/4'],m:['e/4','g/4','b/4']}, 'F':{M:['f/4','a/4','c/5'],m:['f/4','ab/4','c/5']}, 'G':{M:['g/4','b/4','d/5'],m:['g/4','bb/4','d/5']}, 'A':{M:['a/4','c#/5','e/5'],m:['a/4','c/5','e/5']}, 'B':{M:['b/4','d#/5','f#/5'],m:['b/4','d/5','f#/5']} };
+            const tm = { 'C':{M:['C4','E4','G4'],m:['C4','Eb4','G4']}, 'D':{M:['D4','F#4','A4'],m:['D4','F4','A4']}, 'E':{M:['E4','G#4','B4'],m:['E4','G4','B4']}, 'F':{M:['F4','A4','C5'],m:['F4','Ab4','C5']}, 'G':{M:['G4','B4','D5'],m:['G4','Bb4','D5']}, 'A':{M:['A4','C#5','E5'],m:['A4','C5','E5']}, 'B':{M:['B4','D#5','F#5'],m:['B4','D5','F#5']} };
             return { keys: m[r][t], tones: tm[r][t] };
         }
 
@@ -485,7 +559,7 @@
             });
             Vex.Flow.Formatter.FormatAndDraw(ctx, st, n);
             const svgs = div.querySelectorAll('.vf-stavenote');
-            data.forEach((d,i) => addClick(svgs[i], d.toneKey, d.duration));
+            data.forEach((d,i) => addClick(svgs[i], d.toneKey));
         }
 
         function renderChord(eid, keys) {
@@ -508,21 +582,21 @@
             render: () => {
                 const t = LANGUAGES[state.lang].ui;
                 document.getElementById('app-container').innerHTML = `
-                    <div class="theme-card p-8 rounded-xl shadow-lg w-full text-center max-w-md">
+                    <div class="theme-card p-8 rounded-2xl shadow-xl w-full text-center max-w-md border-t-4 theme-border">
                         <h2 class="text-2xl font-bold mb-6">${t.ui && t.ui.modes ? t.modes[4] : 'Ear Training'}</h2>
                         <div class="mb-6 flex items-center justify-center gap-2">
-                            <label>${t.notes}:</label>
-                            <input type="number" min="1" max="10" value="${state.earTrainingNotes}" onchange="let v=parseInt(this.value);if(isNaN(v)||v<1)v=1;if(v>10)v=10;state.earTrainingNotes=v;this.value=v;EAR_LOGIC.newQuestion()" class="border rounded p-2 w-16 text-center text-black">
+                            <label class="font-bold opacity-70">${t.notes}:</label>
+                            <input type="number" min="1" max="10" value="${state.earTrainingNotes}" onchange="let v=parseInt(this.value);if(isNaN(v)||v<1)v=1;if(v>10)v=10;state.earTrainingNotes=v;this.value=v;EAR_LOGIC.newQuestion()" class="border rounded p-2 w-16 text-center bg-[var(--bg-color)] text-[var(--text-color)] font-bold focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]">
                         </div>
-                        <div id="ear-canvas-container" class="bg-[var(--bg-color)] rounded-xl p-4 min-h-[160px] flex items-center justify-center mb-6 shadow-inner">
-                            ${!state.isRevealed ? `<i class="fas fa-music text-6xl text-[var(--text-color)] opacity-50"></i>` : `<div id="ear-vexflow"></div>`}
+                        <div id="ear-canvas-container" class="bg-white rounded-xl p-4 min-h-[160px] flex items-center justify-center mb-6 shadow-inner border border-gray-200">
+                            ${!state.isRevealed ? `<i class="fas fa-headphones-alt text-6xl text-gray-300 animate-pulse"></i>` : `<div id="ear-vexflow"></div>`}
                         </div>
-                        <div class="flex flex-wrap gap-2 justify-center mb-4 min-h-[3rem] items-center">
-                            ${state.isRevealed ? state.targetNotes.map(n => `<span class="bg-[var(--primary-color)] text-white px-3 py-1 rounded-lg font-bold shadow-sm text-xl">${getNoteName(n)}</span>`).join('') : `<span class="text-3xl font-bold text-gray-300">? ? ?</span>`}
+                        <div class="flex flex-wrap gap-2 justify-center mb-6 min-h-[3rem] items-center">
+                            ${state.isRevealed ? state.targetNotes.map(n => `<span class="bg-[var(--primary-color)] text-white px-3 py-1 rounded-lg font-bold shadow-sm text-xl animate-fade-in">${getNoteName(n)}</span>`).join('') : `<span class="text-3xl font-bold text-gray-300">? ? ?</span>`}
                         </div>
                         <div class="flex gap-4 justify-center">
-                            <button onclick="EAR_LOGIC.play()" class="theme-btn-accent px-6 py-3 rounded-full font-bold shadow"><i class="fas fa-volume-up mr-2"></i> ${t.listen}</button>
-                            ${!state.isRevealed ? `<button onclick="EAR_LOGIC.reveal()" class="theme-btn-primary px-6 py-3 rounded-full font-bold shadow">${t.result}</button>` : `<button onclick="EAR_LOGIC.newQuestion()" class="theme-btn-primary px-6 py-3 rounded-full font-bold shadow">${t.next}</button>`}
+                            <button onclick="EAR_LOGIC.play()" class="theme-btn-accent px-8 py-3 rounded-full font-bold shadow-lg transform transition hover:scale-105 active:scale-95"><i class="fas fa-volume-up mr-2"></i> ${t.listen}</button>
+                            ${!state.isRevealed ? `<button onclick="EAR_LOGIC.reveal()" class="theme-btn-primary px-8 py-3 rounded-full font-bold shadow-lg transform transition hover:scale-105 active:scale-95">${t.result}</button>` : `<button onclick="EAR_LOGIC.newQuestion()" class="theme-btn-primary px-8 py-3 rounded-full font-bold shadow-lg transform transition hover:scale-105 active:scale-95">${t.next}</button>`}
                         </div>
                     </div>`;
                 if(state.isRevealed) {
@@ -545,7 +619,7 @@
             isListening: false, detectedNotes: [], timer: null, timeLeft: 0,
             render: () => {
                 const t = LANGUAGES[state.lang].ui;
-                document.getElementById('app-container').innerHTML = `<div class="theme-card p-6 rounded-xl shadow-lg w-full text-center max-w-lg"><h2 class="text-2xl font-bold mb-4">Note Checking</h2><div class="mb-6"><label class="block mb-2 font-bold">${t.time}:</label><div class="flex gap-2 justify-center">${[1,3,5,7,10].map(s=>`<button onclick="state.checkTime=${s};CHECK_LOGIC.render()" class="px-3 py-1 rounded border ${state.checkTime===s?'bg-[var(--primary-color)] text-white':''}">${s}s</button>`).join('')}</div></div><div class="min-h-[100px] flex items-center justify-center bg-[var(--bg-color)] rounded mb-6 text-2xl font-mono p-4">${CHECK_LOGIC.isListening ? `<span class="animate-pulse text-red-500"><i class="fas fa-microphone"></i> ${CHECK_LOGIC.timeLeft}s</span>` : (CHECK_LOGIC.detectedNotes.length?CHECK_LOGIC.detectedNotes.join(", "):"Ready")}</div><button onclick="CHECK_LOGIC.startListening()" ${CHECK_LOGIC.isListening?'disabled':''} class="theme-btn-primary px-8 py-4 rounded-full text-xl font-bold shadow-lg disabled:opacity-50">${CHECK_LOGIC.isListening?t.detect:`<i class="fas fa-microphone mr-2"></i> ${t.start}`}</button></div>`;
+                document.getElementById('app-container').innerHTML = `<div class="theme-card p-8 rounded-2xl shadow-xl w-full text-center max-w-lg border-t-4 theme-border"><h2 class="text-2xl font-bold mb-6">${t.ui && t.ui.modes ? t.modes[5] : 'Note Checking'}</h2><div class="mb-6"><label class="block mb-2 font-bold opacity-80">${t.time}:</label><div class="flex gap-2 justify-center">${[1,3,5,7,10].map(s=>`<button onclick="state.checkTime=${s};CHECK_LOGIC.render()" class="px-4 py-2 rounded-full border border-[var(--primary-color)] transition ${state.checkTime===s?'bg-[var(--primary-color)] text-white shadow-md':'text-[var(--text-color)] hover:bg-[var(--bg-color)]'}">${s}s</button>`).join('')}</div></div><div class="min-h-[120px] flex items-center justify-center bg-[var(--bg-color)] rounded-xl mb-8 text-3xl font-mono p-4 border border-dashed border-[var(--primary-color)]">${CHECK_LOGIC.isListening ? `<span class="animate-pulse text-red-500 font-bold"><i class="fas fa-microphone mr-2"></i> ${CHECK_LOGIC.timeLeft}s</span>` : (CHECK_LOGIC.detectedNotes.length?`<span class="text-[var(--primary-color)] font-bold">${CHECK_LOGIC.detectedNotes.join(", ")}</span>`:"Ready")}</div><button onclick="CHECK_LOGIC.startListening()" ${CHECK_LOGIC.isListening?'disabled':''} class="theme-btn-primary px-10 py-4 rounded-full text-xl font-bold shadow-xl disabled:opacity-50 transform transition hover:scale-105 active:scale-95">${CHECK_LOGIC.isListening?t.detect:`<i class="fas fa-microphone mr-2"></i> ${t.start}`}</button></div>`;
             },
             startListening: async () => {
                 if(!state.audioEnabled) { alert("Please click Start first."); return; }
@@ -581,17 +655,114 @@
 
         const METRO_LOGIC = {
             countdown: 0,
+            countdownInterval: null,
             render: () => {
                 const t = LANGUAGES[state.lang].ui;
-                document.getElementById('app-container').innerHTML = `<div class="theme-card p-8 rounded-xl shadow-lg w-full text-center max-w-sm"><h2 class="text-2xl font-bold mb-6">${t.ui && t.ui.modes ? t.modes[6] : 'Metronome'}</h2><div class="mb-8"><div class="text-6xl font-bold font-mono mb-2 text-[var(--primary-color)]">${state.metronomeBpm}</div><div class="text-sm opacity-60">BPM</div><input type="range" min="40" max="200" value="${state.metronomeBpm}" oninput="state.metronomeBpm=this.value;METRO_LOGIC.render()" class="w-full mt-4 accent-[var(--primary-color)]"></div><div class="flex justify-center gap-4 mb-8">${[1,2,3,4].map(i=>`<div id="metro-dot-${i}" class="metronome-dot"></div>`).join('')}</div>${METRO_LOGIC.countdown>0?`<div class="text-4xl font-bold text-red-500 mb-4">${METRO_LOGIC.countdown}</div>`:''}<button onclick="METRO_LOGIC.toggle()" class="${state.metronomeActive?'bg-red-500':'theme-btn-primary'} text-white px-8 py-4 rounded-full text-xl font-bold shadow-lg w-full transition">${state.metronomeActive?`<i class="fas fa-stop"></i> ${t.stop}`:`<i class="fas fa-play"></i> ${t.start}`}</button></div>`;
+                const metroSounds = [
+                    {id: 'wood', name: 'Woodblock (Mõ)'},
+                    {id: 'tick', name: 'Tick (Tích tắc)'},
+                    {id: 'drop', name: 'Drop (Giọt nước)'},
+                    {id: 'click', name: 'Digital (Điện tử)'},
+                    {id: 'drum', name: 'Drum (Trống)'},
+                    {id: 'bell', name: 'Bell (Chuông)'}
+                ];
+                
+                document.getElementById('app-container').innerHTML = `
+                    <div class="theme-card p-10 rounded-2xl shadow-xl w-full text-center max-w-md border-t-4 theme-border">
+                        <h2 class="text-3xl font-bold mb-8">${t.ui && t.ui.modes ? t.modes[6] : 'Metronome'}</h2>
+                        
+                        <div class="mb-4 w-full">
+                            <label class="text-sm font-bold opacity-70 block mb-1 text-left px-2">${t.soundType || 'Sound'}:</label>
+                            <select onchange="state.metroSound=this.value" class="w-full p-2 rounded-lg bg-[var(--bg-color)] border border-[var(--primary-color)] font-bold focus:outline-none">
+                                ${metroSounds.map(s => `<option value="${s.id}" ${state.metroSound === s.id ? 'selected' : ''}>${s.name}</option>`).join('')}
+                            </select>
+                        </div>
+
+                        <div class="mb-10 flex flex-col items-center">
+                            <div class="flex items-center gap-2 mb-4">
+                                <input type="number" min="40" max="200" value="${state.metronomeBpm}" 
+                                    onchange="let v=parseInt(this.value); if(isNaN(v))v=60; if(v<40)v=40; if(v>200)v=200; state.metronomeBpm=v; METRO_LOGIC.render()"
+                                    class="text-6xl font-bold font-mono text-[var(--primary-color)] text-center bg-transparent border-b-2 border-transparent hover:border-[var(--primary-color)] focus:border-[var(--primary-color)] focus:outline-none w-48">
+                            </div>
+                            <div class="text-sm font-bold opacity-60 tracking-widest uppercase mb-4">BPM</div>
+                            <input type="range" min="40" max="200" value="${state.metronomeBpm}" 
+                                oninput="state.metronomeBpm=this.value; document.querySelector('input[type=number]').value=this.value" 
+                                onchange="METRO_LOGIC.render()"
+                                class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[var(--primary-color)]">
+                        </div>
+                        <div class="flex justify-center gap-6 mb-10">
+                            ${[1,2,3,4].map(i=>`<div id="metro-dot-${i}" class="metronome-dot shadow-sm"></div>`).join('')}
+                        </div>
+                        ${METRO_LOGIC.countdown>0?`<div class="text-6xl font-bold text-red-500 mb-6 animate-ping">${METRO_LOGIC.countdown}</div>`:''}
+                        <button onclick="METRO_LOGIC.toggle()" class="${state.metronomeActive?'bg-red-500 hover:bg-red-600':'theme-btn-primary'} text-white px-10 py-4 rounded-full text-xl font-bold shadow-lg w-full transition transform hover:scale-105 active:scale-95">
+                            ${state.metronomeActive?`<i class="fas fa-stop mr-2"></i> ${t.stop}`:`<i class="fas fa-play mr-2"></i> ${t.start}`}
+                        </button>
+                    </div>`;
             },
             toggle: () => {
-                if(state.metronomeActive) { Tone.Transport.stop(); if(metronomeLoop) metronomeLoop.stop(); state.metronomeActive=false; METRO_LOGIC.render(); }
-                else { if(!state.audioEnabled) return alert("Start Audio First"); let c=5; METRO_LOGIC.countdown=c; state.metronomeActive=true; METRO_LOGIC.render(); const i = setInterval(()=>{c--; METRO_LOGIC.countdown=c; METRO_LOGIC.render(); if(c===0){clearInterval(i);METRO_LOGIC.startTone();}},1000); }
+                if(state.metronomeActive) { 
+                    // Stop Logic
+                    Tone.Transport.stop(); 
+                    if(metronomeLoop) metronomeLoop.stop(); 
+                    if(METRO_LOGIC.countdownInterval) { clearInterval(METRO_LOGIC.countdownInterval); METRO_LOGIC.countdownInterval = null; }
+                    state.metronomeActive=false; 
+                    METRO_LOGIC.countdown=0;
+                    METRO_LOGIC.render(); 
+                }
+                else { 
+                    // Start Logic
+                    if(!state.audioEnabled) return alert("Start Audio First"); 
+                    let c=5; 
+                    METRO_LOGIC.countdown=c; 
+                    state.metronomeActive=true; 
+                    METRO_LOGIC.render(); 
+                    
+                    METRO_LOGIC.countdownInterval = setInterval(()=>{
+                        c--; 
+                        METRO_LOGIC.countdown=c; 
+                        METRO_LOGIC.render(); 
+                        if(c===0){
+                            clearInterval(METRO_LOGIC.countdownInterval); 
+                            METRO_LOGIC.countdownInterval = null;
+                            METRO_LOGIC.startTone();
+                        }
+                    },1000); 
+                }
             },
             startTone: () => {
-                Tone.Transport.bpm.value = state.metronomeBpm; let b=0; const s=new Tone.MembraneSynth().toDestination();
-                metronomeLoop = new Tone.Loop(t=>{ s.triggerAttackRelease(b===0?"C2":"C1","32n",t); Tone.Draw.schedule(()=>{document.querySelectorAll('.metronome-dot').forEach(d=>d.classList.remove('active'));document.getElementById(`metro-dot-${b+1}`)?.classList.add('active');},t); b=(b+1)%4; },"4n").start(0); Tone.Transport.start();
+                Tone.Transport.bpm.value = state.metronomeBpm; 
+                let b=0; 
+                
+                // Synth Factory
+                let s;
+                if (state.metroSound === 'wood') s = new Tone.MembraneSynth().toDestination();
+                else if (state.metroSound === 'tick') s = new Tone.MembraneSynth({envelope:{attack:0.001, decay:0.05, sustain:0}, pitchDecay: 0}).toDestination(); // Short tick
+                else if (state.metroSound === 'drop') s = new Tone.MembraneSynth({envelope:{attack:0.001, decay:0.3, sustain:0}, pitchDecay: 0.1, octaves: 2}).toDestination(); // Water drop ish
+                else if (state.metroSound === 'click') s = new Tone.MembraneSynth({envelope:{attack:0.001, decay:0.1, sustain:0}}).toDestination();
+                else if (state.metroSound === 'drum') s = new Tone.MembraneSynth({pitchDecay:0.05, octaves:4}).toDestination();
+                else if (state.metroSound === 'metal') s = new Tone.MetalSynth({frequency:200, envelope:{attack:0.001, decay:0.1, release:0.01}, harmonicity:5.1, modulationIndex:32, resonance:4000, octaves:1.5}).toDestination();
+                else s = new Tone.Synth({oscillator:{type:"square"}, envelope:{attack:0.01, decay:0.1, sustain:0}}).toDestination(); // Beep fallback
+
+                metronomeLoop = new Tone.Loop(t=>{ 
+                    // Different pitch/tone for first beat
+                    let noteHigh, noteLow;
+                    if (state.metroSound === 'wood') { noteHigh="C2"; noteLow="C1"; }
+                    else if (state.metroSound === 'tick') { noteHigh="G6"; noteLow="C6"; }
+                    else if (state.metroSound === 'drop') { noteHigh="A5"; noteLow="D5"; }
+                    else if (state.metroSound === 'click') { noteHigh="C6"; noteLow="G5"; }
+                    else if (state.metroSound === 'drum') { noteHigh="G2"; noteLow="C2"; }
+                    else if (state.metroSound === 'metal') { noteHigh="C5"; noteLow="G4"; } 
+                    else { noteHigh="C5"; noteLow="C4"; } 
+
+                    s.triggerAttackRelease(b===0?noteHigh:noteLow, "32n", t);
+                    
+                    Tone.Draw.schedule(()=>{
+                        document.querySelectorAll('.metronome-dot').forEach(d=>d.classList.remove('active'));
+                        document.getElementById(`metro-dot-${b+1}`)?.classList.add('active');
+                    },t); 
+                    b=(b+1)%4; 
+                },"4n").start(0); 
+                Tone.Transport.start();
             }
         };
 
@@ -599,7 +770,6 @@
 
         document.getElementById('init-audio-btn').onclick = async () => { await Tone.start(); state.audioEnabled = true; document.getElementById('start-overlay').style.display='none'; synth = new Tone.PolySynth(Tone.Synth).toDestination(); initUI(); };
         
-        // Start without audio initially to render UI
         initUI();
     </script>
 </body>
