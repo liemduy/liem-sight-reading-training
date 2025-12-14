@@ -25,7 +25,7 @@
         }
         
         :root {
-            /* Default Classic */
+            /* --- CLASSIC (Default) --- */
             --bg-color: #f8fafc;
             --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
             --text-color: #1e293b;
@@ -35,7 +35,8 @@
             --accent-color: #10b981;
             --shadow-color: rgba(0, 0, 0, 0.1);
             --border-radius: 1rem;
-            --border-width: 0px;
+            --header-font: 'Nunito', sans-serif;
+            --placeholder-color: #94a3b8; /* Slate 400 */
         }
 
         [data-theme="dark"] {
@@ -47,6 +48,7 @@
             --primary-color: #8b5cf6;
             --accent-color: #2dd4bf;
             --shadow-color: rgba(0, 0, 0, 0.5);
+            --placeholder-color: #475569;
         }
 
         [data-theme="ocean"] {
@@ -58,6 +60,7 @@
             --primary-color: #0284c7;
             --accent-color: #0369a1;
             --shadow-color: rgba(14, 165, 233, 0.2);
+            --placeholder-color: #bae6fd;
         }
 
         [data-theme="coder"] {
@@ -70,8 +73,9 @@
             --accent-color: #008f11;
             --shadow-color: rgba(0, 255, 65, 0.2);
             --border-radius: 0px;
-            --border-width: 1px;
+            --placeholder-color: #003300;
             font-family: 'Fira Code', 'Courier New', monospace;
+            --header-font: 'Fira Code', monospace;
         }
         [data-theme="coder"] .theme-card { border: 1px solid var(--primary-color); box-shadow: 0 0 10px var(--shadow-color); }
         [data-theme="coder"] .theme-btn-primary { background-color: transparent; border: 1px solid var(--primary-color); color: var(--primary-color); }
@@ -87,33 +91,48 @@
             --accent-color: #fb7185;
             --shadow-color: rgba(225, 29, 72, 0.2);
             --border-radius: 1.5rem;
+            --placeholder-color: #fecdd3;
         }
 
-        /* --- CHRISTMAS THEME FIXED --- */
+        /* --- CHRISTMAS THEME (RE-DESIGNED) --- */
         [data-theme="christmas"] {
-            --bg-color: #064e3b; /* Darker Green Background */
-            --bg-gradient: radial-gradient(circle at center, #166534 0%, #064e3b 100%);
-            --text-color: #fefce8; /* Light Yellow/Cream for body text */
-            --card-bg: rgba(255, 252, 245, 0.98); /* Cream White Cards */
-            --card-text: #14532d; /* Dark Green Text INSIDE cards */
-            --primary-color: #b91c1c; /* Deep Red */
-            --accent-color: #d97706; /* Amber/Gold */
+            --bg-color: #0f392b; /* Dark Pine Green */
+            --bg-gradient: radial-gradient(circle at 50% -20%, #b45309 0%, #14532d 40%, #062c21 100%);
+            
+            --text-color: #fefce8; /* Cream for body text (Light) */
+            
+            --card-bg: #fffbeb; /* Warm Cream for Cards */
+            --card-text: #3f0e0e; /* Dark Red-Brown for text inside cards (High Contrast) */
+            
+            --primary-color: #b91c1c; /* Christmas Red */
+            --accent-color: #d97706; /* Gold */
+            
             --shadow-color: rgba(0, 0, 0, 0.4);
             --border-radius: 16px;
+            --placeholder-color: #d1d5db; /* Gray for placeholders */
+            
+            --header-font: 'Mountains of Christmas', cursive;
         }
-        [data-theme="christmas"] h1, [data-theme="christmas"] .theme-btn-primary { 
-            font-family: 'Mountains of Christmas', cursive; 
-            letter-spacing: 1px; 
+        [data-theme="christmas"] .theme-card {
+            border: 2px solid #f59e0b; /* Gold Border */
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
         }
-        [data-theme="christmas"] .theme-card { 
-            border: 3px solid #d97706; /* Gold Border */
-            color: var(--card-text); /* Force dark text in cards */
+        [data-theme="christmas"] .theme-btn-primary {
+            background-color: #b91c1c;
+            border: 2px solid #f59e0b; /* Gold border button */
+            color: #fffbeb;
+            font-family: 'Nunito', sans-serif;
+            font-weight: 800;
         }
-        /* Fix input colors for Christmas */
+        [data-theme="christmas"] .active-tab {
+            background-color: #15803d !important; /* Green Tab */
+            color: #fff !important;
+            border: 2px solid #f59e0b !important;
+        }
         [data-theme="christmas"] select, [data-theme="christmas"] input {
-            color: #14532d;
-            background-color: #fffbeb;
-            border-color: #b91c1c;
+            color: #3f0e0e;
+            background-color: #ffffff;
+            border: 2px solid #b91c1c;
         }
 
         [data-theme="retro"] {
@@ -126,37 +145,50 @@
             --accent-color: #cb4b16;
             --shadow-color: rgba(74, 59, 50, 0.2);
             --border-radius: 2px;
+            --placeholder-color: #dcbfa3;
         }
 
+        /* --- UTILITIES --- */
         .theme-card { 
             background-color: var(--card-bg); 
-            color: var(--card-text); /* Use specific card text color var */
+            color: var(--card-text); 
             border-radius: var(--border-radius);
             box-shadow: 0 10px 15px -3px var(--shadow-color), 0 4px 6px -2px var(--shadow-color);
-            backdrop-filter: blur(10px);
         }
         
         .theme-btn-primary { background-color: var(--primary-color); color: white; border-radius: var(--border-radius); }
-        .theme-btn-primary:hover { filter: brightness(110%); }
+        .theme-btn-primary:hover { filter: brightness(110%); transform: translateY(-1px); }
+        
         .theme-btn-accent { background-color: var(--accent-color); color: white; border-radius: var(--border-radius); }
-        .theme-btn-accent:hover { filter: brightness(110%); }
+        .theme-btn-accent:hover { filter: brightness(110%); transform: translateY(-1px); }
+        
         .theme-border { border-color: var(--primary-color); }
         
+        /* Font Application */
+        h1, h2 { font-family: var(--header-font); }
+        /* Fallback for complex text to Nunito */
+        p, span, div, button, select, input { font-family: 'Nunito', sans-serif; }
+
         .vf-stavenote { cursor: pointer; }
         .vf-stavenote:hover path, .vf-stavenote:hover rect { fill: var(--primary-color) !important; stroke: var(--primary-color) !important; }
-        #notation-container canvas, #notation-container svg { max-width: 100%; height: auto; }
         
+        #flashcard-canvas svg, #ear-vexflow svg, #notation-container svg { display: block; margin: 0 auto; }
+        #ear-vexflow { display: flex; justify-content: center; width: 100%; }
+
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
-        .library-scroll::-webkit-scrollbar { width: 8px; }
+        .library-scroll::-webkit-scrollbar { width: 6px; }
         .library-scroll::-webkit-scrollbar-track { background: transparent; }
-        .library-scroll::-webkit-scrollbar-thumb { background-color: var(--primary-color); border-radius: 20px; }
+        .library-scroll::-webkit-scrollbar-thumb { background-color: var(--primary-color); border-radius: 20px; opacity: 0.5; }
 
-        .metronome-dot { width: 20px; height: 20px; border-radius: 50%; background-color: #ccc; transition: background-color 0.1s; }
+        .metronome-dot { width: 20px; height: 20px; border-radius: 50%; background-color: #e5e7eb; transition: background-color 0.1s; }
         .metronome-dot.active { background-color: var(--primary-color); box-shadow: 0 0 15px var(--primary-color); }
         
         select { color: var(--card-text); background-color: var(--card-bg); border: 1px solid var(--primary-color); }
+        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        
+        .sticky-header { background-color: var(--card-bg); border-bottom: 2px solid var(--primary-color); z-index: 20; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col" data-theme="classic">
@@ -165,30 +197,22 @@
     <nav class="theme-card rounded-none shadow-md p-3 sticky top-0 z-50 flex justify-center items-center w-full border-b theme-border border-b-2 sm:border-b-0">
         <div class="flex items-center gap-3">
             <i class="fas fa-music text-3xl" style="color: var(--primary-color)"></i>
-            <h1 class="text-xl font-bold md:text-3xl tracking-tight">Liem's Harmony Hub</h1>
-            <i class="fas fa-snowflake text-2xl animate-pulse hidden" id="xmas-icon" style="color: var(--accent-color)"></i>
+            <h1 class="text-2xl font-bold md:text-3xl tracking-tight">Liem's Harmony Hub</h1>
+            <i class="fas fa-snowflake text-2xl animate-pulse hidden" id="xmas-icon" style="color: #fbbf24"></i>
         </div>
     </nav>
 
     <!-- Controls Bar -->
-    <div class="w-full py-4">
-        <div class="container mx-auto flex justify-center items-center gap-4 md:gap-6 flex-wrap" id="controls-bar"></div>
+    <div class="w-full py-2">
+        <div class="container mx-auto flex justify-center items-center gap-3 flex-nowrap px-2" id="controls-bar"></div>
     </div>
 
     <!-- Main Content -->
-    <main class="flex-grow container mx-auto p-4 flex flex-col items-center">
+    <main class="flex-grow container mx-auto p-4 flex flex-col items-center pt-2">
         
-        <div id="start-overlay" class="fixed inset-0 bg-black bg-opacity-90 z-[100] flex flex-col items-center justify-center text-white text-center p-4">
-            <h2 class="text-4xl font-bold mb-4 text-[var(--primary-color)]">Welcome to Harmony Hub</h2>
-            <p class="mb-8 max-w-md text-lg opacity-90">Click Start to enable audio and begin your musical journey.</p>
-            <button id="init-audio-btn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-10 rounded-full text-xl shadow-2xl transform transition hover:scale-105">
-                <i class="fas fa-play mr-2"></i> START
-            </button>
-        </div>
-
         <!-- Menu Tabs -->
-        <div class="w-full overflow-x-auto pb-4 pt-2 mb-2 no-scrollbar">
-            <div class="flex gap-3 min-w-max justify-center px-4" id="mode-tabs"></div>
+        <div class="w-full overflow-x-auto pb-4 pt-2 mb-2 no-scrollbar px-4">
+            <div class="flex gap-3 min-w-max justify-center" id="mode-tabs"></div>
         </div>
 
         <div id="app-container" class="w-full max-w-5xl flex flex-col items-center mt-2"></div>
@@ -208,11 +232,11 @@
         const LANGUAGES = {
             vi: {
                 flag: "🇻🇳", name: "Tiếng Việt",
-                modes: ["Khóa Sol", "Khóa Fa", "Hai khóa", "Thư viện", "Luyện tai", "Dò nốt", "Metronome"],
+                modes: ["Khóa Sol", "Khóa Fa", "Hai khóa", "Nốt", "Luyện tai", "Dò nốt", "Metronome"],
                 ui: {
                     level: "Cấp độ", next: "Tiếp theo", result: "Kết quả", listen: "Nghe", check: "Kiểm tra",
                     start: "Bắt đầu", stop: "Dừng", bpm: "Nhịp (BPM)", notes: "Số nốt", time: "Thời gian",
-                    seconds: "giây", detect: "Đang nghe...", library: "Thư viện", chords: "Hợp âm",
+                    seconds: "giây", detect: "Đang nghe...", library: "Nốt", chords: "Hợp âm",
                     settings: "Cài đặt", theme: "Giao diện", lang: "Ngôn ngữ", answer: "Đáp án",
                     tapToStart: "Chạm để bắt đầu",
                     sol: "Sol", fa: "Fa", do: "Đô", re: "Rê", mi: "Mi", fa_note: "Fa", sol_note: "Sol", la: "La", si: "Si",
@@ -221,20 +245,20 @@
             },
             en: {
                 flag: "🇬🇧", name: "English",
-                modes: ["Treble Clef", "Bass Clef", "Grand Staff", "Library", "Ear Training", "Note Check", "Metronome"],
+                modes: ["Treble Clef", "Bass Clef", "Grand Staff", "Notes", "Ear Training", "Note Check", "Metronome"],
                 ui: {
                     level: "Level", next: "Next", result: "Reveal", listen: "Listen", check: "Check",
                     start: "Start", stop: "Stop", bpm: "BPM", notes: "Notes", time: "Time",
-                    seconds: "s", detect: "Listening...", library: "Library", chords: "Chords",
+                    seconds: "s", detect: "Listening...", library: "Notes", chords: "Chords",
                     settings: "Settings", theme: "Theme", lang: "Language", answer: "Answer",
                     tapToStart: "Tap to Start",
                     sol: "G", fa: "F", do: "C", re: "D", mi: "E", fa_note: "F", sol_note: "G", la: "A", si: "B",
                     soundOn: "Sound On", soundOff: "Mute", soundType: "Sound"
                 }
             },
-            fr: { flag: "🇫🇷", name: "Français", modes: ["Clé de Sol", "Clé de Fa", "Grande Portée", "Bibliothèque", "Oreille", "Note Check", "Métronome"], ui: { level: "Niveau", next: "Suivant", result: "Résultat", listen: "Écouter", check: "Vérifier", start: "Démarrer", stop: "Arrêter", bpm: "BPM", notes: "Notes", time: "Temps", seconds: "s", detect: "Écoute...", library: "Bibliothèque", chords: "Accords", settings: "Paramètres", theme: "Thème", lang: "Langue", answer: "Réponse", tapToStart: "Appuyez pour commencer", sol: "Sol", fa: "Fa", do: "Do", re: "Ré", mi: "Mi", fa_note: "Fa", sol_note: "Sol", la: "La", si: "Si", soundOn: "Son activé", soundOff: "Muet", soundType: "Son" } },
-            zh: { flag: "🇨🇳", name: "Chinese", modes: ["高音谱号", "低音谱号", "大谱表", "资料库", "练耳", "音准检查", "节拍器"], ui: { level: "等级", next: "下一个", result: "结果", listen: "听", check: "检查", start: "开始", stop: "停止", bpm: "BPM", notes: "音符", time: "时间", seconds: "秒", detect: "正在听...", library: "资料库", chords: "和弦", settings: "设置", theme: "主题", lang: "语言", answer: "答案", tapToStart: "点击开始", sol: "Sol", fa: "Fa", do: "Do", re: "Re", mi: "Mi", fa_note: "Fa", sol_note: "Sol", la: "La", si: "Si", soundOn: "开音", soundOff: "静音", soundType: "声音" } },
-            th: { flag: "🇹🇭", name: "Thai", modes: ["กุญแจซอล", "กุญแจฟา", "บรรทัด 5 เส้น", "ห้องสมุด", "ฝึกฟัง", "เช็คโน้ต", "เมโทรนอม"], ui: { level: "ระดับ", next: "ถัดไป", result: "เฉลย", listen: "ฟัง", check: "ตรวจ", start: "เริ่ม", stop: "หยุด", bpm: "BPM", notes: "โน้ต", time: "เวลา", seconds: "วิ", detect: "กำลังฟัง...", library: "ห้องสมุด", chords: "คอร์ด", settings: "ตั้งค่า", theme: "ธีม", lang: "ภาษา", answer: "คำตอบ", tapToStart: "แตะเพื่อเริ่ม", sol: "Sol", fa: "Fa", do: "Do", re: "Re", mi: "Mi", fa_note: "Fa", sol_note: "Sol", la: "La", si: "Si", soundOn: "เปิดเสียง", soundOff: "ปิดเสียง", soundType: "เสียง" } },
+            fr: { flag: "🇫🇷", name: "Français", modes: ["Clé de Sol", "Clé de Fa", "Grande Portée", "Notes", "Oreille", "Note Check", "Métronome"], ui: { level: "Niveau", next: "Suivant", result: "Résultat", listen: "Écouter", check: "Vérifier", start: "Démarrer", stop: "Arrêter", bpm: "BPM", notes: "Notes", time: "Temps", seconds: "s", detect: "Écoute...", library: "Notes", chords: "Accords", settings: "Paramètres", theme: "Thème", lang: "Langue", answer: "Réponse", tapToStart: "Appuyez pour commencer", sol: "Sol", fa: "Fa", do: "Do", re: "Ré", mi: "Mi", fa_note: "Fa", sol_note: "Sol", la: "La", si: "Si", soundOn: "Son activé", soundOff: "Muet", soundType: "Son" } },
+            zh: { flag: "🇨🇳", name: "Chinese", modes: ["高音谱号", "低音谱号", "大谱表", "音符", "练耳", "音准检查", "节拍器"], ui: { level: "等级", next: "下一个", result: "结果", listen: "听", check: "检查", start: "开始", stop: "停止", bpm: "BPM", notes: "音符", time: "时间", seconds: "秒", detect: "正在听...", library: "音符", chords: "和弦", settings: "设置", theme: "主题", lang: "语言", answer: "答案", tapToStart: "点击开始", sol: "Sol", fa: "Fa", do: "Do", re: "Re", mi: "Mi", fa_note: "Fa", sol_note: "Sol", la: "La", si: "Si", soundOn: "开音", soundOff: "静音", soundType: "声音" } },
+            th: { flag: "🇹🇭", name: "Thai", modes: ["กุญแจซอล", "กุญแจฟา", "บรรทัด 5 เส้น", "โน้ต", "ฝึกฟัง", "เช็คโน้ต", "เมโทรนอม"], ui: { level: "ระดับ", next: "ถัดไป", result: "เฉลย", listen: "ฟัง", check: "ตรวจ", start: "เริ่ม", stop: "หยุด", bpm: "BPM", notes: "โน้ต", time: "เวลา", seconds: "วิ", detect: "กำลังฟัง...", library: "โน้ต", chords: "คอร์ด", settings: "ตั้งค่า", theme: "ธีม", lang: "ภาษา", answer: "คำตอบ", tapToStart: "แตะเพื่อเริ่ม", sol: "Sol", fa: "Fa", do: "Do", re: "Re", mi: "Mi", fa_note: "Fa", sol_note: "Sol", la: "La", si: "Si", soundOn: "เปิดเสียง", soundOff: "ปิดเสียง", soundType: "เสียง" } },
         };
 
         const THEMES = [
@@ -291,42 +315,54 @@
             const noteChar = noteStr.charAt(0);
             const accidental = noteStr.includes('#') ? '#' : (noteStr.includes('b') ? 'b' : '');
             const octave = noteStr.slice(-1);
-            return `${LANGUAGES[state.lang].ui[toneMap[noteChar]]}${accidental} ${octave}`;
+            const localized = `${LANGUAGES[state.lang].ui[toneMap[noteChar]]}${accidental}`;
+            return `${localized} ${octave} (${noteChar}${accidental}${octave})`;
         }
         function rnd(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
 
         function playTone(note, durationVex) {
+            initAudioIfNeeded();
             if (!state.audioEnabled || !synth) return;
             const dur = DURATION_MAP[durationVex] ? DURATION_MAP[durationVex].tone : '8n';
             synth.triggerAttackRelease(note, dur);
         }
         function playChord(notes) {
+            initAudioIfNeeded();
             if (!state.audioEnabled || !synth) return;
             synth.triggerAttackRelease(notes, "2n");
         }
 
         function toggleMute() {
+            initAudioIfNeeded();
             state.isMuted = !state.isMuted;
             Tone.Destination.mute = state.isMuted;
             renderControls(); 
         }
 
+        let audioInitialized = false;
+        async function initAudioIfNeeded() {
+            if (audioInitialized) return;
+            await Tone.start();
+            state.audioEnabled = true;
+            synth = new Tone.PolySynth(Tone.Synth).toDestination();
+            audioInitialized = true;
+        }
+        document.body.addEventListener('click', initAudioIfNeeded, { once: true });
+        document.body.addEventListener('touchstart', initAudioIfNeeded, { once: true });
+
         // --- RENDER UI ---
         function renderControls() {
             const container = document.getElementById('controls-bar');
-            const soundBtn = `<button onclick="toggleMute()" class="theme-card px-4 py-2 flex items-center justify-center transition hover:scale-105" title="${state.isMuted ? 'Unmute' : 'Mute'}"><i class="fas ${state.isMuted ? 'fa-volume-mute text-gray-400' : 'fa-volume-up text-[var(--primary-color)]'} text-lg"></i></button>`;
-            
-            const themeSelect = `<div class="relative group theme-card rounded-full px-2"><select onchange="state.theme=this.value;initUI()" class="appearance-none bg-transparent border-none py-2 pl-3 pr-8 focus:outline-none cursor-pointer font-medium text-sm w-36">${THEMES.map(th => `<option value="${th.id}" ${state.theme===th.id?'selected':''}>${th.name}</option>`).join('')}</select><div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[var(--primary-color)]"><i class="fas fa-palette"></i></div></div>`;
-            
-            const langSelect = `<div class="relative group theme-card rounded-full px-2"><select onchange="state.lang=this.value;initUI()" class="appearance-none bg-transparent border-none py-2 pl-3 pr-8 focus:outline-none cursor-pointer font-medium text-sm w-36">${Object.keys(LANGUAGES).map(l => `<option value="${l}" ${state.lang===l?'selected':''}>${LANGUAGES[l].flag} ${l.toUpperCase()}</option>`).join('')}</select><div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[var(--primary-color)]"><i class="fas fa-globe"></i></div></div>`;
-            
+            const soundBtn = `<button onclick="toggleMute()" class="theme-card h-10 w-10 flex items-center justify-center rounded-full shadow-sm transition hover:scale-105 ${state.isMuted ? 'bg-gray-300 text-gray-600' : 'bg-[var(--primary-color)] text-white'}" title="${state.isMuted ? 'Unmute' : 'Mute'}"><i class="fas ${state.isMuted ? 'fa-volume-mute' : 'fa-volume-up'}"></i></button>`;
+            const themeSelect = `<div class="relative group h-10"><select onchange="state.theme=this.value;initUI()" class="h-full appearance-none theme-card border-none pl-3 pr-8 rounded-full focus:outline-none cursor-pointer font-bold text-sm min-w-[80px]">${THEMES.map(th => `<option value="${th.id}" ${state.theme===th.id?'selected':''}>${th.name.split(' ')[0]}</option>`).join('')}</select><div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[var(--primary-color)]"><i class="fas fa-palette text-xs"></i></div></div>`;
+            const langSelect = `<div class="relative group h-10"><select onchange="state.lang=this.value;initUI()" class="h-full appearance-none theme-card border-none pl-3 pr-8 rounded-full focus:outline-none cursor-pointer font-bold text-sm min-w-[80px]">${Object.keys(LANGUAGES).map(l => `<option value="${l}" ${state.lang===l?'selected':''}>${LANGUAGES[l].flag} ${l.toUpperCase()}</option>`).join('')}</select><div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[var(--primary-color)]"><i class="fas fa-globe text-xs"></i></div></div>`;
             container.innerHTML = soundBtn + themeSelect + langSelect;
         }
 
         function renderTabs() {
             const t = LANGUAGES[state.lang];
             const tabs = document.getElementById('mode-tabs');
-            tabs.innerHTML = t.modes.map((m, i) => `<button onclick="switchMode(${i})" class="whitespace-nowrap px-6 py-3 rounded-full text-sm font-bold shadow-md transition hover:scale-105 ${state.mode === i ? 'theme-btn-primary shadow-lg ring-2 ring-offset-2 ring-[var(--primary-color)]' : 'theme-card hover:text-[var(--primary-color)]'}">${m}</button>`).join('');
+            tabs.innerHTML = t.modes.map((m, i) => `<button onclick="switchMode(${i})" class="whitespace-nowrap px-5 py-2 rounded-full text-sm font-bold shadow-sm transition hover:scale-105 border ${state.mode === i ? 'active-tab bg-[var(--primary-color)] text-white border-[var(--primary-color)]' : 'theme-card hover:text-[var(--primary-color)]'}">${m}</button>`).join('');
         }
 
         function initUI() {
@@ -344,7 +380,6 @@
                 const count = levelCounts[state.level];
                 state.flashcardData = { treble: [], bass: [] };
                 const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-                
                 let durationPool = ['w', 'h', 'q'];
                 if (state.level > 1) durationPool = ['q', '8', '8', '16', '16', '16', '16'];
 
@@ -460,30 +495,32 @@
                 stopSound();
                 state.isRevealed = true;
                 FLASHCARD_LOGIC.render();
-                const now = Tone.now();
-                let currentTime = now;
-                const bpm = 100; 
-                const beatTime = 60 / bpm; 
-                const getDurTime = (d) => DURATION_MAP[d].time * beatTime;
-                const getToneDur = (d) => DURATION_MAP[d].tone;
+                
+                initAudioIfNeeded().then(() => {
+                    const now = Tone.now();
+                    let currentTime = now;
+                    const bpm = 100; 
+                    const beatTime = 60 / bpm; 
+                    const getDurTime = (d) => DURATION_MAP[d].time * beatTime;
 
-                if (state.mode === 2) {
-                    state.flashcardData.treble.forEach((t, i) => {
-                        const b = state.flashcardData.bass[i];
-                        const durationTime = getDurTime(t.duration);
-                        const toneDuration = getToneDur(t.duration);
-                        synth.triggerAttackRelease([t.toneKey, b.toneKey], toneDuration, currentTime);
-                        currentTime += durationTime;
-                    });
-                } else {
-                    const data = state.mode === 0 ? state.flashcardData.treble : state.flashcardData.bass;
-                    data.forEach((n, i) => {
-                        const durationTime = getDurTime(n.duration);
-                        const toneDuration = getToneDur(n.duration);
-                        synth.triggerAttackRelease(n.toneKey, toneDuration, currentTime);
-                        currentTime += durationTime;
-                    });
-                }
+                    if (state.mode === 2) {
+                        state.flashcardData.treble.forEach((t, i) => {
+                            const b = state.flashcardData.bass[i];
+                            const durationTime = getDurTime(t.duration);
+                            const durTone = DURATION_MAP[t.duration].tone;
+                            synth.triggerAttackRelease([t.toneKey, b.toneKey], durTone, currentTime);
+                            currentTime += durationTime;
+                        });
+                    } else {
+                        const data = state.mode === 0 ? state.flashcardData.treble : state.flashcardData.bass;
+                        data.forEach((n, i) => {
+                            const durationTime = getDurTime(n.duration);
+                            const durTone = DURATION_MAP[n.duration].tone;
+                            synth.triggerAttackRelease(n.toneKey, durTone, currentTime);
+                            currentTime += durationTime;
+                        });
+                    }
+                });
             }
         };
 
@@ -499,13 +536,13 @@
                 const t = LANGUAGES[state.lang].ui;
                 document.getElementById('app-container').innerHTML = `
                     <div class="grid md:grid-cols-2 gap-6 w-full h-[80vh]">
-                        <div class="theme-card p-6 rounded-2xl shadow-xl overflow-y-auto library-scroll">
-                            <h2 class="text-2xl font-bold mb-6 sticky top-0 bg-[var(--card-bg)] pb-4 border-b-2 theme-border z-10 flex items-center gap-2"><i class="fas fa-book-open text-[var(--primary-color)]"></i> ${t.library}</h2>
-                            <div id="notes-lib-content" class="space-y-8"></div>
+                        <div class="theme-card p-0 rounded-2xl shadow-xl overflow-hidden flex flex-col relative">
+                            <h2 class="text-2xl font-bold sticky-header p-4 z-10 flex items-center gap-2"><i class="fas fa-book-open text-[var(--primary-color)]"></i> ${t.library}</h2>
+                            <div class="overflow-y-auto library-scroll p-6" id="notes-lib-content"></div>
                         </div>
-                        <div class="theme-card p-6 rounded-2xl shadow-xl overflow-y-auto library-scroll">
-                            <h2 class="text-2xl font-bold mb-6 sticky top-0 bg-[var(--card-bg)] pb-4 border-b-2 theme-border z-10 flex items-center gap-2"><i class="fas fa-guitar text-[var(--primary-color)]"></i> ${t.chords}</h2>
-                            <div id="chords-lib-content" class="space-y-6"></div>
+                        <div class="theme-card p-0 rounded-2xl shadow-xl overflow-hidden flex flex-col relative">
+                            <h2 class="text-2xl font-bold sticky-header p-4 z-10 flex items-center gap-2"><i class="fas fa-guitar text-[var(--primary-color)]"></i> ${t.chords}</h2>
+                            <div class="overflow-y-auto library-scroll p-6" id="chords-lib-content"></div>
                         </div>
                     </div>`;
                 setTimeout(LIBRARY_LOGIC.fillContent, 100);
@@ -584,15 +621,19 @@
                 document.getElementById('app-container').innerHTML = `
                     <div class="theme-card p-8 rounded-2xl shadow-xl w-full text-center max-w-md border-t-4 theme-border">
                         <h2 class="text-2xl font-bold mb-6">${t.ui && t.ui.modes ? t.modes[4] : 'Ear Training'}</h2>
-                        <div class="mb-6 flex items-center justify-center gap-2">
+                        <div class="mb-6 flex items-center justify-center gap-4">
                             <label class="font-bold opacity-70">${t.notes}:</label>
-                            <input type="number" min="1" max="10" value="${state.earTrainingNotes}" onchange="let v=parseInt(this.value);if(isNaN(v)||v<1)v=1;if(v>10)v=10;state.earTrainingNotes=v;this.value=v;EAR_LOGIC.newQuestion()" class="border rounded p-2 w-16 text-center bg-[var(--bg-color)] text-[var(--text-color)] font-bold focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]">
+                            <div class="flex items-center gap-2">
+                                <button onclick="EAR_LOGIC.changeCount(-1)" class="w-10 h-10 rounded-full bg-white border border-[var(--primary-color)] text-[var(--primary-color)] font-bold hover:bg-[var(--primary-color)] hover:text-white transition shadow-sm flex items-center justify-center"><i class="fas fa-minus"></i></button>
+                                <span class="text-2xl font-bold w-8">${state.earTrainingNotes}</span>
+                                <button onclick="EAR_LOGIC.changeCount(1)" class="w-10 h-10 rounded-full bg-white border border-[var(--primary-color)] text-[var(--primary-color)] font-bold hover:bg-[var(--primary-color)] hover:text-white transition shadow-sm flex items-center justify-center"><i class="fas fa-plus"></i></button>
+                            </div>
                         </div>
                         <div id="ear-canvas-container" class="bg-white rounded-xl p-4 min-h-[160px] flex items-center justify-center mb-6 shadow-inner border border-gray-200">
-                            ${!state.isRevealed ? `<i class="fas fa-headphones-alt text-6xl text-gray-300 animate-pulse"></i>` : `<div id="ear-vexflow"></div>`}
+                            ${!state.isRevealed ? `<i class="fas fa-headphones-alt text-6xl text-[var(--placeholder-color)] animate-pulse"></i>` : `<div id="ear-vexflow"></div>`}
                         </div>
                         <div class="flex flex-wrap gap-2 justify-center mb-6 min-h-[3rem] items-center">
-                            ${state.isRevealed ? state.targetNotes.map(n => `<span class="bg-[var(--primary-color)] text-white px-3 py-1 rounded-lg font-bold shadow-sm text-xl animate-fade-in">${getNoteName(n)}</span>`).join('') : `<span class="text-3xl font-bold text-gray-300">? ? ?</span>`}
+                            ${state.isRevealed ? state.targetNotes.map(n => `<span class="bg-[var(--primary-color)] text-white px-3 py-1 rounded-lg font-bold shadow-sm text-xl animate-fade-in">${getNoteName(n)}</span>`).join('') : `<span class="text-3xl font-bold text-gray-400 opacity-50">? ? ?</span>`}
                         </div>
                         <div class="flex gap-4 justify-center">
                             <button onclick="EAR_LOGIC.play()" class="theme-btn-accent px-8 py-3 rounded-full font-bold shadow-lg transform transition hover:scale-105 active:scale-95"><i class="fas fa-volume-up mr-2"></i> ${t.listen}</button>
@@ -600,18 +641,26 @@
                         </div>
                     </div>`;
                 if(state.isRevealed) {
+                    const containerWidth = document.getElementById('ear-canvas-container').offsetWidth;
+                    const width = Math.min(350, containerWidth - 20); 
                     const no = state.targetNotes.map(s => ({ key: `${s.charAt(0).toLowerCase()}${s.includes('#')?'#':s.includes('b')?'b':''}/${s.slice(-1)}`, toneKey: s, duration:'q', midi:0 }));
-                    renderNotation('ear-vexflow', no, 'treble', 350, 0.9);
+                    renderNotation('ear-vexflow', no, 'treble', width, 0.85);
                 }
                 if(state.targetNotes.length===0) EAR_LOGIC.newQuestion();
+            },
+            changeCount: (delta) => {
+                let v = state.earTrainingNotes + delta;
+                if (v < 1) v = 1; if (v > 10) v = 10;
+                state.earTrainingNotes = v;
+                EAR_LOGIC.newQuestion();
             },
             newQuestion: () => {
                 stopSound(); state.targetNotes = [];
                 const pool = ['C4','D4','E4','F4','G4','A4','B4','C5'];
                 for(let i=0; i<state.earTrainingNotes; i++) state.targetNotes.push(pool[rnd(0, pool.length-1)]);
-                state.isRevealed = false; EAR_LOGIC.render(); playbackTimeout = setTimeout(() => EAR_LOGIC.play(), 500);
+                state.isRevealed = false; EAR_LOGIC.render(); 
             },
-            play: () => { const now = Tone.now(); state.targetNotes.forEach((n,i) => synth.triggerAttackRelease(n, "8n", now + i * 0.6)); },
+            play: () => { initAudioIfNeeded(); const now = Tone.now(); state.targetNotes.forEach((n,i) => synth.triggerAttackRelease(n, "8n", now + i * 0.6)); },
             reveal: () => { state.isRevealed = true; EAR_LOGIC.render(); }
         };
 
@@ -619,7 +668,7 @@
             isListening: false, detectedNotes: [], timer: null, timeLeft: 0,
             render: () => {
                 const t = LANGUAGES[state.lang].ui;
-                document.getElementById('app-container').innerHTML = `<div class="theme-card p-8 rounded-2xl shadow-xl w-full text-center max-w-lg border-t-4 theme-border"><h2 class="text-2xl font-bold mb-6">${t.ui && t.ui.modes ? t.modes[5] : 'Note Checking'}</h2><div class="mb-6"><label class="block mb-2 font-bold opacity-80">${t.time}:</label><div class="flex gap-2 justify-center">${[1,3,5,7,10].map(s=>`<button onclick="state.checkTime=${s};CHECK_LOGIC.render()" class="px-4 py-2 rounded-full border border-[var(--primary-color)] transition ${state.checkTime===s?'bg-[var(--primary-color)] text-white shadow-md':'text-[var(--text-color)] hover:bg-[var(--bg-color)]'}">${s}s</button>`).join('')}</div></div><div class="min-h-[120px] flex items-center justify-center bg-[var(--bg-color)] rounded-xl mb-8 text-3xl font-mono p-4 border border-dashed border-[var(--primary-color)]">${CHECK_LOGIC.isListening ? `<span class="animate-pulse text-red-500 font-bold"><i class="fas fa-microphone mr-2"></i> ${CHECK_LOGIC.timeLeft}s</span>` : (CHECK_LOGIC.detectedNotes.length?`<span class="text-[var(--primary-color)] font-bold">${CHECK_LOGIC.detectedNotes.join(", ")}</span>`:"Ready")}</div><button onclick="CHECK_LOGIC.startListening()" ${CHECK_LOGIC.isListening?'disabled':''} class="theme-btn-primary px-10 py-4 rounded-full text-xl font-bold shadow-xl disabled:opacity-50 transform transition hover:scale-105 active:scale-95">${CHECK_LOGIC.isListening?t.detect:`<i class="fas fa-microphone mr-2"></i> ${t.start}`}</button></div>`;
+                document.getElementById('app-container').innerHTML = `<div class="theme-card p-8 rounded-2xl shadow-xl w-full text-center max-w-lg border-t-4 theme-border"><h2 class="text-2xl font-bold mb-6">${t.ui && t.ui.modes ? t.modes[5] : 'Note Checking'}</h2><div class="mb-6"><label class="block mb-2 font-bold opacity-80">${t.time}:</label><div class="flex gap-2 justify-center">${[1,3,5,7,10].map(s=>`<button onclick="state.checkTime=${s};CHECK_LOGIC.render()" class="px-4 py-2 rounded-full border border-[var(--primary-color)] transition ${state.checkTime===s?'bg-[var(--primary-color)] text-white shadow-md':'text-[var(--card-text)] hover:bg-gray-200'}">${s}s</button>`).join('')}</div></div><div class="min-h-[120px] flex items-center justify-center bg-[var(--bg-color)] text-[var(--text-color)] rounded-xl mb-8 text-3xl font-mono p-4 border border-dashed border-[var(--primary-color)]">${CHECK_LOGIC.isListening ? `<span class="animate-pulse text-red-500 font-bold"><i class="fas fa-microphone mr-2"></i> ${CHECK_LOGIC.timeLeft}s</span>` : (CHECK_LOGIC.detectedNotes.length?`<span class="text-[var(--primary-color)] font-bold">${CHECK_LOGIC.detectedNotes.map(n => getNoteName(n)).join(", ")}</span>`:"Ready")}</div><button onclick="CHECK_LOGIC.startListening()" ${CHECK_LOGIC.isListening?'disabled':''} class="theme-btn-primary px-10 py-4 rounded-full text-xl font-bold shadow-xl disabled:opacity-50 transform transition hover:scale-105 active:scale-95">${CHECK_LOGIC.isListening?t.detect:`<i class="fas fa-microphone mr-2"></i> ${t.start}`}</button></div>`;
             },
             startListening: async () => {
                 if(!state.audioEnabled) { alert("Please click Start first."); return; }
@@ -711,7 +760,9 @@
                 }
                 else { 
                     // Start Logic
-                    if(!state.audioEnabled) return alert("Start Audio First"); 
+                    initAudioIfNeeded(); // Ensure audio context is ready
+                    if(!state.audioEnabled) return; // Should be ready by now due to global listener
+                    
                     let c=5; 
                     METRO_LOGIC.countdown=c; 
                     state.metronomeActive=true; 
@@ -768,8 +819,6 @@
 
         function switchMode(i) { stopSound(); state.mode=i; renderTabs(); if(state.metronomeActive) METRO_LOGIC.toggle(); if(CHECK_LOGIC.isListening) {CHECK_LOGIC.isListening=false; if(CHECK_LOGIC.timer) clearInterval(CHECK_LOGIC.timer);} if(i<=2) FLASHCARD_LOGIC.generateCard(); else if(i===3) LIBRARY_LOGIC.render(); else if(i===4) EAR_LOGIC.newQuestion(); else if(i===5) CHECK_LOGIC.render(); else if(i===6) METRO_LOGIC.render(); }
 
-        document.getElementById('init-audio-btn').onclick = async () => { await Tone.start(); state.audioEnabled = true; document.getElementById('start-overlay').style.display='none'; synth = new Tone.PolySynth(Tone.Synth).toDestination(); initUI(); };
-        
         initUI();
     </script>
 </body>
