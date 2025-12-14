@@ -61,15 +61,22 @@
 </head>
 <body class="h-[100dvh] flex flex-col text-ink bg-paper dark:bg-dark-bg dark:text-dark-text overflow-hidden transition-colors duration-500">
 
-    <!-- Header -->
-    <header class="bg-gradient-to-r from-slate-900 to-slate-800 dark:from-black dark:to-gray-900 text-white p-4 shadow-lg z-10 shrink-0 flex justify-between items-center">
-        <div class="flex items-center gap-2 overflow-hidden">
-            <span class="text-2xl shrink-0">🎹</span>
-            <h1 class="text-lg md:text-xl font-bold font-musical tracking-wide text-amber-50 truncate" data-i18n="appTitle">Liem Sight Reading</h1>
+    <!-- Header (Redesigned) -->
+    <header class="bg-gradient-to-r from-slate-900 to-slate-800 dark:from-black dark:to-gray-900 text-white px-3 py-3 shadow-lg z-10 shrink-0 flex justify-between items-center relative overflow-hidden">
+        <!-- Background Pattern -->
+        <div class="absolute inset-0 opacity-5 pointer-events-none" style="background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, #fff 10px, #fff 12px);"></div>
+        
+        <!-- Title Area -->
+        <div class="flex items-center gap-2 min-w-0 z-10">
+            <!-- Hide icon on small screens to save space -->
+            <span class="text-2xl shrink-0 hidden sm:block shadow-sm">🎹</span>
+            <h1 class="text-base sm:text-xl font-bold font-musical tracking-wide text-amber-50 truncate drop-shadow-md leading-none pt-1" data-i18n="appTitle">Liem Sight Reading</h1>
         </div>
-        <div class="flex items-center gap-2 shrink-0">
+        
+        <!-- Controls Area -->
+        <div class="flex items-center gap-1.5 sm:gap-2 shrink-0 z-10">
             <!-- Language Selector -->
-            <select id="langSelect" onchange="changeLanguage(this.value)" class="lang-select font-sans font-bold hover:bg-white/20 transition-colors">
+            <select id="langSelect" onchange="changeLanguage(this.value)" class="lang-select font-sans font-bold hover:bg-white/20 transition-colors text-xs sm:text-sm py-1">
                 <option value="vi">🇻🇳 VI</option>
                 <option value="en">🇺🇸 EN</option>
                 <option value="fr">🇫🇷 FR</option>
@@ -77,13 +84,16 @@
                 <option value="th">🇹🇭 TH</option>
             </select>
 
-            <button onclick="toggleMute()" class="p-2 rounded-full hover:bg-white/10 active:bg-white/20 transition-colors text-amber-50/80 hover:text-amber-50">
-                <svg id="icon-sound-on" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg>
-                <svg id="icon-sound-off" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z m10.657-9.657a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L18.828 9.414a1 1 0 010-1.414z M21.657 16.657a1 1 0 01-1.414 1.414l-4-4a1 1 0 011.414-1.414l4 4z"></path><line x1="1" y1="1" x2="23" y2="23" stroke="currentColor" stroke-width="2"></line></svg>
+            <!-- Divider -->
+            <div class="h-6 w-px bg-white/20 mx-0.5"></div>
+
+            <button onclick="toggleMute()" class="p-1.5 rounded-full hover:bg-white/10 active:bg-white/20 transition-colors text-amber-50/90 hover:text-amber-50">
+                <svg id="icon-sound-on" class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg>
+                <svg id="icon-sound-off" class="w-5 h-5 sm:w-6 sm:h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z m10.657-9.657a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L18.828 9.414a1 1 0 010-1.414z M21.657 16.657a1 1 0 01-1.414 1.414l-4-4a1 1 0 011.414-1.414l4 4z"></path><line x1="1" y1="1" x2="23" y2="23" stroke="currentColor" stroke-width="2"></line></svg>
             </button>
-            <button onclick="toggleDarkMode()" class="p-2 rounded-full hover:bg-white/10 active:bg-white/20 transition-colors text-amber-50/80 hover:text-amber-50">
-                <svg id="icon-sun" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-                <svg id="icon-moon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+            <button onclick="toggleDarkMode()" class="p-1.5 rounded-full hover:bg-white/10 active:bg-white/20 transition-colors text-amber-50/90 hover:text-amber-50">
+                <svg id="icon-sun" class="w-5 h-5 sm:w-6 sm:h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                <svg id="icon-moon" class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
             </button>
         </div>
     </header>
