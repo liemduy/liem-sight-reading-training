@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Luyện Sight Reading Pro</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- VexFlow Fixed Version -->
     <script src="https://unpkg.com/vexflow@4.2.2/releases/vexflow-min.js"></script>
     <script>
         tailwind.config = {
@@ -14,12 +12,7 @@
             theme: {
                 extend: {
                     colors: {
-                        dark: {
-                            bg: '#1a1b1e',
-                            card: '#25262b',
-                            text: '#c1c2c5',
-                            border: '#2c2e33'
-                        }
+                        dark: { bg: '#1a1b1e', card: '#25262b', text: '#c1c2c5', border: '#2c2e33' }
                     }
                 }
             }
@@ -30,585 +23,419 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
-            transition: background-color 0.3s, color 0.3s;
-            /* Prevent iOS rubber banding */
-            overscroll-behavior-y: none;
+            overscroll-behavior-y: none; /* Chặn kéo nảy trang trên iOS */
         }
         
-        .canvas-container {
+        /* Layout fix: Đảm bảo vùng canvas luôn chiếm chỗ hợp lý */
+        .canvas-wrapper {
+            width: 100%;
             display: flex;
             justify-content: center;
             align-items: center;
+            background: white; /* Light mode bg */
             border-radius: 16px;
             overflow: hidden;
-            width: 100%;
-            /* Fixed height to prevent layout shifts */
-            height: 260px; 
-            position: relative;
-            transition: background-color 0.3s;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.02);
+            /* Quan trọng: Aspect ratio để giữ khung hình đẹp trên mọi máy */
+            aspect-ratio: 16/10; 
+            max-height: 300px;
         }
 
-        /* Dark mode filters */
-        .dark .canvas-container svg, 
-        .dark .library-canvas svg {
-            filter: invert(1) hue-rotate(180deg);
+        .dark .canvas-wrapper {
+            background: #25262b; /* Dark mode bg */
         }
 
-        .btn {
-            transition: all 0.2s;
-            user-select: none;
-            -webkit-touch-callout: none;
-        }
-        .btn:active {
-            transform: scale(0.96);
+        /* Responsive SVG: SVG sẽ tự co giãn theo wrapper */
+        .canvas-wrapper svg {
+            width: 100% !important;
+            height: auto !important;
+            display: block;
         }
         
-        /* Smooth scrolling */
-        .library-scroll {
-            -webkit-overflow-scrolling: touch;
+        /* Dark mode filter cho nốt nhạc */
+        .dark .canvas-wrapper svg, .dark .library-svg svg {
+            filter: invert(1) hue-rotate(180deg) brightness(1.2);
         }
-        .library-scroll::-webkit-scrollbar { width: 4px; height: 4px; }
-        .library-scroll::-webkit-scrollbar-track { background: transparent; }
-        .library-scroll::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+
+        .library-scroll { -webkit-overflow-scrolling: touch; }
     </style>
 </head>
-<body class="h-screen flex flex-col text-gray-800 bg-[#f3f4f6] dark:bg-dark-bg dark:text-dark-text overflow-hidden transition-colors duration-300">
+<body class="h-[100dvh] flex flex-col text-gray-800 bg-[#f3f4f6] dark:bg-dark-bg dark:text-dark-text overflow-hidden transition-colors duration-300">
 
     <!-- Header -->
-    <header class="bg-indigo-600 dark:bg-indigo-900 text-white p-3 shadow-md z-10 shrink-0 flex justify-between items-center px-4 safe-area-top">
+    <header class="bg-indigo-600 dark:bg-indigo-900 text-white p-3 shadow-md z-10 shrink-0 flex justify-between items-center px-4">
         <h1 class="text-lg font-bold truncate">🎹 Sight Reading Pro</h1>
-        
         <div class="flex items-center gap-3">
-            <!-- Mute Button -->
-            <button onclick="toggleMute()" class="p-2 rounded-full hover:bg-white/20 transition-colors active:bg-white/30" aria-label="Toggle Sound">
+            <button onclick="toggleMute()" class="p-2 rounded-full hover:bg-white/20 active:bg-white/30">
                 <svg id="icon-sound-on" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg>
                 <svg id="icon-sound-off" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z m10.657-9.657a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L18.828 9.414a1 1 0 010-1.414z M21.657 16.657a1 1 0 01-1.414 1.414l-4-4a1 1 0 011.414-1.414l4 4z"></path><line x1="1" y1="1" x2="23" y2="23" stroke="currentColor" stroke-width="2"></line></svg>
             </button>
-
-            <!-- Dark Mode Button -->
-            <button onclick="toggleDarkMode()" class="p-2 rounded-full hover:bg-white/20 transition-colors active:bg-white/30" aria-label="Toggle Dark Mode">
+            <button onclick="toggleDarkMode()" class="p-2 rounded-full hover:bg-white/20 active:bg-white/30">
                 <svg id="icon-sun" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                 <svg id="icon-moon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
             </button>
         </div>
     </header>
 
-    <!-- Main Content Area -->
-    <main class="flex-1 flex flex-col p-4 max-w-md mx-auto w-full gap-4 overflow-hidden relative safe-area-bottom">
-        
-        <!-- Error Msg -->
-        <div id="error-msg" class="hidden absolute inset-0 bg-white dark:bg-dark-bg z-50 flex-col items-center justify-center p-6 text-center text-red-600">
+    <main class="flex-1 flex flex-col p-4 max-w-md mx-auto w-full gap-4 overflow-hidden relative">
+        <!-- Error Message -->
+        <div id="error-msg" class="hidden absolute inset-0 bg-white dark:bg-dark-bg z-50 flex flex-col items-center justify-center p-6 text-center text-red-600">
             <p class="font-bold text-xl mb-2">⚠ Lỗi tải thư viện</p>
             <p>Vui lòng kiểm tra mạng và tải lại trang (F5).</p>
         </div>
 
-        <!-- Mode Selection -->
+        <!-- MENU SCREEN -->
         <div id="menu-screen" class="flex flex-col gap-3 h-full justify-center overflow-y-auto pb-4 px-1">
-            <button onclick="startMode('treble')" class="btn bg-white dark:bg-dark-card dark:border-dark-border border-l-4 border-blue-500 p-5 rounded-xl shadow-sm hover:shadow-md flex items-center justify-between group transition-colors">
+            <button onclick="startMode('treble')" class="btn bg-white dark:bg-dark-card dark:border-dark-border border-l-4 border-blue-500 p-5 rounded-xl shadow-sm flex items-center justify-between">
                 <div class="text-left">
-                    <h3 class="font-bold text-lg group-hover:text-blue-600 dark:text-gray-200">Khoá Sol (Treble)</h3>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Một nốt ngẫu nhiên</p>
+                    <h3 class="font-bold text-lg dark:text-gray-200">Khoá Sol</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Treble Clef</p>
                 </div>
                 <span class="text-3xl">🎼</span>
             </button>
-
-            <button onclick="startMode('bass')" class="btn bg-white dark:bg-dark-card dark:border-dark-border border-l-4 border-red-500 p-5 rounded-xl shadow-sm hover:shadow-md flex items-center justify-between group transition-colors">
+            <button onclick="startMode('bass')" class="btn bg-white dark:bg-dark-card dark:border-dark-border border-l-4 border-red-500 p-5 rounded-xl shadow-sm flex items-center justify-between">
                 <div class="text-left">
-                    <h3 class="font-bold text-lg group-hover:text-red-600 dark:text-gray-200">Khoá Fa (Bass)</h3>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Một nốt ngẫu nhiên</p>
+                    <h3 class="font-bold text-lg dark:text-gray-200">Khoá Fa</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Bass Clef</p>
                 </div>
                 <span class="text-3xl">𝄢</span>
             </button>
-
-            <button onclick="startMode('grand')" class="btn bg-white dark:bg-dark-card dark:border-dark-border border-l-4 border-purple-500 p-5 rounded-xl shadow-sm hover:shadow-md flex items-center justify-between group transition-colors">
+            <button onclick="startMode('grand')" class="btn bg-white dark:bg-dark-card dark:border-dark-border border-l-4 border-purple-500 p-5 rounded-xl shadow-sm flex items-center justify-between">
                 <div class="text-left">
-                    <h3 class="font-bold text-lg group-hover:text-purple-600 dark:text-gray-200">Grand Staff (2 Tay)</h3>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Hai nốt cùng lúc (Sol & Fa)</p>
+                    <h3 class="font-bold text-lg dark:text-gray-200">2 Tay</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Grand Staff</p>
                 </div>
                 <span class="text-3xl">🎹</span>
             </button>
-
-            <button onclick="showLibrary()" class="btn bg-gray-800 dark:bg-gray-700 text-white p-4 rounded-xl shadow mt-4 flex items-center justify-center gap-2 hover:bg-gray-700 dark:hover:bg-gray-600">
-                <span>📚</span> Thư viện nốt nhạc
+            <button onclick="showLibrary()" class="btn bg-gray-800 dark:bg-gray-700 text-white p-4 rounded-xl shadow mt-4 flex items-center justify-center gap-2">
+                <span>📚</span> Thư viện nốt
             </button>
         </div>
 
-        <!-- Flashcard Screen -->
-        <div id="game-screen" class="hidden flex-col h-full">
-            <!-- Top Bar -->
+        <!-- GAME SCREEN -->
+        <div id="game-screen" class="hidden flex-col h-full w-full">
+            <!-- Top Nav -->
             <div class="flex justify-between items-center mb-2 shrink-0">
-                <button onclick="goHome()" class="text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
-                    ← Menu
-                </button>
-                <div class="font-bold text-indigo-600 dark:text-indigo-400 truncate max-w-[150px]" id="mode-title">Chế độ</div>
+                <button onclick="goHome()" class="text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 px-4 py-2 rounded-lg">← Menu</button>
+                <div class="font-bold text-indigo-600 dark:text-indigo-400" id="mode-title">Chế độ</div>
                 <div class="w-16"></div> 
             </div>
 
-            <!-- VexFlow Canvas -->
-            <div class="canvas-container bg-white dark:bg-dark-card mb-4 shadow-sm" id="canvas-wrapper">
+            <!-- Canvas Container -->
+            <div class="canvas-wrapper mb-2" id="canvas-wrapper">
                 <div id="notation-output"></div>
             </div>
 
-            <!-- Interaction Area -->
-            <div class="flex-1 flex flex-col justify-end gap-2 pb-2">
-                
-                <!-- Answer Display -->
+            <!-- Controls Area (Flex Grow to fill space) -->
+            <div class="flex-1 flex flex-col justify-end gap-2 pb-safe">
+                <!-- Answer Info -->
                 <div id="answer-box" class="flex-1 flex flex-col items-center justify-center opacity-0 transition-opacity duration-200">
-                    <p class="text-gray-400 text-sm uppercase tracking-wider">Đáp án</p>
-                    <h2 class="text-4xl font-extrabold text-gray-800 dark:text-white mt-2 text-center leading-tight" id="note-name">C4</h2>
-                    <p class="text-lg text-indigo-600 dark:text-indigo-400 font-medium mt-1 text-center" id="note-detail">Đô trung</p>
+                    <p class="text-gray-400 text-xs uppercase tracking-wider">Đáp án</p>
+                    <h2 class="text-5xl font-black text-gray-800 dark:text-white mt-1" id="note-name">C4</h2>
+                    <p class="text-lg text-indigo-600 dark:text-indigo-400 font-medium mt-1 text-center leading-snug" id="note-detail">Đô trung</p>
                 </div>
 
-                <!-- Action Button -->
-                <button id="action-btn" onclick="handleAction()" class="btn w-full bg-indigo-600 dark:bg-indigo-700 text-white font-bold text-xl py-4 rounded-2xl shadow-lg hover:bg-indigo-700 dark:hover:bg-indigo-600 focus:outline-none focus:ring-4 focus:ring-indigo-300 transition-colors mt-auto">
+                <!-- Main Button -->
+                <button id="action-btn" onclick="handleAction()" class="btn w-full bg-indigo-600 dark:bg-indigo-700 text-white font-bold text-xl py-4 rounded-2xl shadow-lg mt-auto mb-2">
                     Hiện đáp án
                 </button>
             </div>
         </div>
 
-        <!-- Library Screen -->
-        <div id="library-screen" class="hidden flex-col h-full">
+        <!-- LIBRARY SCREEN -->
+        <div id="library-screen" class="hidden flex-col h-full w-full">
             <div class="flex justify-between items-center mb-4 shrink-0">
-                <button onclick="goHome()" class="text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600">
-                    ← Menu
-                </button>
+                <button onclick="goHome()" class="text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 px-4 py-2 rounded-lg">← Menu</button>
                 <h2 class="font-bold text-lg dark:text-gray-200">Thư viện</h2>
                 <div class="w-16"></div>
             </div>
-            
-            <div class="flex-1 overflow-y-auto library-scroll space-y-4 px-1" id="library-content">
-                <p class="text-center text-gray-400 py-4">Đang tạo thư viện...</p>
-            </div>
+            <div class="flex-1 overflow-y-auto library-scroll space-y-4 px-1 pb-4" id="library-content"></div>
         </div>
-
     </main>
 
     <script>
-        // Check VexFlow
+        // --- CORE & AUDIO SETUP ---
         if (typeof Vex === 'undefined') {
             document.getElementById('error-msg').classList.remove('hidden');
             document.getElementById('menu-screen').classList.add('hidden');
-            throw new Error("VexFlow not loaded");
         }
 
-        // --- Dark Mode Logic ---
-        function toggleDarkMode() {
-            const html = document.documentElement;
-            const isDark = html.classList.toggle('dark');
-            
-            document.getElementById('icon-sun').classList.toggle('hidden', !isDark);
-            document.getElementById('icon-moon').classList.toggle('hidden', isDark);
-            
-            localStorage.theme = isDark ? 'dark' : 'light';
-        }
-
-        // Initialize Dark Mode Preference
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-            document.getElementById('icon-sun').classList.remove('hidden');
-            document.getElementById('icon-moon').classList.add('hidden');
-        }
-
-        // --- Sound Logic ---
+        const VF = Vex.Flow;
+        let audioContext = null;
         let isMuted = localStorage.muted === 'true';
 
+        // Update UI Icons
         function updateMuteUI() {
             document.getElementById('icon-sound-on').classList.toggle('hidden', isMuted);
             document.getElementById('icon-sound-off').classList.toggle('hidden', !isMuted);
         }
-
         function toggleMute() {
             isMuted = !isMuted;
             localStorage.muted = isMuted;
             updateMuteUI();
-            
-            // Nếu bật tiếng, thử unlock ngay
             if (!isMuted) unlockAudio();
         }
-
         updateMuteUI();
 
-        // --- GLOBAL AUDIO UNLOCKER FOR IPHONE ---
-        let audioContext = null;
-        let isAudioUnlocked = false;
+        // Dark Mode
+        function toggleDarkMode() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            document.getElementById('icon-sun').classList.toggle('hidden', !isDark);
+            document.getElementById('icon-moon').classList.toggle('hidden', isDark);
+            localStorage.theme = isDark ? 'dark' : 'light';
+        }
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            toggleDarkMode(); // Sync state
+        }
 
+        // --- IPHONE AUDIO UNLOCKER ---
         function unlockAudio() {
-            if (isAudioUnlocked) return;
-
+            if (audioContext && audioContext.state === 'running') return;
+            
             const AudioContext = window.AudioContext || window.webkitAudioContext;
-            if (!audioContext) {
-                audioContext = new AudioContext();
-            }
+            if (!audioContext) audioContext = new AudioContext();
+            
+            if (audioContext.state === 'suspended') audioContext.resume();
 
-            // Resume context
-            if (audioContext.state === 'suspended') {
-                audioContext.resume();
-            }
-
-            // Play a silent buffer to wake up the audio engine on iOS
+            // Play silent buffer
             const buffer = audioContext.createBuffer(1, 1, 22050);
             const source = audioContext.createBufferSource();
             source.buffer = buffer;
             source.connect(audioContext.destination);
             source.start(0);
-
-            isAudioUnlocked = true;
             
-            // Remove listeners once unlocked
-            document.removeEventListener('touchstart', unlockAudio);
-            document.removeEventListener('click', unlockAudio);
+            // Clean up listeners
+            ['touchstart', 'click'].forEach(e => document.removeEventListener(e, unlockAudio));
+        }
+        ['touchstart', 'click'].forEach(e => document.addEventListener(e, unlockAudio, {once:true}));
+
+        function playFreq(freq) {
+            if (isMuted || !audioContext) return;
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, audioContext.currentTime);
+            gain.gain.setValueAtTime(0, audioContext.currentTime);
+            gain.gain.linearRampToValueAtTime(0.5, audioContext.currentTime + 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 1.2);
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            osc.start();
+            osc.stop(audioContext.currentTime + 1.2);
         }
 
-        // Add global listeners to catch the FIRST tap anywhere
-        document.addEventListener('touchstart', unlockAudio, { passive: false });
-        document.addEventListener('click', unlockAudio);
-
-
-        // --- 1. Music Data ---
-
-        const VF = Vex.Flow;
+        // --- DATA ---
         const noteNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-        const vietNames = {
-            "C": "Đô", "C#": "Đô#", "D": "Rê", "D#": "Rê#", "E": "Mi", 
-            "F": "Fa", "F#": "Fa#", "G": "Sol", "G#": "Sol#", "A": "La", 
-            "A#": "La#", "B": "Si"
-        };
-
-        const fullPianoRange = [];
+        const vietNames = {"C":"Đô","C#":"Đô#","D":"Rê","D#":"Rê#","E":"Mi","F":"Fa","F#":"Fa#","G":"Sol","G#":"Sol#","A":"La","A#":"La#","B":"Si"};
+        const notes = [];
         for (let i = 21; i <= 108; i++) {
-            const octave = Math.floor(i / 12) - 1;
-            const noteIndex = i % 12;
-            const noteName = noteNames[noteIndex];
-            const scientificName = `${noteName}${octave}`;
-            const isAccidental = noteName.includes("#");
-
-            fullPianoRange.push({
-                midi: i,
-                note: noteName,
-                octave: octave,
-                scientific: scientificName,
-                vietnamese: vietNames[noteName],
-                isAccidental: isAccidental,
-                freq: 440 * Math.pow(2, (i - 69) / 12),
-                vfKey: `${noteName.toLowerCase()}/${octave}`
+            const oct = Math.floor(i/12)-1;
+            const name = noteNames[i%12];
+            notes.push({
+                midi: i, note: name, oct: oct,
+                sci: `${name}${oct}`, viet: vietNames[name],
+                acc: name.includes("#"),
+                freq: 440 * Math.pow(2, (i-69)/12),
+                key: `${name.toLowerCase()}/${oct}`
             });
         }
 
-        // --- 2. State ---
-
-        let currentMode = null;
+        // --- GAME LOGIC ---
+        let mode = null;
         let currentNotes = [];
-        let isAnswerRevealed = false;
-
+        let revealed = false;
+        
+        // Ranges adjusted for better display
         const ranges = {
-            treble: { min: 55, max: 84 },
-            bass: { min: 36, max: 64 },
-            grandTreble: { min: 60, max: 81 },
-            grandBass: { min: 41, max: 60 }
+            treble: { min: 60, max: 79 }, // C4-G5
+            bass: { min: 41, max: 60 },   // F2-C4
+            gTreble: { min: 60, max: 79 },
+            gBass: { min: 41, max: 60 }
         };
 
-        // --- 3. Audio Player ---
-
-        function playFreq(freq, startTime) {
-            if (isMuted) return;
-            if (!audioContext) unlockAudio(); // Just in case
-
-            try {
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-
-                oscillator.type = 'triangle';
-                oscillator.frequency.setValueAtTime(freq, startTime);
-
-                // Tăng volume lên 0.4 cho loa điện thoại
-                gainNode.gain.setValueAtTime(0, startTime);
-                gainNode.gain.linearRampToValueAtTime(0.4, startTime + 0.05); 
-                gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + 1.2);
-
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-
-                oscillator.start(startTime);
-                oscillator.stop(startTime + 1.2);
-            } catch(e) {
-                console.log("Audio Error:", e);
-            }
+        function getRandomNote(min, max) {
+            const pool = notes.filter(n => n.midi >= min && n.midi <= max && !n.acc);
+            return pool[Math.floor(Math.random() * pool.length)];
         }
 
-        function playNotes(notes) {
-            if (!audioContext) unlockAudio();
-            try {
-                const now = audioContext.currentTime;
-                notes.forEach(note => {
-                    playFreq(note.freq, now);
-                });
-            } catch (e) { console.log(e); }
-        }
-
-        // --- 4. Logic ---
-
-        function getRandomNoteFromRange(min, max) {
-            let candidates = fullPianoRange.filter(n => 
-                n.midi >= min && n.midi <= max && !n.isAccidental
-            );
-            return candidates[Math.floor(Math.random() * candidates.length)];
-        }
-
-        window.startMode = function(mode) {
-            unlockAudio(); // Force unlock on interaction
-            currentMode = mode;
+        window.startMode = function(m) {
+            unlockAudio();
+            mode = m;
             document.getElementById('menu-screen').classList.add('hidden');
-            document.getElementById('game-screen').classList.remove('hidden');
-            document.getElementById('game-screen').classList.add('flex');
-            document.getElementById('library-screen').classList.add('hidden');
-
-            const titles = {
-                'treble': 'Khoá Sol',
-                'bass': 'Khoá Fa',
-                'grand': 'Grand Staff'
-            };
-            document.getElementById('mode-title').innerText = titles[mode];
-
+            document.getElementById('game-screen').classList.replace('hidden', 'flex');
+            document.getElementById('mode-title').innerText = m === 'treble' ? 'Khoá Sol' : m === 'bass' ? 'Khoá Fa' : 'Grand Staff';
             nextCard();
         };
 
         window.nextCard = function() {
-            isAnswerRevealed = false;
-            
+            revealed = false;
             const btn = document.getElementById('action-btn');
-            const answerBox = document.getElementById('answer-box');
-            
-            answerBox.style.opacity = '0';
+            document.getElementById('answer-box').style.opacity = '0';
             btn.innerText = "Hiện đáp án";
-            btn.classList.remove('bg-green-600', 'hover:bg-green-700');
-            btn.classList.add('bg-indigo-600', 'hover:bg-indigo-700', 'dark:bg-indigo-700', 'dark:hover:bg-indigo-600');
+            btn.className = "btn w-full bg-indigo-600 dark:bg-indigo-700 text-white font-bold text-xl py-4 rounded-2xl shadow-lg mt-auto mb-2";
 
-            if (currentMode === 'grand') {
-                const noteT = getRandomNoteFromRange(ranges.grandTreble.min, ranges.grandTreble.max);
-                const noteB = getRandomNoteFromRange(ranges.grandBass.min, ranges.grandBass.max);
-                currentNotes = [noteT, noteB];
+            if (mode === 'grand') {
+                currentNotes = [getRandomNote(ranges.gTreble.min, ranges.gTreble.max), getRandomNote(ranges.gBass.min, ranges.gBass.max)];
             } else {
-                const r = ranges[currentMode];
-                const note = getRandomNoteFromRange(r.min, r.max);
-                currentNotes = [note];
+                const r = ranges[mode];
+                currentNotes = [getRandomNote(r.min, r.max)];
             }
 
+            // Set Text
             if (currentNotes.length === 2) {
-                document.getElementById('note-name').innerHTML = `${currentNotes[0].scientific} <span class="text-sm text-gray-400 mx-2">&</span> ${currentNotes[1].scientific}`;
-                document.getElementById('note-detail').innerHTML = `Tay phải: ${currentNotes[0].vietnamese}<br>Tay trái: ${currentNotes[1].vietnamese}`;
+                document.getElementById('note-name').innerHTML = `<span class="text-3xl">${currentNotes[0].sci}</span> & <span class="text-3xl">${currentNotes[1].sci}</span>`;
+                document.getElementById('note-detail').innerHTML = `${currentNotes[0].viet} - ${currentNotes[1].viet}`;
             } else {
-                document.getElementById('note-name').innerText = currentNotes[0].scientific;
-                document.getElementById('note-detail').innerText = currentNotes[0].vietnamese;
+                document.getElementById('note-name').innerText = currentNotes[0].sci;
+                document.getElementById('note-detail').innerText = currentNotes[0].viet;
             }
 
-            // Delay render slightly to ensure layout calculation on mobile
-            setTimeout(() => renderCanvas(currentNotes), 10);
+            renderGameCanvas();
         };
 
         window.handleAction = function() {
-            const btn = document.getElementById('action-btn');
-            const answerBox = document.getElementById('answer-box');
-
-            if (!isAnswerRevealed) {
-                isAnswerRevealed = true;
-                playNotes(currentNotes);
-                
-                answerBox.style.opacity = '1';
+            if (!revealed) {
+                revealed = true;
+                currentNotes.forEach(n => playFreq(n.freq));
+                document.getElementById('answer-box').style.opacity = '1';
+                const btn = document.getElementById('action-btn');
                 btn.innerText = "Câu tiếp theo ➡";
-                btn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700', 'dark:bg-indigo-700', 'dark:hover:bg-indigo-600');
-                btn.classList.add('bg-green-600', 'hover:bg-green-700');
+                btn.className = "btn w-full bg-green-600 text-white font-bold text-xl py-4 rounded-2xl shadow-lg mt-auto mb-2";
             } else {
-                window.nextCard();
+                nextCard();
             }
         };
-
-        // --- 5. Game Rendering (Optimized for Mobile) ---
-
-        function renderCanvas(notes) {
-            const div = document.getElementById("notation-output");
-            div.innerHTML = "";
-
-            // Calculate width safely for mobile
-            // Use clientWidth of the container or window width with margin
-            const containerWidth = document.getElementById('canvas-wrapper').clientWidth || window.innerWidth;
-            const width = Math.min(containerWidth - 20, 400); 
-            const height = 260;
-
-            const renderer = new VF.Renderer(div, VF.Renderer.Backends.SVG);
-            renderer.resize(width, height);
-            const context = renderer.getContext();
-            
-            // Less aggressive scaling for small screens to prevent clipping
-            const scale = width < 350 ? 1.0 : 1.2;
-            context.setViewBox(0, 0, width, height);
-            context.scale(scale, scale);
-            const scaledWidth = width / scale;
-
-            let staveTreble, staveBass;
-            // Center staves based on scaled width
-            const startX = (scaledWidth - 140) / 2; // Approximate centering for single staff
-
-            if (currentMode === 'treble') {
-                staveTreble = new VF.Stave(startX, 70, 140);
-                staveTreble.addClef("treble").setContext(context).draw();
-                drawSingleNote(context, staveTreble, notes[0], "treble");
-            } else if (currentMode === 'bass') {
-                staveBass = new VF.Stave(startX, 70, 140);
-                staveBass.addClef("bass").setContext(context).draw();
-                drawSingleNote(context, staveBass, notes[0], "bass");
-            } else if (currentMode === 'grand') {
-                // For Grand Staff, use more width
-                const grandStartX = 10;
-                const grandWidth = scaledWidth - 20;
-                
-                staveTreble = new VF.Stave(grandStartX, 30, grandWidth);
-                staveBass = new VF.Stave(grandStartX, 120, grandWidth);
-
-                staveTreble.addClef("treble");
-                staveBass.addClef("bass");
-
-                new VF.StaveConnector(staveTreble, staveBass).setType(VF.StaveConnector.type.BRACE).setContext(context).draw();
-                new VF.StaveConnector(staveTreble, staveBass).setType(VF.StaveConnector.type.SINGLE_LEFT).setContext(context).draw();
-                new VF.StaveConnector(staveTreble, staveBass).setType(VF.StaveConnector.type.SINGLE_RIGHT).setContext(context).draw();
-
-                staveTreble.setContext(context).draw();
-                staveBass.setContext(context).draw();
-
-                drawSingleNote(context, staveTreble, notes[0], "treble");
-                drawSingleNote(context, staveBass, notes[1], "bass");
-            }
-        }
-
-        function drawSingleNote(context, stave, noteData, clef) {
-            const vfNote = new VF.StaveNote({ 
-                clef: clef, 
-                keys: [noteData.vfKey], 
-                duration: "w", 
-                auto_stem: true
-            });
-
-            if (noteData.isAccidental) {
-                vfNote.addModifier(new VF.Accidental("#"));
-            }
-
-            vfNote.setStyle({fillStyle: "black", strokeStyle: "black"});
-
-            const voice = new VF.Voice({num_beats: 4,  beat_value: 4});
-            voice.addTickables([vfNote]);
-            // Format to center in the stave
-            new VF.Formatter().joinVoices([voice]).format([voice], stave.getWidth() - 40);
-            
-            // Manually shift voice to center if needed, but formatter usually handles it
-            voice.draw(context, stave);
-        }
-
-        // --- 6. Library Rendering ---
 
         window.goHome = function() {
             document.getElementById('game-screen').classList.add('hidden');
-            document.getElementById('library-screen').classList.add('hidden');
-            document.getElementById('menu-screen').classList.remove('hidden');
             document.getElementById('game-screen').classList.remove('flex');
+            document.getElementById('library-screen').classList.add('hidden');
             document.getElementById('library-screen').classList.remove('flex');
-            currentMode = null;
+            document.getElementById('menu-screen').classList.remove('hidden');
         };
 
+        // --- RENDERING ENGINE (RESPONSIVE FIX) ---
+        function renderGameCanvas() {
+            const div = document.getElementById("notation-output");
+            div.innerHTML = "";
+            
+            // Fixed reference size - CSS will scale this to fit screen
+            const refWidth = 500; 
+            const refHeight = 300; 
+
+            const renderer = new VF.Renderer(div, VF.Renderer.Backends.SVG);
+            renderer.resize(refWidth, refHeight);
+            const ctx = renderer.getContext();
+            ctx.setViewBox(0, 0, refWidth, refHeight);
+
+            // Scale up contents slightly inside the box
+            ctx.scale(1.5, 1.5); 
+            // Effective width after scale
+            const w = refWidth / 1.5; 
+
+            // Center calculation
+            const x = (w - 200) / 2; // Center a 200px stave
+            
+            if (mode === 'treble') {
+                const stave = new VF.Stave(x, 50, 200);
+                stave.addClef("treble").setContext(ctx).draw();
+                drawNote(ctx, stave, currentNotes[0], "treble");
+            } else if (mode === 'bass') {
+                const stave = new VF.Stave(x, 50, 200);
+                stave.addClef("bass").setContext(ctx).draw();
+                drawNote(ctx, stave, currentNotes[0], "bass");
+            } else if (mode === 'grand') {
+                const gStave1 = new VF.Stave(x, 20, 200);
+                const gStave2 = new VF.Stave(x, 110, 200); // Distance between staves
+                gStave1.addClef("treble");
+                gStave2.addClef("bass");
+                
+                new VF.StaveConnector(gStave1, gStave2).setType(VF.StaveConnector.type.BRACE).setContext(ctx).draw();
+                new VF.StaveConnector(gStave1, gStave2).setType(VF.StaveConnector.type.SINGLE_LEFT).setContext(ctx).draw();
+                new VF.StaveConnector(gStave1, gStave2).setType(VF.StaveConnector.type.SINGLE_RIGHT).setContext(ctx).draw();
+
+                gStave1.setContext(ctx).draw();
+                gStave2.setContext(ctx).draw();
+
+                drawNote(ctx, gStave1, currentNotes[0], "treble");
+                drawNote(ctx, gStave2, currentNotes[1], "bass");
+            }
+        }
+
+        function drawNote(ctx, stave, note, clef) {
+            const vfNote = new VF.StaveNote({
+                clef: clef, keys: [note.key], duration: "w", auto_stem: true
+            });
+            vfNote.setStyle({fillStyle: "black", strokeStyle: "black"}); // Default black, CSS filter handles white
+            const voice = new VF.Voice({num_beats: 4, beat_value: 4});
+            voice.addTickables([vfNote]);
+            new VF.Formatter().joinVoices([voice]).format([voice], 100); // Format in center
+            
+            // Shift voice to center of stave manually if needed, but formatter usually does good job
+            // We use a small width in format() to pack it, then draw
+            voice.draw(ctx, stave);
+        }
+
+        // --- LIBRARY RENDERING ---
         window.showLibrary = function() {
             unlockAudio();
             document.getElementById('menu-screen').classList.add('hidden');
-            document.getElementById('library-screen').classList.remove('hidden');
-            document.getElementById('library-screen').classList.add('flex');
-            setTimeout(renderLibraryStaves, 50);
-        };
-
-        function renderLibraryStaves() {
+            document.getElementById('library-screen').classList.replace('hidden', 'flex');
+            
             const container = document.getElementById('library-content');
-            container.innerHTML = ""; 
+            if (container.children.length > 0) return; // Render once
 
-            // Create stave for each octave
-            for (let octave = 0; octave <= 8; octave++) {
-                const notesInOctave = fullPianoRange.filter(n => n.octave === octave && !n.isAccidental);
-                if (notesInOctave.length === 0) continue;
+            for (let oct = 1; oct <= 7; oct++) {
+                const octNotes = notes.filter(n => n.oct === oct && !n.acc);
+                if (octNotes.length === 0) continue;
 
                 const card = document.createElement('div');
-                card.className = "bg-white dark:bg-dark-card rounded-xl shadow-sm border border-gray-200 dark:border-dark-border overflow-hidden";
+                card.className = "bg-white dark:bg-dark-card rounded-xl shadow-sm border border-gray-100 dark:border-dark-border";
                 
-                const header = document.createElement('div');
-                header.className = "bg-gray-50 dark:bg-gray-800 px-4 py-2 border-b border-gray-100 dark:border-gray-700";
-                header.innerHTML = `<h3 class="font-bold text-gray-700 dark:text-gray-300">Quãng tám ${octave}</h3>`;
-                card.appendChild(header);
+                const title = document.createElement('div');
+                title.className = "px-4 py-2 bg-gray-50 dark:bg-gray-800 border-b dark:border-gray-700 font-bold dark:text-gray-300";
+                title.innerText = `Quãng tám ${oct}`;
+                card.appendChild(title);
 
-                const staveWrapper = document.createElement('div');
-                staveWrapper.className = "relative flex justify-center py-4 overflow-x-auto library-canvas";
-                const canvasId = `lib-stave-${octave}`;
+                const scrollWrap = document.createElement('div');
+                scrollWrap.className = "overflow-x-auto library-scroll py-2 flex justify-center library-svg relative"; // Relative for overlays
+                
                 const canvasDiv = document.createElement('div');
-                canvasDiv.id = canvasId;
-                // Add min-width to ensure scrollability on small screens
-                canvasDiv.style.minWidth = "320px"; 
-                staveWrapper.appendChild(canvasDiv);
-
-                card.appendChild(staveWrapper);
+                scrollWrap.appendChild(canvasDiv);
+                card.appendChild(scrollWrap);
                 container.appendChild(card);
 
-                // Use slightly wider width for clearer rendering
-                const width = 350; 
-                const height = 140;
-
+                // Render Stave
+                const width = 360; const height = 120;
                 const renderer = new VF.Renderer(canvasDiv, VF.Renderer.Backends.SVG);
                 renderer.resize(width, height);
-                const context = renderer.getContext();
-                
-                const clef = (octave < 4) ? "bass" : "treble";
-                
+                const ctx = renderer.getContext();
+                const clef = oct < 4 ? "bass" : "treble";
                 const stave = new VF.Stave(10, 10, width - 20);
-                stave.addClef(clef).setContext(context).draw();
+                stave.addClef(clef).setContext(ctx).draw();
 
-                const vfNotes = notesInOctave.map(note => {
-                    return new VF.StaveNote({
-                        clef: clef,
-                        keys: [note.vfKey],
-                        duration: "q", 
-                        auto_stem: true
-                    });
-                });
-
+                const vfNotes = octNotes.map(n => new VF.StaveNote({
+                    clef: clef, keys: [n.key], duration: "q", auto_stem: true
+                }));
                 const voice = new VF.Voice({num_beats: vfNotes.length, beat_value: 4});
                 voice.addTickables(vfNotes);
+                new VF.Formatter().joinVoices([voice]).format([voice], width - 70);
+                voice.draw(ctx, stave);
 
-                new VF.Formatter().joinVoices([voice]).format([voice], width - 60);
-                voice.draw(context, stave);
-
-                // --- CREATE INTERACTIVE OVERLAYS ---
-                vfNotes.forEach((vfNote, index) => {
-                    const noteData = notesInOctave[index];
-                    const noteX = vfNote.getAbsoluteX();
-                    
-                    const overlay = document.createElement('button');
-                    overlay.className = "absolute top-0 h-full hover:bg-indigo-500/10 dark:hover:bg-white/10 transition-colors flex flex-col justify-end pb-2 items-center group touch-manipulation";
-                    overlay.style.left = `${noteX - 15}px`; 
-                    overlay.style.width = "40px"; // Tap target size
-
-                    const label = document.createElement('div');
-                    label.className = "text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-white/90 dark:bg-black/50 px-1 rounded transform translate-y-1 opacity-100 shadow-sm";
-                    label.innerText = noteData.vietnamese;
-                    overlay.appendChild(label);
-
-                    const subLabel = document.createElement('div');
-                    subLabel.className = "text-[10px] text-gray-400 mt-0.5";
-                    subLabel.innerText = noteData.scientific;
-                    overlay.appendChild(subLabel);
-
-                    overlay.onclick = (e) => {
-                        // Prevent zooming or default behaviors
-                        e.preventDefault();
-                        unlockAudio();
-                        playFreq(noteData.freq, audioContext ? audioContext.currentTime : 0);
-                        
-                        label.classList.add("text-red-500", "scale-110");
-                        setTimeout(() => label.classList.remove("text-red-500", "scale-110"), 200);
+                // Overlays
+                vfNotes.forEach((vn, i) => {
+                    const n = octNotes[i];
+                    const x = vn.getAbsoluteX();
+                    const btn = document.createElement('button');
+                    btn.className = "absolute top-0 h-full w-10 hover:bg-black/5 flex flex-col justify-end items-center pb-2";
+                    btn.style.left = (x - 15) + "px";
+                    btn.innerHTML = `<span class="text-xs font-bold text-indigo-600 bg-white/80 px-1 rounded">${n.viet}</span>`;
+                    btn.onclick = () => {
+                        playFreq(n.freq);
+                        btn.firstElementChild.style.color = "red";
+                        setTimeout(()=>btn.firstElementChild.style.color = "", 200);
                     };
-
-                    staveWrapper.appendChild(overlay);
+                    scrollWrap.appendChild(btn);
                 });
             }
         }
