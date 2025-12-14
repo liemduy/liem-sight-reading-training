@@ -16,8 +16,7 @@
                         sans: ['"Inter"', 'sans-serif'],
                     },
                     colors: {
-                        paper: '#f8f5f2',
-                        ink: '#2b2b2b',
+                        // Custom colors if needed
                     },
                     boxShadow: {
                         'glow': '0 0 20px rgba(79, 70, 229, 0.15)',
@@ -42,7 +41,7 @@
         /* Classic (Default) */
         body.theme-classic { background-color: #f8f5f2; color: #1a1a1a; }
         .theme-classic .glass-panel { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(0,0,0,0.05); }
-        .theme-classic .accent-text { color: #8b5cf6; } /* Violet */
+        .theme-classic .accent-text { color: #8b5cf6; } 
 
         /* Dark */
         body.theme-dark { background-color: #0f172a; color: #f1f5f9; }
@@ -51,14 +50,16 @@
         .theme-dark svg { filter: invert(1) hue-rotate(180deg) brightness(1.1); }
 
         /* Ocean */
-        body.theme-ocean { background: linear-gradient(180deg, #f0f9ff 0%, #e0f2fe 100%); color: #0c4a6e; }
-        .theme-ocean .glass-panel { background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.4); }
-        .theme-ocean .accent-text { color: #0284c7; }
+        body.theme-ocean { background: linear-gradient(180deg, #ecfeff 0%, #cffafe 100%); color: #164e63; }
+        .theme-ocean .glass-panel { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(8px); border: 1px solid rgba(6, 182, 212, 0.2); box-shadow: 0 4px 20px -2px rgba(6, 182, 212, 0.1); }
+        .theme-ocean .accent-text { color: #0891b2; } 
+        .theme-ocean .control-pill { background: rgba(6, 182, 212, 0.1); border-color: rgba(6, 182, 212, 0.2); }
+        .theme-ocean .btn-primary { background-color: #0891b2 !important; box-shadow: 0 4px 14px 0 rgba(8, 145, 178, 0.39) !important; }
 
         /* Christmas */
         body.theme-christmas { background-color: #0f392b; color: #fff; background-image: radial-gradient(rgba(255,255,255,0.1) 1px, transparent 1px); background-size: 30px 30px; }
         .theme-christmas .glass-panel { background: rgba(20, 83, 45, 0.85); backdrop-filter: blur(10px); border: 1px solid rgba(255,215,0,0.2); }
-        .theme-christmas .accent-text { color: #fbbf24; } /* Gold */
+        .theme-christmas .accent-text { color: #fbbf24; } 
         .theme-christmas .btn-primary { background: #dc2626 !important; border-color: #b91c1c !important; }
         
         /* Snow Animation */
@@ -69,15 +70,51 @@
 
         /* --- COMPONENTS --- */
         .canvas-container {
-            width: 100%; display: flex; justify-content: center; align-items: center;
-            background: white; border-radius: 24px; overflow: hidden;
+            width: 100%; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center;
+            background: white; 
+            border-radius: 24px; 
+            overflow: hidden;
             box-shadow: inset 0 2px 10px rgba(0,0,0,0.03);
             border: 1px solid rgba(0,0,0,0.04);
-            aspect-ratio: 16/10; max-height: 320px;
+            flex: 1; 
+            min-height: 200px;
             position: relative; z-index: 10;
         }
         .theme-dark .canvas-container { background: #1e293b; border-color: #334155; }
         .canvas-container svg { width: 100% !important; height: auto !important; }
+
+        /* Lyric Style Answer */
+        .lyric-answer {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            pointer-events: none;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 20;
+        }
+        
+        .lyric-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(4px);
+            padding: 8px 24px;
+            border-radius: 99px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border: 1px solid rgba(0,0,0,0.05);
+            transform: translateY(10px);
+            opacity: 0;
+        }
+        .theme-dark .lyric-badge { background: rgba(30, 41, 59, 0.95); border-color: rgba(255,255,255,0.1); }
+        
+        .lyric-answer.visible .lyric-badge {
+            transform: translateY(0);
+            opacity: 1;
+        }
 
         .btn-mode {
             position: relative; overflow: hidden; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -101,7 +138,6 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
-        /* Select styling reset */
         select { -webkit-appearance: none; appearance: none; background: transparent; border: none; outline: none; font-weight: 600; text-align: center; }
     </style>
 </head>
@@ -110,21 +146,21 @@
     <div class="snow-container" id="snowEffect"></div>
 
     <!-- Header -->
-    <header class="z-50 shrink-0 px-6 py-4 flex flex-col items-center justify-center relative">
-        <!-- Logo Area -->
-        <div class="text-center mb-4 relative">
-            <h1 class="font-serif text-3xl md:text-4xl font-extrabold tracking-tight accent-text drop-shadow-sm" data-i18n="appTitle">
+    <header class="z-50 shrink-0 px-6 py-3 flex flex-col items-center justify-center relative">
+        <!-- Logo Area - Clickable to Home -->
+        <div class="text-center mb-3 relative cursor-pointer group" onclick="goHome()">
+            <h1 class="font-serif text-2xl md:text-3xl font-extrabold tracking-tight accent-text drop-shadow-sm group-hover:scale-105 transition-transform" data-i18n="appTitle">
                 Liem Sight Reading
             </h1>
-            <div class="h-1 w-12 bg-current opacity-20 mx-auto mt-2 rounded-full"></div>
+            <div class="h-1 w-12 bg-current opacity-20 mx-auto mt-1 rounded-full group-hover:w-16 transition-all"></div>
         </div>
 
         <!-- Controls Bar -->
-        <div class="flex items-center gap-3 bg-white/50 dark:bg-black/20 backdrop-blur-md p-1.5 rounded-full shadow-sm border border-white/20">
+        <div class="flex items-center gap-3 bg-white/50 dark:bg-black/20 backdrop-blur-md p-1 rounded-full shadow-sm border border-white/20">
             <!-- Lang -->
             <div class="control-pill px-3 cursor-pointer relative group">
-                <span class="text-sm">🌐</span>
-                <select id="langSelect" onchange="changeLanguage(this.value)" class="text-xs uppercase cursor-pointer text-inherit w-full">
+                <span class="text-xs">🌐</span>
+                <select id="langSelect" onchange="changeLanguage(this.value)" class="text-[10px] sm:text-xs uppercase cursor-pointer text-inherit w-full font-bold">
                     <option value="vi">VIE</option>
                     <option value="en">ENG</option>
                     <option value="fr">FRA</option>
@@ -135,19 +171,19 @@
 
             <!-- Theme -->
             <div class="control-pill px-3 cursor-pointer">
-                <span class="text-sm">🎨</span>
-                <select id="themeSelect" onchange="changeTheme(this.value)" class="text-xs cursor-pointer text-inherit">
+                <span class="text-xs">🎨</span>
+                <select id="themeSelect" onchange="changeTheme(this.value)" class="text-[10px] sm:text-xs cursor-pointer text-inherit font-bold">
                     <option value="classic">Classic</option>
-                    <option value="dark">Dark</option>
                     <option value="ocean">Ocean</option>
+                    <option value="dark">Dark</option>
                     <option value="christmas">Noel</option>
                 </select>
             </div>
 
             <!-- Mute -->
-            <button onclick="toggleMute()" class="control-pill w-8 h-8 justify-center">
-                <svg id="icon-sound-on" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg>
-                <svg id="icon-sound-off" class="w-4 h-4 hidden" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z m10.657-9.657a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L18.828 9.414a1 1 0 010-1.414z M21.657 16.657a1 1 0 01-1.414 1.414l-4-4a1 1 0 011.414-1.414l4 4z"></path></svg>
+            <button onclick="toggleMute()" class="control-pill w-7 h-7 justify-center">
+                <svg id="icon-sound-on" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg>
+                <svg id="icon-sound-off" class="w-3.5 h-3.5 hidden" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z m10.657-9.657a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L18.828 9.414a1 1 0 010-1.414z M21.657 16.657a1 1 0 01-1.414 1.414l-4-4a1 1 0 011.414-1.414l4 4z"></path></svg>
             </button>
         </div>
     </header>
@@ -212,29 +248,31 @@
 
         <!-- 2. GAME SCREEN -->
         <div id="game-screen" class="hidden flex-col h-full w-full">
-            <div class="flex justify-between items-center mb-4 px-2">
-                <button onclick="goHome()" class="text-sm font-semibold hover:opacity-70 transition-opacity flex items-center gap-1" data-i18n="menuBack">← Menu</button>
-                <div class="font-bold text-lg font-serif accent-text" id="mode-title">Mode</div>
-                <div class="w-12"></div> 
+            <!-- New Header -->
+            <div class="flex items-center mb-2 px-1 shrink-0 gap-3">
+                <button onclick="goHome()" class="p-2 rounded-xl bg-white/50 dark:bg-white/10 hover:bg-white dark:hover:bg-white/20 transition-colors shadow-sm group">
+                    <!-- Big Back Arrow Icon -->
+                    <svg class="w-6 h-6 text-slate-700 dark:text-slate-200 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"></path></svg>
+                </button>
+                <div class="font-bold text-xl font-serif accent-text tracking-tight" id="mode-title">Mode</div>
             </div>
 
-            <!-- Music Canvas -->
-            <div class="canvas-container mb-6 shadow-xl" id="canvas-wrapper">
+            <!-- Music Canvas (Flexible Height) -->
+            <div class="canvas-container mb-2 shadow-xl" id="canvas-wrapper">
                 <div id="notation-output"></div>
-            </div>
-
-            <!-- Controls -->
-            <div class="flex-1 flex flex-col justify-end pb-safe">
-                <!-- Answer Reveal -->
-                <div id="answer-box" class="flex-1 flex flex-col items-center justify-center transition-all duration-300 transform scale-95 opacity-0">
-                    <div class="glass-panel px-12 py-6 rounded-3xl text-center shadow-lg border border-white/50 dark:border-white/10">
-                        <p class="text-[10px] uppercase tracking-widest font-bold opacity-50 mb-1" data-i18n="answerLabel">ĐÁP ÁN</p>
-                        <h2 class="text-6xl font-black font-serif mb-1 accent-text leading-none" id="note-name">C4</h2>
-                        <p class="text-lg font-medium opacity-80" id="note-detail">Đô trung</p>
+                
+                <!-- LYRIC STYLE ANSWER (Overlay inside canvas) -->
+                <div id="lyric-answer" class="lyric-answer">
+                    <div class="lyric-badge">
+                        <span class="text-2xl font-black font-serif accent-text mr-2" id="note-name">C4</span>
+                        <span class="text-lg font-bold opacity-80" id="note-detail">Đô</span>
                     </div>
                 </div>
+            </div>
 
-                <button id="action-btn" onclick="handleAction()" class="btn-primary w-full bg-slate-900 dark:bg-indigo-600 text-white font-bold text-lg py-4 rounded-2xl shadow-lg hover:shadow-2xl hover:-translate-y-1 active:translate-y-0 transition-all duration-200 mt-4" data-i18n="btnShow">
+            <!-- Controls (Fixed Height at Bottom) -->
+            <div class="shrink-0 flex flex-col justify-end pb-safe pt-2">
+                <button id="action-btn" onclick="handleAction()" class="btn-primary w-full bg-slate-900 dark:bg-indigo-600 text-white font-bold text-lg py-3.5 rounded-2xl shadow-lg hover:shadow-2xl hover:-translate-y-1 active:translate-y-0 transition-all duration-200" data-i18n="btnShow">
                     Hiện đáp án
                 </button>
             </div>
@@ -243,7 +281,7 @@
         <!-- 3. LIBRARY SCREEN -->
         <div id="library-screen" class="hidden flex-col h-full w-full">
             <div class="flex justify-between items-center mb-2 px-2 shrink-0">
-                <button onclick="goHome()" class="text-sm font-semibold hover:opacity-70 transition-opacity" data-i18n="menuBack">← Menu</button>
+                <button onclick="goHome()" class="text-sm font-semibold hover:opacity-70 transition-opacity flex items-center gap-1" data-i18n="menuBack">← Menu</button>
                 <h2 class="font-bold text-xl font-serif accent-text" data-i18n="library">Thư viện</h2>
                 <div class="w-12"></div>
             </div>
@@ -257,7 +295,7 @@
     <script>
         // --- LOGIC: Theme & Snow ---
         function initTheme() {
-            const savedTheme = localStorage.theme || 'classic';
+            const savedTheme = localStorage.theme || 'ocean'; 
             document.getElementById('themeSelect').value = savedTheme;
             changeTheme(savedTheme);
             createSnow();
@@ -285,11 +323,11 @@
 
         // --- I18N ---
         const i18n = {
-            vi: { appTitle:"Liem Sight Reading", selectMode:"CHỌN CHẾ ĐỘ TẬP", modeTreble:"Khoá Sol", descTreble:"Tay phải (Treble)", modeBass:"Khoá Fa", descBass:"Tay trái (Bass)", modeGrand:"Grand Staff", descGrand:"Kết hợp 2 tay", library:"Thư viện nốt", menuBack:"Thoát", answerLabel:"ĐÁP ÁN", btnShow:"Hiện đáp án", btnNext:"Câu tiếp theo", octave:"Quãng tám", errorTitle:"Lỗi tải", errorMsg:"Kiểm tra mạng (F5)" },
-            en: { appTitle:"Liem Sight Reading", selectMode:"PRACTICE MODE", modeTreble:"Treble Clef", descTreble:"Right Hand", modeBass:"Bass Clef", descBass:"Left Hand", modeGrand:"Grand Staff", descGrand:"Both Hands", library:"Library", menuBack:"Exit", answerLabel:"ANSWER", btnShow:"Show Answer", btnNext:"Next Question", octave:"Octave", errorTitle:"Error", errorMsg:"Check Network (F5)" },
-            fr: { appTitle:"Liem Lecture", selectMode:"MODE", modeTreble:"Clé de Sol", descTreble:"Main Droite", modeBass:"Clé de Fa", descBass:"Main Gauche", modeGrand:"Double", descGrand:"Deux Mains", library:"Bibliothèque", menuBack:"Retour", answerLabel:"RÉPONSE", btnShow:"Voir Réponse", btnNext:"Suivant", octave:"Octave", errorTitle:"Erreur", errorMsg:"Vérifier Connexion" },
-            es: { appTitle:"Liem Lectura", selectMode:"MODO", modeTreble:"Clave Sol", descTreble:"Mano Derecha", modeBass:"Clave Fa", descBass:"Mano Izquierda", modeGrand:"Gran Pent.", descGrand:"Ambas Manos", library:"Biblioteca", menuBack:"Atrás", answerLabel:"RESPUESTA", btnShow:"Ver Respuesta", btnNext:"Siguiente", octave:"Octava", errorTitle:"Error", errorMsg:"Revisar Red" },
-            th: { appTitle:"Liem การอ่านโน้ต", selectMode:"โหมดฝึกฝน", modeTreble:"กุญแจซอล", descTreble:"มือขวา", modeBass:"กุญแจฟา", descBass:"มือซ้าย", modeGrand:"บรรทัด 5 เส้นใหญ่", descGrand:"สองมือ", library:"ห้องสมุด", menuBack:"กลับ", answerLabel:"คำตอบ", btnShow:"เฉลย", btnNext:"ข้อต่อไป", octave:"ออกเทฟ", errorTitle:"ผิดพลาด", errorMsg:"ตรวจสอบเน็ต" }
+            vi: { appTitle:"Liem Sight Reading", selectMode:"CHỌN CHẾ ĐỘ TẬP", modeTreble:"Khoá Sol", descTreble:"Tay phải (Treble)", modeBass:"Khoá Fa", descBass:"Tay trái (Bass)", modeGrand:"Grand Staff", descGrand:"Kết hợp 2 tay", library:"Thư viện nốt", menuBack:"Menu", answerLabel:"ĐÁP ÁN", btnShow:"Hiện đáp án", btnNext:"Câu tiếp theo", octave:"Quãng tám", errorTitle:"Lỗi tải", errorMsg:"Kiểm tra mạng (F5)" },
+            en: { appTitle:"Liem Sight Reading", selectMode:"PRACTICE MODE", modeTreble:"Treble Clef", descTreble:"Right Hand", modeBass:"Bass Clef", descBass:"Left Hand", modeGrand:"Grand Staff", descGrand:"Both Hands", library:"Library", menuBack:"Menu", answerLabel:"ANSWER", btnShow:"Show Answer", btnNext:"Next Question", octave:"Octave", errorTitle:"Error", errorMsg:"Check Network (F5)" },
+            fr: { appTitle:"Liem Lecture", selectMode:"MODE", modeTreble:"Clé de Sol", descTreble:"Main Droite", modeBass:"Clé de Fa", descBass:"Main Gauche", modeGrand:"Double", descGrand:"Deux Mains", library:"Bibliothèque", menuBack:"Menu", answerLabel:"RÉPONSE", btnShow:"Voir Réponse", btnNext:"Suivant", octave:"Octave", errorTitle:"Erreur", errorMsg:"Vérifier Connexion" },
+            es: { appTitle:"Liem Lectura", selectMode:"MODO", modeTreble:"Clave Sol", descTreble:"Mano Derecha", modeBass:"Clave Fa", descBass:"Mano Izquierda", modeGrand:"Gran Pent.", descGrand:"Ambas Manos", library:"Biblioteca", menuBack:"Menú", answerLabel:"RESPUESTA", btnShow:"Ver Respuesta", btnNext:"Siguiente", octave:"Octava", errorTitle:"Error", errorMsg:"Revisar Red" },
+            th: { appTitle:"Liem การอ่านโน้ต", selectMode:"โหมดฝึกฝน", modeTreble:"กุญแจซอล", descTreble:"มือขวา", modeBass:"กุญแจฟา", descBass:"มือซ้าย", modeGrand:"บรรทัด 5 เส้นใหญ่", descGrand:"สองมือ", library:"ห้องสมุด", menuBack:"เมนู", answerLabel:"คำตอบ", btnShow:"เฉลย", btnNext:"ข้อต่อไป", octave:"ออกเทฟ", errorTitle:"ผิดพลาด", errorMsg:"ตรวจสอบเน็ต" }
         };
 
         const noteLocales = {
@@ -326,8 +364,12 @@
                 document.getElementById('library-content').innerHTML = ""; 
                 showLibrary();
             }
-            if (currentNotes.length > 0 && document.getElementById('answer-box').classList.contains('opacity-100')) {
+            if (currentNotes.length > 0 && document.getElementById('lyric-answer').classList.contains('visible')) {
                  updateAnswerText(true);
+            }
+            if(mode) {
+                let titleKey = mode === 'treble' ? 'modeTreble' : mode === 'bass' ? 'modeBass' : 'modeGrand';
+                document.getElementById('mode-title').innerText = i18n[currentLang][titleKey];
             }
         }
 
@@ -407,7 +449,14 @@
         let mode = null;
         let currentNotes = [];
         let revealed = false;
-        const ranges = { treble: { min: 60, max: 79 }, bass: { min: 41, max: 60 }, gTreble: { min: 60, max: 79 }, gBass: { min: 41, max: 60 } };
+        
+        // RANGES
+        const ranges = { 
+            treble: { min: 55, max: 84 }, 
+            bass: { min: 36, max: 65 }, 
+            gTreble: { min: 60, max: 84 }, 
+            gBass: { min: 36, max: 60 }    
+        };
 
         function getRandomNote(min, max) {
             const pool = notes.filter(n => n.midi >= min && n.midi <= max && !n.acc);
@@ -420,32 +469,37 @@
             mode = m;
             document.getElementById('menu-screen').classList.add('hidden');
             document.getElementById('game-screen').classList.replace('hidden', 'flex');
+            
+            let titleKey = m === 'treble' ? 'modeTreble' : m === 'bass' ? 'modeBass' : 'modeGrand';
+            document.getElementById('mode-title').innerText = i18n[currentLang][titleKey];
+            
             nextCard();
         };
 
         function updateAnswerText(onlyText = false) {
              const n1 = noteLocales[currentLang][currentNotes[0].noteIdx];
-             if (currentNotes.length === 2) {
-                const n2 = noteLocales[currentLang][currentNotes[1].noteIdx];
-                if(!onlyText) document.getElementById('note-name').innerHTML = `<span class="text-4xl">${currentNotes[0].sci}</span><span class="text-2xl mx-2 opacity-50">&</span><span class="text-4xl">${currentNotes[1].sci}</span>`;
-                document.getElementById('note-detail').innerText = `${n1} - ${n2}`;
-             } else {
-                if(!onlyText) document.getElementById('note-name').innerText = currentNotes[0].sci;
-                document.getElementById('note-detail').innerText = n1;
+             const nameStr = currentNotes.length === 2 
+                ? `${currentNotes[0].sci} & ${currentNotes[1].sci}`
+                : currentNotes[0].sci;
+             const detailStr = currentNotes.length === 2
+                ? `${n1} - ${noteLocales[currentLang][currentNotes[1].noteIdx]}`
+                : `${n1}`;
+
+             if(!onlyText) {
+                 document.getElementById('note-name').innerHTML = nameStr;
+                 document.getElementById('note-detail').innerText = detailStr;
              }
         }
 
         window.nextCard = function() {
             revealed = false;
             const btn = document.getElementById('action-btn');
-            const box = document.getElementById('answer-box');
+            const lyric = document.getElementById('lyric-answer');
             
-            box.style.opacity = '0';
-            box.classList.add('scale-95');
+            lyric.classList.remove('visible');
             
             btn.innerText = i18n[currentLang].btnShow;
-            // Default Button Style
-            btn.className = "w-full bg-slate-900 dark:bg-indigo-600 text-white font-bold text-lg py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all mt-auto mb-2";
+            btn.className = "w-full bg-slate-900 dark:bg-indigo-600 text-white font-bold text-lg py-3.5 rounded-2xl shadow-lg hover:shadow-xl transition-all mt-auto mb-2";
 
             if (mode === 'grand') {
                 currentNotes = [getRandomNote(ranges.gTreble.min, ranges.gTreble.max), getRandomNote(ranges.gBass.min, ranges.gBass.max)];
@@ -454,6 +508,7 @@
                 currentNotes = [getRandomNote(r.min, r.max)];
             }
             updateAnswerText();
+            // Timeout to allow DOM layout before rendering canvas
             setTimeout(renderGameCanvas, 10);
         };
 
@@ -462,14 +517,12 @@
                 revealed = true;
                 currentNotes.forEach(n => playFreq(n.freq));
                 
-                const box = document.getElementById('answer-box');
-                box.style.opacity = '1';
-                box.classList.remove('scale-95');
+                const lyric = document.getElementById('lyric-answer');
+                lyric.classList.add('visible');
                 
                 const btn = document.getElementById('action-btn');
                 btn.innerText = i18n[currentLang].btnNext;
-                // Success Style
-                btn.className = "w-full bg-emerald-500 text-white font-bold text-lg py-4 rounded-2xl shadow-glow transition-all mt-auto mb-2";
+                btn.className = "w-full bg-emerald-500 text-white font-bold text-lg py-3.5 rounded-2xl shadow-glow transition-all mt-auto mb-2";
             } else {
                 nextCard();
             }
@@ -483,33 +536,57 @@
             document.getElementById('menu-screen').classList.remove('hidden');
         };
 
-        // --- RENDER GAME ---
+        // --- RENDER GAME (OPTIMIZED SPACE) ---
         function renderGameCanvas() {
             const div = document.getElementById("notation-output");
             div.innerHTML = "";
-            const refW = 500, refH = 320; 
+            
+            // Dynamic width based on container, but fixed internal coordinate system
+            const refW = 500;
+            // Higher height for grand staff to avoid clipping
+            const refH = mode === 'grand' ? 420 : 300; 
+            
             const renderer = new VF.Renderer(div, VF.Renderer.Backends.SVG);
             renderer.resize(refW, refH);
             const ctx = renderer.getContext();
+            
+            // Adjust ViewBox to fit content perfectly
             ctx.setViewBox(0, 0, refW, refH);
-            ctx.scale(1.5, 1.5); 
-            const w = refW / 1.5; const x = (w - 200) / 2;
+            
+            // Slightly reduced scale to fit everything comfortably
+            const scale = mode === 'grand' ? 1.2 : 1.4; 
+            ctx.scale(scale, scale); 
+            
+            const w = refW / scale; 
+            
+            // WIDER STAVE: Increased from 220 to 400 (or near max width)
+            const staveWidth = 350; 
+            const x = (w - staveWidth) / 2; // Center based on stave width
+            
+            // Centered Y positions
+            const startY = mode === 'grand' ? 50 : 80;
             
             if (mode === 'treble') {
-                const s = new VF.Stave(x, 60, 200);
+                const s = new VF.Stave(x, startY, staveWidth);
                 s.addClef("treble").setContext(ctx).draw();
                 drawNote(ctx, s, currentNotes[0], "treble");
             } else if (mode === 'bass') {
-                const s = new VF.Stave(x, 60, 200);
+                const s = new VF.Stave(x, startY, staveWidth);
                 s.addClef("bass").setContext(ctx).draw();
                 drawNote(ctx, s, currentNotes[0], "bass");
             } else if (mode === 'grand') {
-                const s1 = new VF.Stave(x, 30, 200); const s2 = new VF.Stave(x, 120, 200);
+                const s1 = new VF.Stave(x, startY, staveWidth); 
+                const s2 = new VF.Stave(x, startY + 130, staveWidth); 
+                
                 s1.addClef("treble"); s2.addClef("bass");
+                
                 new VF.StaveConnector(s1, s2).setType(VF.StaveConnector.type.BRACE).setContext(ctx).draw();
                 new VF.StaveConnector(s1, s2).setType(VF.StaveConnector.type.SINGLE_LEFT).setContext(ctx).draw();
                 new VF.StaveConnector(s1, s2).setType(VF.StaveConnector.type.SINGLE_RIGHT).setContext(ctx).draw();
-                s1.setContext(ctx).draw(); s2.setContext(ctx).draw();
+                
+                s1.setContext(ctx).draw(); 
+                s2.setContext(ctx).draw();
+                
                 drawNote(ctx, s1, currentNotes[0], "treble");
                 drawNote(ctx, s2, currentNotes[1], "bass");
             }
@@ -519,11 +596,12 @@
             const vn = new VF.StaveNote({clef: clef, keys: [note.key], duration: "w", auto_stem: true});
             vn.setStyle({fillStyle: "black", strokeStyle: "black"});
             const v = new VF.Voice({num_beats: 4, beat_value: 4}).addTickables([vn]);
-            new VF.Formatter().joinVoices([v]).format([v], 100);
+            // Format to center (width/2)
+            new VF.Formatter().joinVoices([v]).format([v], stave.getWidth() - 100); 
             v.draw(ctx, stave);
         }
 
-        // --- RENDER LIBRARY (FIXED WIDTH FOR B NOTE) ---
+        // --- RENDER LIBRARY ---
         window.showLibrary = function() {
             unlockAudio();
             document.getElementById('menu-screen').classList.add('hidden');
@@ -548,8 +626,9 @@
                 card.appendChild(scrollWrap);
                 container.appendChild(card);
 
-                // FIX: Tăng Width lên 550 để chứa đủ nốt Si
-                const width = 550; const height = 160; 
+                // FIX: Wider canvas to fit last note (Si)
+                const width = 600; 
+                const height = 160; 
                 
                 const renderer = new VF.Renderer(canvasDiv, VF.Renderer.Backends.SVG);
                 renderer.resize(width, height);
@@ -565,7 +644,7 @@
                 const vfNotes = octNotes.map(n => new VF.StaveNote({clef: clef, keys: [n.key], duration: "q", auto_stem: true}));
                 const voice = new VF.Voice({num_beats: vfNotes.length, beat_value: 4}).addTickables(vfNotes);
                 
-                // Formatter: Spread notes evenly across width - 50px padding
+                // Formatter: Spread notes evenly
                 new VF.Formatter().joinVoices([voice]).format([voice], width - 50);
                 voice.draw(ctx, stave);
 
@@ -575,7 +654,8 @@
                     const btn = document.createElement('button');
                     const locName = noteLocales[currentLang][n.noteIdx];
                     btn.className = "absolute top-0 h-full w-12 hover:bg-indigo-500/10 flex flex-col justify-end items-center pb-2 transition-colors";
-                    btn.style.left = (x - 20) + "px"; // Centered on note
+                    // Center button relative to note head
+                    btn.style.left = (x - 20) + "px"; 
                     btn.innerHTML = `<span class="text-[10px] font-bold text-slate-600 bg-white/90 px-1.5 py-0.5 rounded-full shadow-sm font-sans transition-all">${locName}</span>`;
                     
                     btn.onclick = () => {
