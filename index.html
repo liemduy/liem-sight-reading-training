@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Luyện Sight Reading Pro</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- VexFlow -->
+    <script src="https://unpkg.com/vexflow@4.2.2/releases/vexflow-min.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            bg: '#1a1b1e',
+                            card: '#25262b',
+                            text: '#c1c2c5',
+                            border: '#2c2e33'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        
+        .canvas-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 16px;
+            overflow: hidden;
+            width: 100%;
+            min-height: 260px;
+            position: relative;
+            transition: background-color 0.3s;
+        }
+
+        /* Dark mode specific for VexFlow canvas */
+        .dark .canvas-container svg, 
+        .dark .library-canvas svg {
+            filter: invert(1) hue-rotate(180deg);
+        }
+
+        .btn {
+            transition: all 0.2s;
+            user-select: none;
+        }
+        .btn:active {
+            transform: scale(0.96);
+        }
+        
+        .library-scroll::-webkit-scrollbar { width: 6px; }
+        .library-scroll::-webkit-scrollbar-track { background: transparent; }
+        .library-scroll::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+        .dark .library-scroll::-webkit-scrollbar-thumb { background: #555; }
+    </style>
+</head>
+<body class="h-screen flex flex-col text-gray-800 bg-[#f3f4f6] dark:bg-dark-bg dark:text-dark-text overflow-hidden transition-colors duration-300">
+
+    <!-- Header -->
+    <header class="bg-indigo-600 dark:bg-indigo-900 text-white p-3 shadow-md z-10 shrink-0 flex justify-between items-center px-4">
+        <h1 class="text-xl font-bold">🎹 Sight Reading Pro of Liem</h1>
+        
+        <div class="flex items-center gap-2">
+            <!-- Mute Button -->
+            <button onclick="toggleMute()" class="p-2 rounded-full hover:bg-white/20 transition-colors" aria-label="Toggle Sound">
+                <!-- Sound On Icon -->
+                <svg id="icon-sound-on" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg>
+                <!-- Sound Off Icon -->
+                <svg id="icon-sound-off" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z m10.657-9.657a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L18.828 9.414a1 1 0 010-1.414z M21.657 16.657a1 1 0 01-1.414 1.414l-4-4a1 1 0 011.414-1.414l4 4z"></path><line x1="1" y1="1" x2="23" y2="23" stroke="currentColor" stroke-width="2"></line></svg>
+            </button>
+
+            <!-- Dark Mode Button -->
+            <button onclick="toggleDarkMode()" class="p-2 rounded-full hover:bg-white/20 transition-colors" aria-label="Toggle Dark Mode">
+                <!-- Sun Icon -->
+                <svg id="icon-sun" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                <!-- Moon Icon -->
+                <svg id="icon-moon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col p-4 max-w-md mx-auto w-full gap-4 overflow-hidden relative">
+        
+        <!-- Error Msg -->
+        <div id="error-msg" class="hidden absolute inset-0 bg-white dark:bg-dark-bg z-50 flex-col items-center justify-center p-6 text-center text-red-600">
+            <p class="font-bold text-xl mb-2">⚠ Lỗi tải thư viện</p>
+            <p>Vui lòng kiểm tra mạng và tải lại trang (F5).</p>
+        </div>
+
+        <!-- Mode Selection -->
+        <div id="menu-screen" class="flex flex-col gap-3 h-full justify-center overflow-y-auto pb-4">
+            <button onclick="startMode('treble')" class="btn bg-white dark:bg-dark-card dark:border-dark-border border-l-4 border-blue-500 p-5 rounded-xl shadow-sm hover:shadow-md flex items-center justify-between group transition-colors">
+                <div class="text-left">
+                    <h3 class="font-bold text-lg group-hover:text-blue-600 dark:text-gray-200">Khoá Sol (Treble)</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Một nốt ngẫu nhiên</p>
+                </div>
+                <span class="text-3xl">🎼</span>
+            </button>
+
+            <button onclick="startMode('bass')" class="btn bg-white dark:bg-dark-card dark:border-dark-border border-l-4 border-red-500 p-5 rounded-xl shadow-sm hover:shadow-md flex items-center justify-between group transition-colors">
+                <div class="text-left">
+                    <h3 class="font-bold text-lg group-hover:text-red-600 dark:text-gray-200">Khoá Fa (Bass)</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Một nốt ngẫu nhiên</p>
+                </div>
+                <span class="text-3xl">𝄢</span>
+            </button>
+
+            <button onclick="startMode('grand')" class="btn bg-white dark:bg-dark-card dark:border-dark-border border-l-4 border-purple-500 p-5 rounded-xl shadow-sm hover:shadow-md flex items-center justify-between group transition-colors">
+                <div class="text-left">
+                    <h3 class="font-bold text-lg group-hover:text-purple-600 dark:text-gray-200">Grand Staff (2 Tay)</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Hai nốt cùng lúc (Sol & Fa)</p>
+                </div>
+                <span class="text-3xl">🎹</span>
+            </button>
+
+            <button onclick="showLibrary()" class="btn bg-gray-800 dark:bg-gray-700 text-white p-4 rounded-xl shadow mt-4 flex items-center justify-center gap-2 hover:bg-gray-700 dark:hover:bg-gray-600">
+                <span>📚</span> Thư viện nốt nhạc
+            </button>
+        </div>
+
+        <!-- Flashcard Screen -->
+        <div id="game-screen" class="hidden flex-col h-full">
+            <!-- Top Bar -->
+            <div class="flex justify-between items-center mb-2 shrink-0">
+                <button onclick="goHome()" class="text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 px-3 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                    ← Menu
+                </button>
+                <div class="font-bold text-indigo-600 dark:text-indigo-400" id="mode-title">Chế độ</div>
+                <div class="w-16"></div> 
+            </div>
+
+            <!-- VexFlow Canvas -->
+            <div class="canvas-container bg-white dark:bg-dark-card mb-4 shadow-sm" id="canvas-wrapper">
+                <div id="notation-output"></div>
+            </div>
+
+            <!-- Interaction Area -->
+            <div class="flex-1 flex flex-col justify-end gap-2 pb-2">
+                
+                <!-- Answer Display -->
+                <div id="answer-box" class="flex-1 flex flex-col items-center justify-center opacity-0 transition-opacity duration-200">
+                    <p class="text-gray-400 text-sm uppercase tracking-wider">Đáp án</p>
+                    <h2 class="text-4xl font-extrabold text-gray-800 dark:text-white mt-2 text-center leading-tight" id="note-name">C4</h2>
+                    <p class="text-lg text-indigo-600 dark:text-indigo-400 font-medium mt-1 text-center" id="note-detail">Đô trung</p>
+                </div>
+
+                <!-- Action Button -->
+                <button id="action-btn" onclick="handleAction()" class="btn w-full bg-indigo-600 dark:bg-indigo-700 text-white font-bold text-xl py-4 rounded-2xl shadow-lg hover:bg-indigo-700 dark:hover:bg-indigo-600 focus:outline-none focus:ring-4 focus:ring-indigo-300 transition-colors mt-auto">
+                    Hiện đáp án
+                </button>
+            </div>
+        </div>
+
+        <!-- Library Screen -->
+        <div id="library-screen" class="hidden flex-col h-full">
+            <div class="flex justify-between items-center mb-4 shrink-0">
+                <button onclick="goHome()" class="text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 px-3 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600">
+                    ← Menu
+                </button>
+                <h2 class="font-bold text-lg dark:text-gray-200">Thư viện (Theo thang âm)</h2>
+                <div class="w-16"></div>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto library-scroll space-y-4" id="library-content">
+                <p class="text-center text-gray-400 py-4">Đang tạo thư viện...</p>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // Check VexFlow
+        if (typeof Vex === 'undefined') {
+            document.getElementById('error-msg').classList.remove('hidden');
+            document.getElementById('menu-screen').classList.add('hidden');
+            throw new Error("VexFlow not loaded");
+        }
+
+        // --- Dark Mode Logic ---
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            const isDark = html.classList.toggle('dark');
+            
+            document.getElementById('icon-sun').classList.toggle('hidden', !isDark);
+            document.getElementById('icon-moon').classList.toggle('hidden', isDark);
+            
+            localStorage.theme = isDark ? 'dark' : 'light';
+        }
+
+        // Initialize Dark Mode Preference
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+            document.getElementById('icon-sun').classList.remove('hidden');
+            document.getElementById('icon-moon').classList.add('hidden');
+        }
+
+        // --- Sound Logic ---
+        let isMuted = localStorage.muted === 'true';
+
+        function updateMuteUI() {
+            document.getElementById('icon-sound-on').classList.toggle('hidden', isMuted);
+            document.getElementById('icon-sound-off').classList.toggle('hidden', !isMuted);
+        }
+
+        function toggleMute() {
+            isMuted = !isMuted;
+            localStorage.muted = isMuted;
+            updateMuteUI();
+        }
+
+        // Init UI
+        updateMuteUI();
+
+        // --- 1. Music Data ---
+
+        const VF = Vex.Flow;
+        const noteNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+        const vietNames = {
+            "C": "Đô", "C#": "Đô#", "D": "Rê", "D#": "Rê#", "E": "Mi", 
+            "F": "Fa", "F#": "Fa#", "G": "Sol", "G#": "Sol#", "A": "La", 
+            "A#": "La#", "B": "Si"
+        };
+
+        const fullPianoRange = [];
+        for (let i = 21; i <= 108; i++) {
+            const octave = Math.floor(i / 12) - 1;
+            const noteIndex = i % 12;
+            const noteName = noteNames[noteIndex];
+            const scientificName = `${noteName}${octave}`;
+            const isAccidental = noteName.includes("#");
+
+            fullPianoRange.push({
+                midi: i,
+                note: noteName,
+                octave: octave,
+                scientific: scientificName,
+                vietnamese: vietNames[noteName],
+                isAccidental: isAccidental,
+                freq: 440 * Math.pow(2, (i - 69) / 12),
+                vfKey: `${noteName.toLowerCase()}/${octave}`
+            });
+        }
+
+        // --- 2. State ---
+
+        let currentMode = null;
+        let currentNotes = [];
+        let isAnswerRevealed = false;
+        let audioContext = null;
+
+        const ranges = {
+            treble: { min: 55, max: 84 },
+            bass: { min: 36, max: 64 },
+            grandTreble: { min: 60, max: 81 },
+            grandBass: { min: 41, max: 60 }
+        };
+
+        // --- 3. Audio ---
+
+        function initAudio() {
+            if (!audioContext) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioContext = new AudioContext();
+            }
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+        }
+
+        function playFreq(freq, startTime) {
+            // Kiểm tra trạng thái Mute trước khi phát
+            if (isMuted) return;
+
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.type = 'triangle';
+            oscillator.frequency.setValueAtTime(freq, startTime);
+
+            gainNode.gain.setValueAtTime(0, startTime);
+            gainNode.gain.linearRampToValueAtTime(0.2, startTime + 0.05);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + 1.2);
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.start(startTime);
+            oscillator.stop(startTime + 1.2);
+        }
+
+        function playNotes(notes) {
+            try {
+                initAudio();
+                const now = audioContext.currentTime;
+                notes.forEach(note => {
+                    playFreq(note.freq, now);
+                });
+            } catch (e) {
+                console.error("Audio error:", e);
+            }
+        }
+
+        // --- 4. Logic ---
+
+        function getRandomNoteFromRange(min, max) {
+            let candidates = fullPianoRange.filter(n => 
+                n.midi >= min && n.midi <= max && !n.isAccidental
+            );
+            return candidates[Math.floor(Math.random() * candidates.length)];
+        }
+
+        window.startMode = function(mode) {
+            initAudio();
+            currentMode = mode;
+            document.getElementById('menu-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            document.getElementById('game-screen').classList.add('flex');
+            document.getElementById('library-screen').classList.add('hidden');
+
+            const titles = {
+                'treble': 'Khoá Sol (Treble)',
+                'bass': 'Khoá Fa (Bass)',
+                'grand': 'Grand Staff (2 Tay)'
+            };
+            document.getElementById('mode-title').innerText = titles[mode];
+
+            nextCard();
+        };
+
+        window.nextCard = function() {
+            isAnswerRevealed = false;
+            
+            const btn = document.getElementById('action-btn');
+            const answerBox = document.getElementById('answer-box');
+            
+            answerBox.style.opacity = '0';
+            btn.innerText = "Hiện đáp án";
+            btn.classList.remove('bg-green-600', 'hover:bg-green-700');
+            btn.classList.add('bg-indigo-600', 'hover:bg-indigo-700', 'dark:bg-indigo-700', 'dark:hover:bg-indigo-600');
+
+            if (currentMode === 'grand') {
+                const noteT = getRandomNoteFromRange(ranges.grandTreble.min, ranges.grandTreble.max);
+                const noteB = getRandomNoteFromRange(ranges.grandBass.min, ranges.grandBass.max);
+                currentNotes = [noteT, noteB];
+            } else {
+                const r = ranges[currentMode];
+                const note = getRandomNoteFromRange(r.min, r.max);
+                currentNotes = [note];
+            }
+
+            if (currentNotes.length === 2) {
+                document.getElementById('note-name').innerHTML = `${currentNotes[0].scientific} <span class="text-sm text-gray-400 mx-2">&</span> ${currentNotes[1].scientific}`;
+                document.getElementById('note-detail').innerHTML = `Tay phải: ${currentNotes[0].vietnamese}<br>Tay trái: ${currentNotes[1].vietnamese}`;
+            } else {
+                document.getElementById('note-name').innerText = currentNotes[0].scientific;
+                document.getElementById('note-detail').innerText = currentNotes[0].vietnamese;
+            }
+
+            renderCanvas(currentNotes);
+        };
+
+        window.handleAction = function() {
+            const btn = document.getElementById('action-btn');
+            const answerBox = document.getElementById('answer-box');
+
+            if (!isAnswerRevealed) {
+                isAnswerRevealed = true;
+                playNotes(currentNotes);
+                
+                answerBox.style.opacity = '1';
+                btn.innerText = "Câu tiếp theo ➡";
+                btn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700', 'dark:bg-indigo-700', 'dark:hover:bg-indigo-600');
+                btn.classList.add('bg-green-600', 'hover:bg-green-700');
+            } else {
+                window.nextCard();
+            }
+        };
+
+        // --- 5. Game Rendering ---
+
+        function renderCanvas(notes) {
+            const div = document.getElementById("notation-output");
+            div.innerHTML = "";
+
+            const width = Math.min(window.innerWidth - 40, 360);
+            const height = 260;
+
+            const renderer = new VF.Renderer(div, VF.Renderer.Backends.SVG);
+            renderer.resize(width, height);
+            const context = renderer.getContext();
+            
+            context.setViewBox(0, 0, width, height);
+            context.scale(1.2, 1.2);
+            const scaledWidth = width / 1.2;
+
+            let staveTreble, staveBass;
+
+            if (currentMode === 'treble') {
+                staveTreble = new VF.Stave(scaledWidth/2 - 60, 70, 120);
+                staveTreble.addClef("treble").setContext(context).draw();
+                drawSingleNote(context, staveTreble, notes[0], "treble");
+            } else if (currentMode === 'bass') {
+                staveBass = new VF.Stave(scaledWidth/2 - 60, 70, 120);
+                staveBass.addClef("bass").setContext(context).draw();
+                drawSingleNote(context, staveBass, notes[0], "bass");
+            } else if (currentMode === 'grand') {
+                staveTreble = new VF.Stave(20, 30, scaledWidth - 40);
+                staveBass = new VF.Stave(20, 120, scaledWidth - 40);
+
+                staveTreble.addClef("treble");
+                staveBass.addClef("bass");
+
+                new VF.StaveConnector(staveTreble, staveBass).setType(VF.StaveConnector.type.BRACE).setContext(context).draw();
+                new VF.StaveConnector(staveTreble, staveBass).setType(VF.StaveConnector.type.SINGLE_LEFT).setContext(context).draw();
+                new VF.StaveConnector(staveTreble, staveBass).setType(VF.StaveConnector.type.SINGLE_RIGHT).setContext(context).draw();
+
+                staveTreble.setContext(context).draw();
+                staveBass.setContext(context).draw();
+
+                drawSingleNote(context, staveTreble, notes[0], "treble");
+                drawSingleNote(context, staveBass, notes[1], "bass");
+            }
+        }
+
+        function drawSingleNote(context, stave, noteData, clef) {
+            const vfNote = new VF.StaveNote({ 
+                clef: clef, 
+                keys: [noteData.vfKey], 
+                duration: "w", 
+                auto_stem: true
+            });
+
+            if (noteData.isAccidental) {
+                vfNote.addModifier(new VF.Accidental("#"));
+            }
+
+            vfNote.setStyle({fillStyle: "black", strokeStyle: "black"});
+
+            const voice = new VF.Voice({num_beats: 4,  beat_value: 4});
+            voice.addTickables([vfNote]);
+            new VF.Formatter().joinVoices([voice]).format([voice], stave.getWidth() - 60);
+            voice.draw(context, stave);
+        }
+
+        // --- 6. Library Rendering (UPDATED) ---
+
+        window.goHome = function() {
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('library-screen').classList.add('hidden');
+            document.getElementById('menu-screen').classList.remove('hidden');
+            document.getElementById('game-screen').classList.remove('flex');
+            document.getElementById('library-screen').classList.remove('flex');
+            currentMode = null;
+        };
+
+        window.showLibrary = function() {
+            initAudio();
+            document.getElementById('menu-screen').classList.add('hidden');
+            document.getElementById('library-screen').classList.remove('hidden');
+            document.getElementById('library-screen').classList.add('flex');
+            setTimeout(renderLibraryStaves, 100);
+        };
+
+        function renderLibraryStaves() {
+            const container = document.getElementById('library-content');
+            container.innerHTML = ""; 
+
+            // Create stave for each octave
+            for (let octave = 0; octave <= 8; octave++) {
+                // Get all natural notes (white keys) for this octave to make a nice scale
+                const notesInOctave = fullPianoRange.filter(n => n.octave === octave && !n.isAccidental);
+                
+                if (notesInOctave.length === 0) continue;
+
+                // Container for this octave
+                const card = document.createElement('div');
+                card.className = "bg-white dark:bg-dark-card rounded-xl shadow-sm border border-gray-200 dark:border-dark-border overflow-hidden";
+                
+                // Header
+                const header = document.createElement('div');
+                header.className = "bg-gray-50 dark:bg-gray-800 px-4 py-2 border-b border-gray-100 dark:border-gray-700";
+                header.innerHTML = `<h3 class="font-bold text-gray-700 dark:text-gray-300">Quãng tám ${octave}</h3>`;
+                card.appendChild(header);
+
+                // Stave Container (Relative for absolute positioning overlays)
+                const staveWrapper = document.createElement('div');
+                staveWrapper.className = "relative flex justify-center py-4 overflow-x-auto library-canvas";
+                const canvasId = `lib-stave-${octave}`;
+                const canvasDiv = document.createElement('div');
+                canvasDiv.id = canvasId;
+                staveWrapper.appendChild(canvasDiv);
+
+                card.appendChild(staveWrapper);
+                container.appendChild(card);
+
+                // Render VexFlow immediately
+                // Using a slightly wider width to accommodate the scale
+                const width = Math.min(window.innerWidth - 60, 500); 
+                const height = 140;
+
+                const renderer = new VF.Renderer(canvasDiv, VF.Renderer.Backends.SVG);
+                renderer.resize(width, height);
+                const context = renderer.getContext();
+                
+                // Use Bass Clef for octaves < 4, Treble for >= 4
+                const clef = (octave < 4) ? "bass" : "treble";
+                
+                const stave = new VF.Stave(10, 10, width - 20);
+                stave.addClef(clef).setContext(context).draw();
+
+                // Convert data notes to VexFlow notes
+                const vfNotes = notesInOctave.map(note => {
+                    return new VF.StaveNote({
+                        clef: clef,
+                        keys: [note.vfKey],
+                        duration: "q", // quarter notes
+                        auto_stem: true
+                    });
+                });
+
+                const voice = new VF.Voice({num_beats: vfNotes.length, beat_value: 4});
+                voice.addTickables(vfNotes);
+
+                new VF.Formatter().joinVoices([voice]).format([voice], width - 80);
+                voice.draw(context, stave);
+
+                // --- CREATE INTERACTIVE OVERLAYS ---
+                // We map over the vfNotes (which now have geometry data) and place transparent buttons
+                vfNotes.forEach((vfNote, index) => {
+                    const noteData = notesInOctave[index];
+                    
+                    // Get X position of the note head (roughly)
+                    // getAbsoluteX() returns the x coordinate relative to the stave start
+                    const noteX = vfNote.getAbsoluteX();
+                    
+                    // Create a clickable overlay
+                    const overlay = document.createElement('button');
+                    // Style: absolute, tall rectangle centered on the note
+                    overlay.className = "absolute top-0 h-full hover:bg-indigo-500/10 dark:hover:bg-white/10 transition-colors flex flex-col justify-end pb-2 items-center group";
+                    overlay.style.left = `${noteX - 20}px`; // Center align (approx width 40px)
+                    overlay.style.width = "40px";
+
+                    // Note Label (Hidden by default or shown nicely)
+                    const label = document.createElement('div');
+                    label.className = "text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-white/90 dark:bg-black/50 px-1 rounded transform translate-y-1 opacity-100";
+                    label.innerText = noteData.vietnamese;
+                    overlay.appendChild(label);
+
+                    const subLabel = document.createElement('div');
+                    subLabel.className = "text-[10px] text-gray-400";
+                    subLabel.innerText = noteData.scientific;
+                    overlay.appendChild(subLabel);
+
+                    // Click Event
+                    overlay.onclick = () => {
+                        initAudio();
+                        playFreq(noteData.freq, audioContext.currentTime);
+                        
+                        // Visual feedback
+                        label.classList.add("text-red-500");
+                        setTimeout(() => label.classList.remove("text-red-500"), 200);
+                    };
+
+                    staveWrapper.appendChild(overlay);
+                });
+            }
+        }
+    </script>
+</body>
+</html>
