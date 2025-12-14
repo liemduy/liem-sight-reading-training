@@ -23,41 +23,43 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
-            overscroll-behavior-y: none; /* Chặn kéo nảy trang trên iOS */
+            overscroll-behavior-y: none;
         }
         
-        /* Layout fix: Đảm bảo vùng canvas luôn chiếm chỗ hợp lý */
+        /* Game Canvas Wrapper */
         .canvas-wrapper {
             width: 100%;
             display: flex;
             justify-content: center;
             align-items: center;
-            background: white; /* Light mode bg */
+            background: white;
             border-radius: 16px;
             overflow: hidden;
             box-shadow: inset 0 0 20px rgba(0,0,0,0.02);
-            /* Quan trọng: Aspect ratio để giữ khung hình đẹp trên mọi máy */
             aspect-ratio: 16/10; 
             max-height: 300px;
+            position: relative;
         }
 
-        .dark .canvas-wrapper {
-            background: #25262b; /* Dark mode bg */
-        }
+        .dark .canvas-wrapper { background: #25262b; }
 
-        /* Responsive SVG: SVG sẽ tự co giãn theo wrapper */
-        .canvas-wrapper svg {
+        /* SVG Styling */
+        .canvas-wrapper svg, .library-canvas svg {
             width: 100% !important;
             height: auto !important;
             display: block;
         }
         
-        /* Dark mode filter cho nốt nhạc */
-        .dark .canvas-wrapper svg, .dark .library-svg svg {
+        .dark .canvas-wrapper svg, .dark .library-canvas svg {
             filter: invert(1) hue-rotate(180deg) brightness(1.2);
         }
 
+        /* Library Styling */
         .library-scroll { -webkit-overflow-scrolling: touch; }
+        
+        /* Custom scrollbar hide for cleaner look */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body class="h-[100dvh] flex flex-col text-gray-800 bg-[#f3f4f6] dark:bg-dark-bg dark:text-dark-text overflow-hidden transition-colors duration-300">
@@ -114,31 +116,23 @@
 
         <!-- GAME SCREEN -->
         <div id="game-screen" class="hidden flex-col h-full w-full">
-            <!-- Top Nav -->
             <div class="flex justify-between items-center mb-2 shrink-0">
                 <button onclick="goHome()" class="text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 px-4 py-2 rounded-lg">← Menu</button>
                 <div class="font-bold text-indigo-600 dark:text-indigo-400" id="mode-title">Chế độ</div>
                 <div class="w-16"></div> 
             </div>
 
-            <!-- Canvas Container -->
             <div class="canvas-wrapper mb-2" id="canvas-wrapper">
                 <div id="notation-output"></div>
             </div>
 
-            <!-- Controls Area (Flex Grow to fill space) -->
             <div class="flex-1 flex flex-col justify-end gap-2 pb-safe">
-                <!-- Answer Info -->
                 <div id="answer-box" class="flex-1 flex flex-col items-center justify-center opacity-0 transition-opacity duration-200">
                     <p class="text-gray-400 text-xs uppercase tracking-wider">Đáp án</p>
                     <h2 class="text-5xl font-black text-gray-800 dark:text-white mt-1" id="note-name">C4</h2>
                     <p class="text-lg text-indigo-600 dark:text-indigo-400 font-medium mt-1 text-center leading-snug" id="note-detail">Đô trung</p>
                 </div>
-
-                <!-- Main Button -->
-                <button id="action-btn" onclick="handleAction()" class="btn w-full bg-indigo-600 dark:bg-indigo-700 text-white font-bold text-xl py-4 rounded-2xl shadow-lg mt-auto mb-2">
-                    Hiện đáp án
-                </button>
+                <button id="action-btn" onclick="handleAction()" class="btn w-full bg-indigo-600 dark:bg-indigo-700 text-white font-bold text-xl py-4 rounded-2xl shadow-lg mt-auto mb-2">Hiện đáp án</button>
             </div>
         </div>
 
@@ -154,7 +148,7 @@
     </main>
 
     <script>
-        // --- CORE & AUDIO SETUP ---
+        // --- SETUP ---
         if (typeof Vex === 'undefined') {
             document.getElementById('error-msg').classList.remove('hidden');
             document.getElementById('menu-screen').classList.add('hidden');
@@ -164,7 +158,6 @@
         let audioContext = null;
         let isMuted = localStorage.muted === 'true';
 
-        // Update UI Icons
         function updateMuteUI() {
             document.getElementById('icon-sound-on').classList.toggle('hidden', isMuted);
             document.getElementById('icon-sound-off').classList.toggle('hidden', !isMuted);
@@ -177,34 +170,25 @@
         }
         updateMuteUI();
 
-        // Dark Mode
         function toggleDarkMode() {
             const isDark = document.documentElement.classList.toggle('dark');
             document.getElementById('icon-sun').classList.toggle('hidden', !isDark);
             document.getElementById('icon-moon').classList.toggle('hidden', isDark);
             localStorage.theme = isDark ? 'dark' : 'light';
         }
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            toggleDarkMode(); // Sync state
-        }
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) toggleDarkMode();
 
-        // --- IPHONE AUDIO UNLOCKER ---
         function unlockAudio() {
             if (audioContext && audioContext.state === 'running') return;
-            
             const AudioContext = window.AudioContext || window.webkitAudioContext;
             if (!audioContext) audioContext = new AudioContext();
-            
             if (audioContext.state === 'suspended') audioContext.resume();
-
-            // Play silent buffer
+            
             const buffer = audioContext.createBuffer(1, 1, 22050);
             const source = audioContext.createBufferSource();
             source.buffer = buffer;
             source.connect(audioContext.destination);
             source.start(0);
-            
-            // Clean up listeners
             ['touchstart', 'click'].forEach(e => document.removeEventListener(e, unlockAudio));
         }
         ['touchstart', 'click'].forEach(e => document.addEventListener(e, unlockAudio, {once:true}));
@@ -224,7 +208,6 @@
             osc.stop(audioContext.currentTime + 1.2);
         }
 
-        // --- DATA ---
         const noteNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
         const vietNames = {"C":"Đô","C#":"Đô#","D":"Rê","D#":"Rê#","E":"Mi","F":"Fa","F#":"Fa#","G":"Sol","G#":"Sol#","A":"La","A#":"La#","B":"Si"};
         const notes = [];
@@ -240,18 +223,10 @@
             });
         }
 
-        // --- GAME LOGIC ---
         let mode = null;
         let currentNotes = [];
         let revealed = false;
-        
-        // Ranges adjusted for better display
-        const ranges = {
-            treble: { min: 60, max: 79 }, // C4-G5
-            bass: { min: 41, max: 60 },   // F2-C4
-            gTreble: { min: 60, max: 79 },
-            gBass: { min: 41, max: 60 }
-        };
+        const ranges = { treble: { min: 60, max: 79 }, bass: { min: 41, max: 60 }, gTreble: { min: 60, max: 79 }, gBass: { min: 41, max: 60 } };
 
         function getRandomNote(min, max) {
             const pool = notes.filter(n => n.midi >= min && n.midi <= max && !n.acc);
@@ -281,7 +256,6 @@
                 currentNotes = [getRandomNote(r.min, r.max)];
             }
 
-            // Set Text
             if (currentNotes.length === 2) {
                 document.getElementById('note-name').innerHTML = `<span class="text-3xl">${currentNotes[0].sci}</span> & <span class="text-3xl">${currentNotes[1].sci}</span>`;
                 document.getElementById('note-detail').innerHTML = `${currentNotes[0].viet} - ${currentNotes[1].viet}`;
@@ -289,7 +263,6 @@
                 document.getElementById('note-name').innerText = currentNotes[0].sci;
                 document.getElementById('note-detail').innerText = currentNotes[0].viet;
             }
-
             renderGameCanvas();
         };
 
@@ -314,27 +287,19 @@
             document.getElementById('menu-screen').classList.remove('hidden');
         };
 
-        // --- RENDERING ENGINE (RESPONSIVE FIX) ---
+        // --- RENDERING GAME ---
         function renderGameCanvas() {
             const div = document.getElementById("notation-output");
             div.innerHTML = "";
-            
-            // Fixed reference size - CSS will scale this to fit screen
             const refWidth = 500; 
             const refHeight = 300; 
-
             const renderer = new VF.Renderer(div, VF.Renderer.Backends.SVG);
             renderer.resize(refWidth, refHeight);
             const ctx = renderer.getContext();
             ctx.setViewBox(0, 0, refWidth, refHeight);
-
-            // Scale up contents slightly inside the box
             ctx.scale(1.5, 1.5); 
-            // Effective width after scale
             const w = refWidth / 1.5; 
-
-            // Center calculation
-            const x = (w - 200) / 2; // Center a 200px stave
+            const x = (w - 200) / 2;
             
             if (mode === 'treble') {
                 const stave = new VF.Stave(x, 50, 200);
@@ -345,45 +310,33 @@
                 stave.addClef("bass").setContext(ctx).draw();
                 drawNote(ctx, stave, currentNotes[0], "bass");
             } else if (mode === 'grand') {
-                const gStave1 = new VF.Stave(x, 20, 200);
-                const gStave2 = new VF.Stave(x, 110, 200); // Distance between staves
-                gStave1.addClef("treble");
-                gStave2.addClef("bass");
-                
-                new VF.StaveConnector(gStave1, gStave2).setType(VF.StaveConnector.type.BRACE).setContext(ctx).draw();
-                new VF.StaveConnector(gStave1, gStave2).setType(VF.StaveConnector.type.SINGLE_LEFT).setContext(ctx).draw();
-                new VF.StaveConnector(gStave1, gStave2).setType(VF.StaveConnector.type.SINGLE_RIGHT).setContext(ctx).draw();
-
-                gStave1.setContext(ctx).draw();
-                gStave2.setContext(ctx).draw();
-
-                drawNote(ctx, gStave1, currentNotes[0], "treble");
-                drawNote(ctx, gStave2, currentNotes[1], "bass");
+                const s1 = new VF.Stave(x, 20, 200);
+                const s2 = new VF.Stave(x, 110, 200);
+                s1.addClef("treble"); s2.addClef("bass");
+                new VF.StaveConnector(s1, s2).setType(VF.StaveConnector.type.BRACE).setContext(ctx).draw();
+                new VF.StaveConnector(s1, s2).setType(VF.StaveConnector.type.SINGLE_LEFT).setContext(ctx).draw();
+                new VF.StaveConnector(s1, s2).setType(VF.StaveConnector.type.SINGLE_RIGHT).setContext(ctx).draw();
+                s1.setContext(ctx).draw(); s2.setContext(ctx).draw();
+                drawNote(ctx, s1, currentNotes[0], "treble");
+                drawNote(ctx, s2, currentNotes[1], "bass");
             }
         }
 
         function drawNote(ctx, stave, note, clef) {
-            const vfNote = new VF.StaveNote({
-                clef: clef, keys: [note.key], duration: "w", auto_stem: true
-            });
-            vfNote.setStyle({fillStyle: "black", strokeStyle: "black"}); // Default black, CSS filter handles white
-            const voice = new VF.Voice({num_beats: 4, beat_value: 4});
-            voice.addTickables([vfNote]);
-            new VF.Formatter().joinVoices([voice]).format([voice], 100); // Format in center
-            
-            // Shift voice to center of stave manually if needed, but formatter usually does good job
-            // We use a small width in format() to pack it, then draw
-            voice.draw(ctx, stave);
+            const vn = new VF.StaveNote({clef: clef, keys: [note.key], duration: "w", auto_stem: true});
+            vn.setStyle({fillStyle: "black", strokeStyle: "black"});
+            const v = new VF.Voice({num_beats: 4, beat_value: 4}).addTickables([vn]);
+            new VF.Formatter().joinVoices([v]).format([v], 100);
+            v.draw(ctx, stave);
         }
 
-        // --- LIBRARY RENDERING ---
+        // --- RENDERING LIBRARY (FIXED) ---
         window.showLibrary = function() {
             unlockAudio();
             document.getElementById('menu-screen').classList.add('hidden');
             document.getElementById('library-screen').classList.replace('hidden', 'flex');
-            
             const container = document.getElementById('library-content');
-            if (container.children.length > 0) return; // Render once
+            if (container.children.length > 0) return; 
 
             for (let oct = 1; oct <= 7; oct++) {
                 const octNotes = notes.filter(n => n.oct === oct && !n.acc);
@@ -391,45 +344,63 @@
 
                 const card = document.createElement('div');
                 card.className = "bg-white dark:bg-dark-card rounded-xl shadow-sm border border-gray-100 dark:border-dark-border";
+                card.innerHTML = `<div class="px-4 py-2 bg-gray-50 dark:bg-gray-800 border-b dark:border-gray-700 font-bold dark:text-gray-300">Quãng tám ${oct}</div>`;
                 
-                const title = document.createElement('div');
-                title.className = "px-4 py-2 bg-gray-50 dark:bg-gray-800 border-b dark:border-gray-700 font-bold dark:text-gray-300";
-                title.innerText = `Quãng tám ${oct}`;
-                card.appendChild(title);
-
                 const scrollWrap = document.createElement('div');
-                scrollWrap.className = "overflow-x-auto library-scroll py-2 flex justify-center library-svg relative"; // Relative for overlays
+                scrollWrap.className = "overflow-x-auto library-scroll py-2 flex justify-center library-canvas relative no-scrollbar";
                 
                 const canvasDiv = document.createElement('div');
                 scrollWrap.appendChild(canvasDiv);
                 card.appendChild(scrollWrap);
                 container.appendChild(card);
 
-                // Render Stave
-                const width = 360; const height = 120;
+                // --- LOGIC FIX: Tăng chiều cao & khoảng cách ---
+                const width = 400; // Đủ rộng để không bị cắt đuôi
+                const height = 160; // Tăng chiều cao để chứa nốt cao/thấp
+                
                 const renderer = new VF.Renderer(canvasDiv, VF.Renderer.Backends.SVG);
                 renderer.resize(width, height);
                 const ctx = renderer.getContext();
-                const clef = oct < 4 ? "bass" : "treble";
-                const stave = new VF.Stave(10, 10, width - 20);
+                
+                // Chọn khoá và vị trí Y phù hợp
+                let clef = "treble";
+                let staveY = 30; // Mặc định
+                
+                if (oct < 4) {
+                    clef = "bass";
+                    staveY = 40; // Đẩy xuống một chút cho quãng trầm
+                } else if (oct >= 6) {
+                    // Quãng siêu cao: Đẩy Stave xuống nhiều hơn để nốt không chạm trần
+                    staveY = 70; 
+                }
+
+                // Vẽ Stave rộng hết canvas
+                const stave = new VF.Stave(10, staveY, width - 20);
                 stave.addClef(clef).setContext(ctx).draw();
 
-                const vfNotes = octNotes.map(n => new VF.StaveNote({
-                    clef: clef, keys: [n.key], duration: "q", auto_stem: true
-                }));
-                const voice = new VF.Voice({num_beats: vfNotes.length, beat_value: 4});
-                voice.addTickables(vfNotes);
-                new VF.Formatter().joinVoices([voice]).format([voice], width - 70);
+                // Tạo nốt
+                const vfNotes = octNotes.map(n => {
+                    // Xử lý hiển thị 8va (nếu cần thiết, hoặc để vexflow tự render ledger lines)
+                    // Ở đây ta cứ để ledger lines nhưng nhờ tăng height và staveY nên sẽ không bị cắt
+                    return new VF.StaveNote({
+                        clef: clef, keys: [n.key], duration: "q", auto_stem: true
+                    });
+                });
+
+                const voice = new VF.Voice({num_beats: vfNotes.length, beat_value: 4}).addTickables(vfNotes);
+                // Dàn trải nốt đều ra toàn bộ chiều rộng
+                new VF.Formatter().joinVoices([voice]).format([voice], width - 60);
                 voice.draw(ctx, stave);
 
-                // Overlays
+                // Tạo nút bấm
                 vfNotes.forEach((vn, i) => {
                     const n = octNotes[i];
                     const x = vn.getAbsoluteX();
                     const btn = document.createElement('button');
+                    // Nút bấm cao hết chiều cao thẻ để dễ bấm
                     btn.className = "absolute top-0 h-full w-10 hover:bg-black/5 flex flex-col justify-end items-center pb-2";
                     btn.style.left = (x - 15) + "px";
-                    btn.innerHTML = `<span class="text-xs font-bold text-indigo-600 bg-white/80 px-1 rounded">${n.viet}</span>`;
+                    btn.innerHTML = `<span class="text-xs font-bold text-indigo-600 bg-white/90 px-1 rounded shadow-sm border border-indigo-100">${n.viet}</span>`;
                     btn.onclick = () => {
                         playFreq(n.freq);
                         btn.firstElementChild.style.color = "red";
