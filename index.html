@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -43,8 +43,8 @@
 
         .logo-text { font-family: var(--header-font); }
         .vf-stavenote { cursor: pointer; } .vf-stavenote:hover path, .vf-stavenote:hover rect { fill: var(--primary-color) !important; stroke: var(--primary-color) !important; }
-        #flashcard-canvas svg, #ear-vexflow svg, #notation-container svg, #passive-canvas svg, #feel-beat-canvas svg, #finding-notes-canvas svg { display: block; margin: 0 auto; }
-        #ear-vexflow, #passive-canvas, #feel-beat-canvas, #finding-notes-canvas { display: flex; justify-content: center; width: 100%; }
+        #flashcard-canvas svg, #ear-vexflow svg, #notation-container svg, #passive-canvas svg, #feel-beat-canvas svg, #finding-treble-canvas svg, #finding-bass-canvas svg { display: block; margin: 0 auto; }
+        #ear-vexflow, #passive-canvas, #feel-beat-canvas, #finding-treble-canvas, #finding-bass-canvas { display: flex; justify-content: center; width: 100%; }
         .no-scrollbar::-webkit-scrollbar { display: none; } .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .library-scroll::-webkit-scrollbar { width: 6px; } .library-scroll::-webkit-scrollbar-track { background: transparent; } .library-scroll::-webkit-scrollbar-thumb { background-color: var(--primary-color); border-radius: 20px; opacity: 0.5; }
         .metronome-dot { width: 20px; height: 20px; border-radius: 50%; background-color: #e5e7eb; transition: background-color 0.1s; } .metronome-dot.active { background-color: var(--primary-color); box-shadow: 0 0 15px var(--primary-color); }
@@ -71,9 +71,34 @@
         }
         
         /* Finding Notes Styles */
-        .finding-note-ghost path { fill: #94a3b8 !important; stroke: #94a3b8 !important; opacity: 0.3; transition: all 0.2s; }
-        .finding-note-ghost:hover path { opacity: 0.6; fill: var(--primary-color) !important; stroke: var(--primary-color) !important; }
-        .finding-note-active path { fill: #000000 !important; stroke: #000000 !important; opacity: 1; filter: drop-shadow(0 0 2px rgba(0,0,0,0.3)); }
+        /* Make the stem invisible to create "Black Whole Note" effect */
+        .finding-note-group .vf-stem { display: none !important; }
+        
+        /* Default state: Faded (Ghost) */
+        .finding-note-group path, 
+        .finding-note-group text { 
+            opacity: 0.3; 
+            transition: all 0.2s; 
+            fill: #334155; 
+            stroke: #334155; 
+        }
+        .finding-note-group:hover path { opacity: 0.6; fill: var(--primary-color) !important; stroke: var(--primary-color) !important; cursor: pointer; }
+
+        /* Active state: Fully opaque, black/highlighted */
+        .finding-note-group.active path { 
+            opacity: 1 !important; 
+            fill: #000000 !important; 
+            stroke: #000000 !important; 
+            filter: drop-shadow(0 0 2px rgba(0,0,0,0.3)); 
+        }
+        /* Make annotation visible only when active */
+        .finding-note-group text { display: none; }
+        .finding-note-group.active text { 
+            display: block !important; 
+            opacity: 1 !important; 
+            fill: var(--primary-color) !important; 
+            font-weight: 800;
+        }
         
         /* Beat Counter Animation */
         @keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.3); color: var(--accent-color); } 100% { transform: scale(1); } }
@@ -113,27 +138,27 @@
         const LANGUAGES = {
             vi: { 
                 flag: "🇻🇳", name: "Tiếng Việt", 
-                modes: ["Khóa Sol", "Khóa Fa", "Hai khóa", "Học thụ động", "Feel the beat", "Tra cứu nốt", "Thư viện", "Luyện tai", "Dò nốt", "Metronome"], 
+                modes: ["Khóa Sol", "Khóa Fa", "Hai khóa", "Tiktok Mode", "Feel the beat", "Tra cứu nốt", "Thư viện", "Luyện tai", "Dò nốt", "Metronome"], 
                 ui: { 
                     level: "Cấp độ", next: "Tiếp theo", result: "Kết quả", listen: "Nghe", check: "Kiểm tra", start: "Bắt đầu", stop: "Dừng", bpm: "Nhịp (BPM)", notes: "Số nốt", time: "Thời gian", seconds: "giây", detect: "Đang nghe...", library: "Thư viện", chords: "Hợp âm", settings: "Cài đặt", theme: "Giao diện", lang: "Ngôn ngữ", answer: "Đáp án", tapToStart: "Chạm để bắt đầu", soundOn: "Bật tiếng", soundOff: "Tắt tiếng", soundType: "Âm thanh", 
-                    passiveSetup: "Cấu hình Học thụ động", interval: "Chuyển câu sau (s)", pauseTime: "Thời gian dừng (s)", target: "Số câu mục tiêu", noteCount: "Số lượng nốt", clefMode: "Chế độ khóa", clefSol: "Chỉ Khóa Sol", clefFa: "Chỉ Khóa Fa", clefMix: "Trộn lẫn Sol/Fa", clefGrand: "Hai khóa song song", progress: "Câu", waiting: "Đang chờ...", nextIn: "Tiếp theo: ",
+                    passiveSetup: "Cấu hình Tiktok Mode", interval: "Chuyển câu sau (s)", pauseTime: "Thời gian dừng (s)", target: "Số câu mục tiêu", noteCount: "Số lượng nốt", clefMode: "Chế độ khóa", clefSol: "Chỉ Khóa Sol", clefFa: "Chỉ Khóa Fa", clefMix: "Trộn lẫn Sol/Fa", clefGrand: "Hai khóa song song", progress: "Câu", waiting: "Đang chờ...", nextIn: "Tiếp theo: ",
                     fbSetup: "Cấu hình Feel the Beat", fbTimeSig: "Số chỉ nhịp", fbSound: "Âm beat", fbReplay: "Chơi", fbNew: "Bài mới", fbPlaying: "Đang chơi...", fbInst1: "Tick (Mặc định)", fbInst2: "Woodblock", fbInst3: "Digital", fbInst4: "Drum", fbInst5: "Bell",
                     fbMeasureCount: "Số ô nhịp"
                 } 
             },
             en: { 
                 flag: "🇬🇧", name: "English", 
-                modes: ["Treble Clef", "Bass Clef", "Grand Staff", "Passive Learning", "Feel the beat", "Finding Notes", "Library", "Ear Training", "Note Check", "Metronome"], 
+                modes: ["Treble Clef", "Bass Clef", "Grand Staff", "Tiktok Mode", "Feel the beat", "Finding Notes", "Library", "Ear Training", "Note Check", "Metronome"], 
                 ui: { 
                     level: "Level", next: "Next", result: "Reveal", listen: "Listen", check: "Check", start: "Start", stop: "Stop", bpm: "BPM", notes: "Notes", time: "Time", seconds: "s", detect: "Listening...", library: "Library", chords: "Chords", settings: "Settings", theme: "Theme", lang: "Language", answer: "Answer", tapToStart: "Tap to Start", soundOn: "Sound On", soundOff: "Mute", soundType: "Sound", 
-                    passiveSetup: "Passive Learning Setup", interval: "Interval (s)", pauseTime: "Pause Time (s)", target: "Target Count", noteCount: "Note Count", clefMode: "Clef Mode", clefSol: "Treble Only", clefFa: "Bass Only", clefMix: "Mixed Treble/Bass", clefGrand: "Grand Staff", progress: "Question", waiting: "Waiting...", nextIn: "Next in: ",
+                    passiveSetup: "Tiktok Mode Setup", interval: "Interval (s)", pauseTime: "Pause Time (s)", target: "Target Count", noteCount: "Note Count", clefMode: "Clef Mode", clefSol: "Treble Only", clefFa: "Bass Only", clefMix: "Mixed Treble/Bass", clefGrand: "Grand Staff", progress: "Question", waiting: "Waiting...", nextIn: "Next in: ",
                     fbSetup: "Feel the Beat Setup", fbTimeSig: "Time Signature", fbSound: "Beat Sound", fbReplay: "Play", fbNew: "New Sheet", fbPlaying: "Playing...", fbInst1: "Tick (Default)", fbInst2: "Woodblock", fbInst3: "Digital", fbInst4: "Drum", fbInst5: "Bell",
                     fbMeasureCount: "Measures"
                 } 
             },
-            fr: { flag: "🇫🇷", name: "Français", modes: ["Clé de Sol", "Clé de Fa", "Grande Portée", "Apprentissage Passif", "Feel the beat", "Finding Notes", "Bibliothèque", "Oreille", "Note Check", "Métronome"], ui: { level: "Niveau", next: "Suivant", result: "Résultat", listen: "Écouter", check: "Vérifier", start: "Démarrer", stop: "Arrêter", bpm: "BPM", notes: "Notes", time: "Temps", seconds: "s", detect: "Écoute...", library: "Notes", chords: "Accords", settings: "Paramètres", theme: "Thème", lang: "Langue", answer: "Réponse", tapToStart: "Appuyez pour commencer", soundOn: "Son activé", soundOff: "Muet", soundType: "Son", passiveSetup: "Config Passif", interval: "Intervalle (s)", pauseTime: "Pause (s)", target: "Cible", noteCount: "Nb Notes", clefMode: "Mode Clé", clefSol: "Sol Seule", clefFa: "Fa Seule", clefMix: "Mixte", clefGrand: "Grande Portée", progress: "Question", waiting: "Attente...", nextIn: "Suivant: ", fbSetup: "Config Feel the Beat", fbTimeSig: "Signature", fbSound: "Son Beat", fbReplay: "Jouer", fbNew: "Nouveau", fbPlaying: "Lecture...", fbInst1: "Tick", fbInst2: "Woodblock", fbInst3: "Digital", fbInst4: "Drum", fbInst5: "Bell", fbMeasureCount: "Mesures" } },
-            zh: { flag: "🇨🇳", name: "Chinese", modes: ["高音谱号", "低音谱号", "大谱表", "被动学习", "Feel the beat", "Finding Notes", "资料库", "练耳", "音准检查", "节拍器"], ui: { level: "等级", next: "下一个", result: "结果", listen: "听", check: "检查", start: "开始", stop: "停止", bpm: "BPM", notes: "音符", time: "时间", seconds: "秒", detect: "正在听...", library: "资料库", chords: "和弦", settings: "设置", theme: "主题", lang: "语言", answer: "答案", tapToStart: "点击开始", soundOn: "开音", soundOff: "静音", soundType: "声音", passiveSetup: "被动学习设置", interval: "间隔 (秒)", pauseTime: "暂停 (秒)", target: "目标数量", noteCount: "音符数量", clefMode: "谱号模式", clefSol: "仅高音", clefFa: "仅低音", clefMix: "混合", clefGrand: "大谱表", progress: "问题", waiting: "等待...", nextIn: "下一个: ", fbSetup: "Feel the Beat设置", fbTimeSig: "拍号", fbSound: "节拍音", fbReplay: "播放", fbNew: "新乐谱", fbPlaying: "播放中...", fbInst1: "Tick", fbInst2: "Woodblock", fbInst3: "Digital", fbInst4: "Drum", fbInst5: "Bell", fbMeasureCount: "小节数" } },
-            th: { flag: "🇹🇭", name: "Thai", modes: ["กุญแจซอล", "กุญแจฟา", "บรรทัด 5 เส้น", "เรียนรู้แบบพาสซีฟ", "ห้องสมุด", "ฝึกฟัง", "เช็คโน้ต", "เมโทรนอม", "Finding Notes"], ui: { level: "ระดับ", next: "ถัดไป", result: "เฉลย", listen: "ฟัง", check: "ตรวจ", start: "เริ่ม", stop: "หยุด", bpm: "BPM", notes: "โน้ต", time: "เวลา", seconds: "วิ", detect: "กำลังฟัง...", library: "ห้องสมุด", chords: "คอร์ด", settings: "ตั้งค่า", theme: "ธีม", lang: "ภาษา", answer: "คำตอบ", tapToStart: "แตะเพื่อเริ่ม", soundOn: "เปิดเสียง", soundOff: "ปิดเสียง", soundType: "เสียง", passiveSetup: "ตั้งค่าพาสซีฟ", interval: "ระยะเวลา (วิ)", pauseTime: "หยุดชั่วคราว (วิ)", target: "เป้าหมาย", noteCount: "จำนวนโน้ต", clefMode: "โหมดกุญแจ", clefSol: "ซอลเท่านั้น", clefFa: "ฟาเท่านั้น", clefMix: "ผสม", clefGrand: "บรรทัด 5 เส้นคู่", progress: "คำถาม", waiting: "กำลังรอ...", nextIn: "ถัดไป: ", fbSetup: "ตั้งค่า Feel the Beat", fbTimeSig: "เครื่องหมายกำหนดจังหวะ", fbSound: "เสียงจังหวะ", fbReplay: "เล่น", fbNew: "เพลงใหม่", fbPlaying: "กำลังเล่น...", fbInst1: "Tick", fbInst2: "Woodblock", fbInst3: "Digital", fbInst4: "Drum", fbInst5: "Bell", fbMeasureCount: "ห้องเพลง" } },
+            fr: { flag: "🇫🇷", name: "Français", modes: ["Clé de Sol", "Clé de Fa", "Grande Portée", "Tiktok Mode", "Feel the beat", "Finding Notes", "Bibliothèque", "Oreille", "Note Check", "Métronome"], ui: { level: "Niveau", next: "Suivant", result: "Résultat", listen: "Écouter", check: "Vérifier", start: "Démarrer", stop: "Arrêter", bpm: "BPM", notes: "Notes", time: "Temps", seconds: "s", detect: "Écoute...", library: "Notes", chords: "Accords", settings: "Paramètres", theme: "Thème", lang: "Langue", answer: "Réponse", tapToStart: "Appuyez pour commencer", soundOn: "Son activé", soundOff: "Muet", soundType: "Son", passiveSetup: "Config Tiktok Mode", interval: "Intervalle (s)", pauseTime: "Pause (s)", target: "Cible", noteCount: "Nb Notes", clefMode: "Mode Clé", clefSol: "Sol Seule", clefFa: "Fa Seule", clefMix: "Mixte", clefGrand: "Grande Portée", progress: "Question", waiting: "Attente...", nextIn: "Suivant: ", fbSetup: "Config Feel the Beat", fbTimeSig: "Signature", fbSound: "Son Beat", fbReplay: "Jouer", fbNew: "Nouveau", fbPlaying: "Lecture...", fbInst1: "Tick", fbInst2: "Woodblock", fbInst3: "Digital", fbInst4: "Drum", fbInst5: "Bell", fbMeasureCount: "Mesures" } },
+            zh: { flag: "🇨🇳", name: "Chinese", modes: ["高音谱号", "低音谱号", "大谱表", "Tiktok Mode", "Feel the beat", "Finding Notes", "资料库", "练耳", "音准检查", "节拍器"], ui: { level: "等级", next: "下一个", result: "结果", listen: "听", check: "检查", start: "开始", stop: "停止", bpm: "BPM", notes: "音符", time: "时间", seconds: "秒", detect: "正在听...", library: "资料库", chords: "和弦", settings: "设置", theme: "主题", lang: "语言", answer: "答案", tapToStart: "点击开始", soundOn: "开音", soundOff: "静音", soundType: "声音", passiveSetup: "Tiktok Mode 设置", interval: "间隔 (秒)", pauseTime: "暂停 (秒)", target: "目标数量", noteCount: "音符数量", clefMode: "谱号模式", clefSol: "仅高音", clefFa: "仅低音", clefMix: "混合", clefGrand: "大谱表", progress: "问题", waiting: "等待...", nextIn: "下一个: ", fbSetup: "Feel the Beat设置", fbTimeSig: "拍号", fbSound: "节拍音", fbReplay: "播放", fbNew: "新乐谱", fbPlaying: "播放中...", fbInst1: "Tick", fbInst2: "Woodblock", fbInst3: "Digital", fbInst4: "Drum", fbInst5: "Bell", fbMeasureCount: "小节数" } },
+            th: { flag: "🇹🇭", name: "Thai", modes: ["กุญแจซอล", "กุญแจฟา", "บรรทัด 5 เส้น", "Tiktok Mode", "ห้องสมุด", "ฝึกฟัง", "เช็คโน้ต", "เมโทรนอม", "Finding Notes"], ui: { level: "ระดับ", next: "ถัดไป", result: "เฉลย", listen: "ฟัง", check: "ตรวจ", start: "เริ่ม", stop: "หยุด", bpm: "BPM", notes: "โน้ต", time: "เวลา", seconds: "วิ", detect: "กำลังฟัง...", library: "ห้องสมุด", chords: "คอร์ด", settings: "ตั้งค่า", theme: "ธีม", lang: "ภาษา", answer: "คำตอบ", tapToStart: "แตะเพื่อเริ่ม", soundOn: "เปิดเสียง", soundOff: "ปิดเสียง", soundType: "เสียง", passiveSetup: "ตั้งค่า Tiktok Mode", interval: "ระยะเวลา (วิ)", pauseTime: "หยุดชั่วคราว (วิ)", target: "เป้าหมาย", noteCount: "จำนวนโน้ต", clefMode: "โหมดกุญแจ", clefSol: "ซอลเท่านั้น", clefFa: "ฟาเท่านั้น", clefMix: "ผสม", clefGrand: "บรรทัด 5 เส้นคู่", progress: "คำถาม", waiting: "กำลังรอ...", nextIn: "ถัดไป: ", fbSetup: "ตั้งค่า Feel the Beat", fbTimeSig: "เครื่องหมายกำหนดจังหวะ", fbSound: "เสียงจังหวะ", fbReplay: "เล่น", fbNew: "เพลงใหม่", fbPlaying: "กำลังเล่น...", fbInst1: "Tick", fbInst2: "Woodblock", fbInst3: "Digital", fbInst4: "Drum", fbInst5: "Bell", fbMeasureCount: "ห้องเพลง" } },
         };
 
         const THEMES = [
@@ -153,7 +178,7 @@
         const DURATION_MAP = { 'w': { tone: '1n', time: 4 }, 'h': { tone: '2n', time: 2 }, 'q': { tone: '4n', time: 1 }, '8': { tone: '8n', time: 0.5 }, '16': { tone: '16n', time: 0.25 } };
 
         let state = {
-            lang: 'vi', theme: DEFAULT_THEME, mode: 0, level: 1,
+            lang: 'en', theme: DEFAULT_THEME, mode: 0, level: 1,
             flashcardData: { treble: [], bass: [] }, timeSignature: '4/4',
             isRevealed: false, audioEnabled: false, isMuted: false,
             earTrainingNotes: 1, checkTime: 5, metronomeBpm: 60, metronomeActive: false, metroSound: 'tick',
@@ -263,19 +288,32 @@
                 };
                 const createRest = (clef, dur) => ({ type: 'rest', duration: (dur || 'q') + 'r', clef, value: 0 });
                 let data = { treble: [], bass: [] };
-                let targetMode = clefMode; if (clefMode === 3) targetMode = Math.random() > 0.5 ? 0 : 1; 
+                let targetMode = clefMode; 
+                if (clefMode === 3) targetMode = Math.random() > 0.5 ? 0 : 1; 
+                
                 let durationPool = ['w', 'h', 'q', '8', '16'];
+                
                 if (targetMode === 2) { 
                      for(let i=0; i<count; i++) { 
                          let dur = durationPool[rnd(0, durationPool.length-1)];
                          const dist = rnd(0, 2);
-                         if (dist === 0) { data.treble.push(createNote('treble', dur)); data.bass.push(createRest('bass', dur)); } 
-                         else if (dist === 1) { data.treble.push(createRest('treble', dur)); data.bass.push(createNote('bass', dur)); } 
-                         else { data.treble.push(createNote('treble', dur)); data.bass.push(createNote('bass', dur)); }
+                         if (dist === 0) {
+                             data.treble.push(createNote('treble', dur));
+                             data.bass.push(createRest('bass', dur));
+                         } else if (dist === 1) {
+                             data.treble.push(createRest('treble', dur));
+                             data.bass.push(createNote('bass', dur));
+                         } else {
+                             data.treble.push(createNote('treble', dur));
+                             data.bass.push(createNote('bass', dur));
+                         }
                      }
                 } else { 
                      const c = targetMode === 0 ? 'treble' : 'bass';
-                     for(let i=0; i<count; i++) { let dur = durationPool[rnd(0, durationPool.length-1)]; data[c].push(createNote(c, dur)); }
+                     for(let i=0; i<count; i++) {
+                         let dur = durationPool[rnd(0, durationPool.length-1)];
+                         data[c].push(createNote(c, dur));
+                     }
                 }
                 return { data, mode: targetMode === 2 ? 2 : (targetMode === 0 ? 0 : 1) };
             }
@@ -480,6 +518,7 @@
                 }, loopInterval).start(0);
                 Tone.Transport.start();
             },
+
             stop: () => {
                 state.fbIsPlaying = false; Tone.Transport.stop(); Tone.Transport.cancel();
                 if (beatSynth) { try { beatSynth.dispose(); } catch(e) {} beatSynth = null; }
@@ -615,7 +654,7 @@
                 } else {
                     const clef = state.mode === 0 ? 'treble' : 'bass';
                     const staveY = 50; 
-                    const st = new Stave(staveX, staveY, computedWidth - 20).addClef(clef).setContext(ctx);
+                    const st = new Stave(staveX, staveY, computedWidth - 20).addClef(clef).setContext(ctx).draw();
                     if(state.level===4) st.addTimeSignature(state.timeSignature); st.draw();
                     const n = makeNotes(state.mode === 0 ? state.flashcardData.treble : state.flashcardData.bass, clef);
                     const beams = Beam.generateBeams(n.filter(note => note instanceof StaveNote && note.getNoteType() !== 'r'));
@@ -839,166 +878,143 @@
         };
 
         const FINDING_LOGIC = {
+            activeNotes: new Set(),
             render: () => {
                 document.getElementById('app-container').innerHTML = `
-                    <div class="theme-card p-4 rounded-2xl shadow-xl w-full max-w-lg border-t-4 theme-border overflow-hidden">
-                        <div class="text-center mb-4">
-                            <h2 class="text-2xl font-bold text-[var(--primary-color)]">Tra cứu nốt nhạc</h2>
-                            <p class="text-sm opacity-70">Chạm vào nốt nhạc để xem tên nốt</p>
+                    <div class="theme-card p-4 rounded-2xl shadow-xl w-full max-w-5xl border-t-4 theme-border overflow-hidden flex flex-col gap-4">
+                        <div class="text-center mb-0">
+                            <h2 class="text-2xl font-bold text-[var(--primary-color)]">Finding Notes</h2>
+                            <p class="text-sm opacity-70">Tap notes to see names</p>
                         </div>
-                        <div id="finding-notes-scroll" class="overflow-x-auto w-full bg-white rounded-xl shadow-inner border border-gray-100 mb-4 p-2 flex justify-center min-h-[460px]">
-                            <div id="finding-notes-canvas"></div>
+                        
+                        <div class="flex flex-col gap-4">
+                             <h3 class="font-bold text-lg ml-2 border-l-4 border-[var(--primary-color)] pl-2">1. Khóa Sol (Treble Clef)</h3>
+                             <div class="bg-white rounded-xl shadow-inner border border-gray-100 p-2 flex flex-col items-center">
+                                 <div id="finding-treble-canvas" class="w-full"></div>
+                             </div>
+                             
+                             <h3 class="font-bold text-lg ml-2 border-l-4 border-[var(--accent-color)] pl-2">2. Khóa Fa (Bass Clef)</h3>
+                             <div class="bg-white rounded-xl shadow-inner border border-gray-100 p-2 flex flex-col items-center">
+                                 <div id="finding-bass-canvas" class="w-full"></div>
+                             </div>
                         </div>
                     </div>
                 `;
                 setTimeout(FINDING_LOGIC.draw, 100);
             },
             draw: () => {
-                const div = document.getElementById('finding-notes-canvas');
-                if(!div) return;
-                div.innerHTML = '';
-                
-                const VF = Vex.Flow;
-                // --- SCALE 1.3 ---
-                const scale = 1.3; 
-                
-                const noteNames = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
-                
-                // Helper to generate full range
-                const generateRange = (startOctave, endOctave, startNoteIdx, endNoteIdx) => {
-                    let pitches = [];
-                    for(let o = startOctave; o <= endOctave; o++) {
-                        noteNames.forEach((n, i) => {
-                            if(o === startOctave && i < startNoteIdx) return;
-                            if(o === endOctave && i > endNoteIdx) return;
-                            pitches.push(`${n}/${o}`);
+                const getNotesInRange = (startOctave, endOctave) => {
+                    const notes = [];
+                    const names = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+                    for (let o = startOctave; o <= endOctave; o++) {
+                        names.forEach(n => {
+                            if(o === 3 && ['C','D','E','F'].includes(n) && startOctave === 3) return;
+                            if(o === 6 && n !== 'C' && endOctave === 6) return;
+                            if(o === 2 && ['C','D'].includes(n) && startOctave === 2) return;
+                            if(o === 4 && ['F','G','A','B'].includes(n) && endOctave === 4) return;
+                            notes.push(`${n}/${o}`);
                         });
                     }
-                    return pitches;
-                }
-                
-                // Full Range with ledger lines
-                // Bass: C2 to E4 (covers low F2 to Middle C and above)
-                const bassKeys = generateRange(2, 4, 0, 2); 
-                // Treble: A3 to C6 (covers below Middle C to high C6)
-                const trebleKeys = generateRange(3, 6, 5, 0); 
-                
-                // Fixed Width for column style
-                const staveWidth = 150; // Tăng width một chút cho thoải mái
-                const height = 450;
-                
-                const renderer = new VF.Renderer(div, VF.Renderer.Backends.SVG);
-                // Adjust renderer size to account for scale
-                renderer.resize((staveWidth + 100) * scale, height * scale);
-                const ctx = renderer.getContext();
-                ctx.scale(scale, scale); // Apply scale
-                
-                // Treble Stave
-                const trebleStave = new VF.Stave(10, 20, staveWidth);
-                trebleStave.addClef("treble");
-                trebleStave.setContext(ctx).draw();
-                
-                // Bass Stave
-                const bassStave = new VF.Stave(10, 240, staveWidth);
-                bassStave.addClef("bass");
-                bassStave.setContext(ctx).draw();
-                
-                new VF.StaveConnector(trebleStave, bassStave).setType(VF.StaveConnector.type.BRACE).setContext(ctx).draw();
+                    return notes;
+                };
 
-                // Create Notes - ALL at X center
-                // Use a fixed X offset relative to stave start
-                const noteX = 10 + (staveWidth / 2); // Center of stave which starts at 10
-
-                const createFindingNotes = (keys, clef, stave) => {
-                    keys.forEach(key => {
-                        // Create Ghost Note (Gray)
-                        const note = new VF.StaveNote({ 
-                            clef: clef, 
-                            keys: [key], 
-                            duration: 'q', 
-                            auto_stem: true
+                const drawSection = (id, clef, notes) => {
+                    const div = document.getElementById(id);
+                    if (!div) return;
+                    div.innerHTML = '';
+                    
+                    const VF = Vex.Flow;
+                    const containerWidth = div.clientWidth || 300; 
+                    const noteWidth = 35; 
+                    const stavePadding = 10;
+                    const clefSpace = 60;
+                    
+                    const availableNoteSpace = containerWidth - (stavePadding * 2) - clefSpace;
+                    let notesPerRow = Math.floor(availableNoteSpace / noteWidth);
+                    
+                    if (notesPerRow < 5) notesPerRow = 5; 
+                    
+                    const rows = [];
+                    for (let i = 0; i < notes.length; i += notesPerRow) {
+                        rows.push(notes.slice(i, i + notesPerRow));
+                    }
+                    
+                    const rowHeight = 150; 
+                    const totalHeight = rows.length * rowHeight;
+                    
+                    const renderer = new VF.Renderer(div, VF.Renderer.Backends.SVG);
+                    renderer.resize(containerWidth, totalHeight);
+                    const ctx = renderer.getContext();
+                    
+                    rows.forEach((rowNotes, rowIndex) => {
+                        const y = rowIndex * rowHeight;
+                        const stave = new VF.Stave(stavePadding, y + 40, containerWidth - (stavePadding * 2));
+                        stave.addClef(clef).setContext(ctx).draw();
+                        
+                        const staveNotes = rowNotes.map(key => {
+                            const note = new VF.StaveNote({ clef: clef, keys: [key], duration: 'q', auto_stem: true });
+                            
+                            const noteId = `${clef}-${key}`;
+                            const isActive = FINDING_LOGIC.activeNotes.has(noteId);
+                            
+                            if (isActive) {
+                                const tonePart = key.split('/')[0];
+                                const octave = key.split('/')[1];
+                                const solfege = SOLFEGE[tonePart];
+                                const text = `${solfege} (${tonePart}${octave})`;
+                                const annotation = new VF.Annotation(text);
+                                annotation.setFont("Nunito", 11, "800");
+                                annotation.setVerticalJustification(VF.Annotation.VerticalJustify.TOP);
+                                note.addModifier(annotation);
+                            }
+                            return note;
                         });
                         
-                        const id = `${clef}-${key}`;
-                        const isActive = state.findingNotes.has(id);
+                        const voice = new VF.Voice({num_beats: rowNotes.length, beat_value: 4});
+                        voice.addTickables(staveNotes);
+                        new VF.Formatter().joinVoices([voice]).format([voice], containerWidth - clefSpace - (stavePadding * 2) - 10);
+                        voice.draw(ctx, stave);
+                    });
+                    
+                    const noteGroups = div.querySelectorAll('.vf-stavenote');
+                    noteGroups.forEach((g, i) => {
+                        const key = notes[i];
+                        const noteId = `${clef}-${key}`;
                         
-                        // Style based on active state
-                        if (isActive) {
-                             const tonePart = key.split('/')[0].toUpperCase();
-                             const octave = key.split('/')[1];
-                             const solfege = SOLFEGE[tonePart];
-                             const text = `${solfege} (${tonePart}${octave})`;
-                             
-                             // Add text to the RIGHT
-                             // Use manual text draw instead of Annotation for precise placement "bên cạnh"
-                             // We do this in post-render step
-                             
-                             note.setStyle({ fillStyle: "black", strokeStyle: "black" });
-                        } else {
-                             // Ghost style - lighter gray
-                             note.setStyle({ fillStyle: "#cbd5e1", strokeStyle: "#cbd5e1" });
-                        }
+                        g.classList.add('finding-note-group');
+                        if (FINDING_LOGIC.activeNotes.has(noteId)) g.classList.add('active');
                         
-                        // Manually Draw Note using TickContext to position
-                        const tickContext = new VF.TickContext();
-                        tickContext.addTickable(note);
-                        tickContext.preFormat().setX(noteX); // Force X position
-                        
-                        note.setStave(stave);
-                        note.setContext(ctx);
-                        note.setModifierContext(new VF.ModifierContext()); // Needed for ledger lines
-                        note.draw();
-                        
-                        // Custom Text Drawing for Active Note
-                        if (isActive) {
-                            const tonePart = key.split('/')[0].toUpperCase();
-                            const octave = key.split('/')[1];
-                            const solfege = SOLFEGE[tonePart];
-                            const text = `${solfege} (${tonePart}${octave})`;
-                            
-                            ctx.save();
-                            ctx.setFont("Nunito", 14, "800"); // Bold, larger
-                            ctx.setFillStyle("var(--primary-color)");
-                            // Draw text to the right of the notehead
-                            // note.getNoteHeadBeginX() gives X. 
-                            // note.ys[0] gives Y of the first notehead.
-                            const textX = note.getNoteHeadBeginX() + 25; // Shift right
-                            const textY = note.getYs()[0] + 4; // Center vertically roughly
-                            ctx.fillText(text, textX, textY);
-                            ctx.restore();
-                        }
-                        
-                        // Interaction
-                        let el = null;
-                        if (note.attrs && note.attrs.el) el = note.attrs.el;
-                        else if (typeof note.getSVGElement === 'function') el = note.getSVGElement();
-                        
-                        if (el) {
-                            el.style.cursor = 'pointer';
-                            el.onclick = (e) => {
-                                e.stopPropagation();
-                                FINDING_LOGIC.toggleNote(id, key);
-                            };
-                            
-                            if (isActive) el.classList.add('finding-note-active');
-                            else el.classList.add('finding-note-ghost');
-                        }
+                        g.onclick = (e) => {
+                            e.stopPropagation();
+                            FINDING_LOGIC.toggleNote(noteId, key);
+                        };
                     });
                 };
-                
-                createFindingNotes(trebleKeys, 'treble', trebleStave);
-                createFindingNotes(bassKeys, 'bass', bassStave);
+
+                const trebleNotes = getNotesInRange(3, 6).filter(n => {
+                    if(n.endsWith('3') && ['C','D','E','F'].includes(n[0])) return false;
+                    return true;
+                });
+                drawSection('finding-treble-canvas', 'treble', trebleNotes);
+
+                const bassNotes = getNotesInRange(2, 4).filter(n => {
+                     if(n.endsWith('2') && ['C','D'].includes(n[0])) return false;
+                     if(n.endsWith('4') && ['F','G','A','B'].includes(n[0])) return false;
+                     return true;
+                });
+                drawSection('finding-bass-canvas', 'bass', bassNotes);
             },
-            toggleNote: (id, keyString) => {
-                if (state.findingNotes.has(id)) {
-                    state.findingNotes.delete(id);
+            toggleNote: (id, key) => {
+                initAudioIfNeeded();
+                if (FINDING_LOGIC.activeNotes.has(id)) {
+                    FINDING_LOGIC.activeNotes.delete(id);
                 } else {
-                    state.findingNotes.clear(); // Exclusive
-                    state.findingNotes.add(id);
-                    const toneKey = keyString.replace('/', '');
+                    FINDING_LOGIC.activeNotes.clear();
+                    FINDING_LOGIC.activeNotes.add(id);
+                    const toneKey = key.replace('/', '');
                     playTone(toneKey, '2n');
                 }
-                FINDING_LOGIC.draw(); 
+                FINDING_LOGIC.draw();
             }
         };
 
