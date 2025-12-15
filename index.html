@@ -2,851 +2,1049 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <!-- FIX: Chặn zoom trên mobile để trải nghiệm giống App -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Liem's Harmony Hub</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- VexFlow (Music Notation) -->
     <script src="https://cdn.jsdelivr.net/npm/vexflow@4.2.3/build/cjs/vexflow.js"></script>
-    <!-- Tone.js (Audio Synthesis) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
-    <!-- Font Awesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Fira+Code:wght@400;600&family=Mountains+of+Christmas:wght@700&display=swap" rel="stylesheet">
 
     <style>
-        body {
-            font-family: 'Nunito', sans-serif;
-            transition: background 0.5s ease, color 0.3s ease;
-            background: var(--bg-gradient, var(--bg-color));
-            color: var(--text-color);
-            min-height: 100vh;
-            /* FIX: Chặn hành vi double-tap zoom trên toàn trang */
-            touch-action: manipulation;
-            -webkit-tap-highlight-color: transparent; /* Bỏ highlight màu xanh khi tap trên iOS */
-        }
+        body { font-family: 'Nunito', sans-serif; transition: background 0.5s ease, color 0.3s ease; background: var(--bg-gradient, var(--bg-color)); color: var(--text-color); min-height: 100vh; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+        button, input, select, a, .vf-stavenote { touch-action: manipulation; }
         
-        /* FIX: Áp dụng chặn zoom cho tất cả các phần tử tương tác */
-        button, input, select, a, .vf-stavenote {
-            touch-action: manipulation;
-        }
-
         :root {
-            /* --- CLASSIC (Default) --- */
-            --bg-color: #f8fafc;
-            --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-            --text-color: #1e293b;
-            --card-bg: rgba(255, 255, 255, 0.95);
-            --card-text: #1e293b;
-            --primary-color: #3b82f6;
-            --accent-color: #10b981;
-            --shadow-color: rgba(0, 0, 0, 0.1);
-            --border-radius: 1rem;
-            --header-font: 'Nunito', sans-serif;
-            --placeholder-color: #94a3b8;
+            --bg-color: #f8fafc; --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            --text-color: #1e293b; --card-bg: rgba(255, 255, 255, 0.95); --card-text: #1e293b;
+            --primary-color: #3b82f6; --accent-color: #10b981; --shadow-color: rgba(0, 0, 0, 0.1);
+            --border-radius: 1rem; --header-font: 'Nunito', sans-serif; --placeholder-color: #94a3b8;
         }
+        [data-theme="dark"] { --bg-color: #0f172a; --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); --text-color: #e2e8f0; --card-bg: rgba(30, 41, 59, 0.95); --card-text: #e2e8f0; --primary-color: #8b5cf6; --accent-color: #2dd4bf; --shadow-color: rgba(0, 0, 0, 0.5); --placeholder-color: #475569; }
+        [data-theme="ocean"] { --bg-color: #e0f2fe; --bg-gradient: linear-gradient(to bottom, #0ea5e9, #e0f2fe); --text-color: #0c4a6e; --card-bg: rgba(255, 255, 255, 0.9); --card-text: #0c4a6e; --primary-color: #0284c7; --accent-color: #0369a1; --shadow-color: rgba(14, 165, 233, 0.2); --placeholder-color: #bae6fd; }
+        [data-theme="coder"] { --bg-color: #000000; --bg-gradient: repeating-linear-gradient(0deg, transparent, transparent 1px, #001100 1px, #001100 2px); --text-color: #00ff41; --card-bg: #0d0d0d; --card-text: #00ff41; --primary-color: #00ff41; --accent-color: #008f11; --shadow-color: rgba(0, 255, 65, 0.2); --border-radius: 0px; --placeholder-color: #003300; font-family: 'Fira Code', monospace; --header-font: 'Fira Code', monospace; }
+        [data-theme="love"] { --bg-color: #fff1f2; --bg-gradient: radial-gradient(circle, #ffe4e6 0%, #fda4af 100%); --text-color: #881337; --card-bg: rgba(255, 255, 255, 0.9); --card-text: #881337; --primary-color: #e11d48; --accent-color: #fb7185; --shadow-color: rgba(225, 29, 72, 0.2); --border-radius: 1.5rem; --placeholder-color: #fecdd3; }
+        [data-theme="christmas"] { --bg-color: #022c22; --bg-gradient: radial-gradient(circle at top, #14532d 0%, #022c22 100%); --text-color: #fefce8; --card-bg: #fffbeb; --card-text: #064e3b; --primary-color: #b91c1c; --accent-color: #d97706; --shadow-color: rgba(0, 0, 0, 0.5); --border-radius: 16px; --placeholder-color: #d1d5db; --header-font: 'Nunito', sans-serif; }
+        [data-theme="retro"] { --bg-color: #d7c9a8; --bg-gradient: url('https://www.transparenttextures.com/patterns/aged-paper.png'), linear-gradient(#e6d5b8, #d7c9a8); --text-color: #4a3b32; --card-bg: #fdf6e3; --card-text: #4a3b32; --primary-color: #b58900; --accent-color: #cb4b16; --shadow-color: rgba(74, 59, 50, 0.2); --border-radius: 2px; --placeholder-color: #dcbfa3; }
 
-        [data-theme="dark"] {
-            --bg-color: #0f172a;
-            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-            --text-color: #e2e8f0;
-            --card-bg: rgba(30, 41, 59, 0.95);
-            --card-text: #e2e8f0;
-            --primary-color: #8b5cf6;
-            --accent-color: #2dd4bf;
-            --shadow-color: rgba(0, 0, 0, 0.5);
-            --placeholder-color: #475569;
-        }
-
-        [data-theme="ocean"] {
-            --bg-color: #e0f2fe;
-            --bg-gradient: linear-gradient(to bottom, #0ea5e9, #e0f2fe);
-            --text-color: #0c4a6e;
-            --card-bg: rgba(255, 255, 255, 0.9);
-            --card-text: #0c4a6e;
-            --primary-color: #0284c7;
-            --accent-color: #0369a1;
-            --shadow-color: rgba(14, 165, 233, 0.2);
-            --placeholder-color: #bae6fd;
-        }
-
-        [data-theme="coder"] {
-            --bg-color: #000000;
-            --bg-gradient: repeating-linear-gradient(0deg, transparent, transparent 1px, #001100 1px, #001100 2px);
-            --text-color: #00ff41;
-            --card-bg: #0d0d0d;
-            --card-text: #00ff41;
-            --primary-color: #00ff41;
-            --accent-color: #008f11;
-            --shadow-color: rgba(0, 255, 65, 0.2);
-            --border-radius: 0px;
-            --placeholder-color: #003300;
-            font-family: 'Fira Code', 'Courier New', monospace;
-            --header-font: 'Fira Code', monospace;
-        }
+        .theme-card { background-color: var(--card-bg); color: var(--card-text); border-radius: var(--border-radius); box-shadow: 0 10px 15px -3px var(--shadow-color), 0 4px 6px -2px var(--shadow-color); }
+        .theme-btn-primary { background-color: var(--primary-color); color: white; border-radius: var(--border-radius); }
+        .theme-btn-accent { background-color: var(--accent-color); color: white; border-radius: var(--border-radius); }
+        .theme-border { border-color: var(--primary-color); }
+        
+        [data-theme="christmas"] .logo-text { font-family: 'Mountains of Christmas', cursive; }
+        [data-theme="christmas"] .theme-card { border: 2px solid #f59e0b; box-shadow: 0 8px 30px rgba(0,0,0,0.3); }
+        [data-theme="christmas"] .theme-btn-primary { background-color: #b91c1c; border: 2px solid #f59e0b; color: #fffbeb; font-weight: 800; }
+        [data-theme="christmas"] .active-tab { background-color: #15803d !important; color: #fff !important; border: 2px solid #f59e0b !important; }
+        [data-theme="christmas"] select, [data-theme="christmas"] input { color: #3f0e0e; background-color: #ffffff; border: 2px solid #b91c1c; }
         [data-theme="coder"] .theme-card { border: 1px solid var(--primary-color); box-shadow: 0 0 10px var(--shadow-color); }
         [data-theme="coder"] .theme-btn-primary { background-color: transparent; border: 1px solid var(--primary-color); color: var(--primary-color); }
         [data-theme="coder"] .theme-btn-primary:hover { background-color: var(--primary-color); color: black; box-shadow: 0 0 15px var(--primary-color); }
 
-        [data-theme="love"] {
-            --bg-color: #fff1f2;
-            --bg-gradient: radial-gradient(circle, #ffe4e6 0%, #fda4af 100%);
-            --text-color: #881337;
-            --card-bg: rgba(255, 255, 255, 0.9);
-            --card-text: #881337;
-            --primary-color: #e11d48;
-            --accent-color: #fb7185;
-            --shadow-color: rgba(225, 29, 72, 0.2);
-            --border-radius: 1.5rem;
-            --placeholder-color: #fecdd3;
-        }
-
-        /* --- CHRISTMAS THEME --- */
-        [data-theme="christmas"] {
-            --bg-color: #0f392b; 
-            --bg-gradient: radial-gradient(circle at 50% -20%, #b45309 0%, #14532d 40%, #062c21 100%);
-            --text-color: #fefce8; 
-            --card-bg: #fffbeb; 
-            --card-text: #3f0e0e; 
-            --primary-color: #b91c1c; 
-            --accent-color: #d97706; 
-            --shadow-color: rgba(0, 0, 0, 0.4);
-            --border-radius: 16px;
-            --placeholder-color: #d1d5db;
-            --header-font: 'Nunito', sans-serif; 
-        }
-        [data-theme="christmas"] .logo-text { font-family: 'Mountains of Christmas', cursive; }
-        [data-theme="christmas"] .theme-card { border: 2px solid #f59e0b; box-shadow: 0 8px 30px rgba(0,0,0,0.3); }
-        [data-theme="christmas"] .theme-btn-primary {
-            background-color: #b91c1c;
-            border: 2px solid #f59e0b;
-            color: #fffbeb;
-            font-family: 'Nunito', sans-serif;
-            font-weight: 800;
-        }
-        [data-theme="christmas"] .active-tab {
-            background-color: #15803d !important;
-            color: #fff !important;
-            border: 2px solid #f59e0b !important;
-        }
-        [data-theme="christmas"] select, [data-theme="christmas"] input {
-            color: #3f0e0e;
-            background-color: #ffffff;
-            border: 2px solid #b91c1c;
-        }
-
-        [data-theme="retro"] {
-            --bg-color: #d7c9a8;
-            --bg-gradient: url('https://www.transparenttextures.com/patterns/aged-paper.png'), linear-gradient(#e6d5b8, #d7c9a8);
-            --text-color: #4a3b32;
-            --card-bg: #fdf6e3;
-            --card-text: #4a3b32;
-            --primary-color: #b58900;
-            --accent-color: #cb4b16;
-            --shadow-color: rgba(74, 59, 50, 0.2);
-            --border-radius: 2px;
-            --placeholder-color: #dcbfa3;
-        }
-
-        /* --- UTILITIES --- */
-        .theme-card { 
-            background-color: var(--card-bg); 
-            color: var(--card-text); 
-            border-radius: var(--border-radius);
-            box-shadow: 0 10px 15px -3px var(--shadow-color), 0 4px 6px -2px var(--shadow-color);
-        }
-        
-        .theme-btn-primary { background-color: var(--primary-color); color: white; border-radius: var(--border-radius); }
-        .theme-btn-primary:hover { filter: brightness(110%); transform: translateY(-1px); }
-        
-        .theme-btn-accent { background-color: var(--accent-color); color: white; border-radius: var(--border-radius); }
-        .theme-btn-accent:hover { filter: brightness(110%); transform: translateY(-1px); }
-        
-        .theme-border { border-color: var(--primary-color); }
-        
         .logo-text { font-family: var(--header-font); }
-        h1, h2 { font-family: var(--header-font); }
-
-        .vf-stavenote { cursor: pointer; }
-        .vf-stavenote:hover path, .vf-stavenote:hover rect { fill: var(--primary-color) !important; stroke: var(--primary-color) !important; }
-        
-        #flashcard-canvas svg, #ear-vexflow svg, #notation-container svg { display: block; margin: 0 auto; }
-        #ear-vexflow { display: flex; justify-content: center; width: 100%; }
-
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        
-        .library-scroll::-webkit-scrollbar { width: 6px; }
-        .library-scroll::-webkit-scrollbar-track { background: transparent; }
-        .library-scroll::-webkit-scrollbar-thumb { background-color: var(--primary-color); border-radius: 20px; opacity: 0.5; }
-
-        .metronome-dot { width: 20px; height: 20px; border-radius: 50%; background-color: #e5e7eb; transition: background-color 0.1s; }
-        .metronome-dot.active { background-color: var(--primary-color); box-shadow: 0 0 15px var(--primary-color); }
-        
+        .vf-stavenote { cursor: pointer; } .vf-stavenote:hover path, .vf-stavenote:hover rect { fill: var(--primary-color) !important; stroke: var(--primary-color) !important; }
+        #flashcard-canvas svg, #ear-vexflow svg, #notation-container svg, #passive-canvas svg, #feel-beat-canvas svg, #finding-notes-canvas svg { display: block; margin: 0 auto; }
+        #ear-vexflow, #passive-canvas, #feel-beat-canvas, #finding-notes-canvas { display: flex; justify-content: center; width: 100%; }
+        .no-scrollbar::-webkit-scrollbar { display: none; } .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .library-scroll::-webkit-scrollbar { width: 6px; } .library-scroll::-webkit-scrollbar-track { background: transparent; } .library-scroll::-webkit-scrollbar-thumb { background-color: var(--primary-color); border-radius: 20px; opacity: 0.5; }
+        .metronome-dot { width: 20px; height: 20px; border-radius: 50%; background-color: #e5e7eb; transition: background-color 0.1s; } .metronome-dot.active { background-color: var(--primary-color); box-shadow: 0 0 15px var(--primary-color); }
         select { color: var(--card-text); background-color: var(--card-bg); border: 1px solid var(--primary-color); }
         input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-        
         .sticky-header { background-color: var(--card-bg); border-bottom: 2px solid var(--primary-color); z-index: 20; }
+        .fixed-action-btn { min-width: 220px; white-space: nowrap; }
         
-        /* FIX: Class để cố định chiều rộng nút, tránh bị phình khi đổi text */
-        .fixed-action-btn {
-            min-width: 220px; /* Chiều rộng cố định cho nút chính */
-            white-space: nowrap; /* Không xuống dòng */
+        .btn-group-btn { padding: 0.5rem 0.75rem; border: 1px solid var(--primary-color); color: var(--card-text); background-color: transparent; font-size: 0.875rem; font-weight: 600; transition: all 0.2s; }
+        .btn-group-btn:first-child { border-top-left-radius: 0.5rem; border-bottom-left-radius: 0.5rem; }
+        .btn-group-btn:last-child { border-top-right-radius: 0.5rem; border-bottom-right-radius: 0.5rem; }
+        .btn-group-btn.active { background-color: var(--primary-color); color: white; }
+        
+        /* Animation for active note */
+        .vf-stavenote.active-note path, 
+        .vf-stavenote.active-note rect { 
+            fill: #f97316 !important; 
+            stroke: #f97316 !important; 
+            filter: drop-shadow(0 0 5px rgba(249, 115, 22, 0.5)); 
         }
+        .vf-stavenote.active-note text {
+            fill: #f97316 !important; 
+            filter: drop-shadow(0 0 5px rgba(249, 115, 22, 0.5));
+        }
+        
+        /* Finding Notes Styles */
+        .finding-note-ghost path { fill: #94a3b8 !important; stroke: #94a3b8 !important; opacity: 0.3; transition: all 0.2s; }
+        .finding-note-ghost:hover path { opacity: 0.6; fill: var(--primary-color) !important; stroke: var(--primary-color) !important; }
+        .finding-note-active path { fill: #000000 !important; stroke: #000000 !important; opacity: 1; filter: drop-shadow(0 0 2px rgba(0,0,0,0.3)); }
+        
+        /* Beat Counter Animation */
+        @keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.3); color: var(--accent-color); } 100% { transform: scale(1); } }
+        .beat-pop { animation: pop 0.2s ease-in-out; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col" data-theme="classic">
+<body class="min-h-screen flex flex-col" data-theme="ocean">
 
-    <!-- Header -->
-    <nav class="theme-card rounded-none shadow-md p-3 sticky top-0 z-50 flex justify-center items-center w-full border-b theme-border border-b-2 sm:border-b-0">
+    <nav class="theme-card rounded-none shadow-md p-2 sticky top-0 z-50 flex justify-center items-center w-full border-b theme-border border-b-2 sm:border-b-0">
         <div class="flex items-center gap-3">
             <i class="fas fa-music text-3xl" style="color: var(--primary-color)"></i>
-            <h1 class="text-2xl font-bold md:text-3xl tracking-tight logo-text">Liem's Harmony Hub</h1>
+            <h1 class="text-xl font-bold md:text-2xl tracking-tight logo-text">Liem's Harmony Hub</h1>
             <i class="fas fa-snowflake text-2xl animate-pulse hidden" id="xmas-icon" style="color: #fbbf24"></i>
         </div>
     </nav>
 
-    <!-- Controls Bar -->
-    <div class="w-full py-2">
-        <div class="container mx-auto flex justify-center items-center gap-3 flex-nowrap px-2" id="controls-bar"></div>
+    <div class="w-full py-1 bg-opacity-50">
+        <div class="container mx-auto flex justify-center items-center gap-2 flex-nowrap px-2" id="controls-bar"></div>
     </div>
 
-    <!-- Main Content -->
-    <main class="flex-grow container mx-auto p-4 flex flex-col items-center pt-2">
-        
-        <!-- Menu Tabs -->
-        <div class="w-full overflow-x-auto pb-4 pt-2 mb-2 no-scrollbar px-4">
-            <div class="flex gap-3 min-w-max justify-center" id="mode-tabs"></div>
+    <main class="flex-grow container mx-auto p-4 pt-1 flex flex-col items-center">
+        <div class="w-full overflow-x-auto pb-2 pt-2 mb-2 no-scrollbar px-2">
+            <div class="flex gap-2 min-w-max justify-center px-2" id="mode-tabs"></div>
         </div>
-
-        <div id="app-container" class="w-full max-w-5xl flex flex-col items-center mt-2"></div>
-
+        <div id="app-container" class="w-full max-w-5xl flex flex-col items-center mt-0"></div>
     </main>
 
-    <footer class="theme-card rounded-none mt-auto py-4 text-center text-sm font-semibold w-full">
-        <p class="opacity-80">© 2025 Liem's Harmony Hub <i class="fas fa-heart text-[var(--primary-color)]"></i> — built to stop future great pianists from counting notes from C.</p>
+    <footer class="theme-card rounded-none mt-auto py-3 text-center text-sm font-semibold w-full">
+        <p class="opacity-80">© 2024 Liem's Harmony Hub. Design with <i class="fas fa-heart text-[var(--primary-color)]"></i> for Music Lovers.</p>
     </footer>
 
     <script>
         const APP_NAME = "Liem's Harmony Hub";
         const DEFAULT_THEME = 'ocean'; 
+        const SOLFEGE = { 'C': 'Do', 'D': 'Re', 'E': 'Mi', 'F': 'Fa', 'G': 'Sol', 'A': 'La', 'B': 'Si' };
 
         const LANGUAGES = {
-            vi: {
-                flag: "🇻🇳", name: "Tiếng Việt",
-                modes: ["Khóa Sol", "Khóa Fa", "Hai khóa", "Thư viện", "Luyện tai", "Dò nốt", "Metronome"],
-                ui: {
-                    level: "Cấp độ", next: "Tiếp theo", result: "Kết quả", listen: "Nghe", check: "Kiểm tra",
-                    start: "Bắt đầu", stop: "Dừng", bpm: "Nhịp (BPM)", notes: "Số nốt", time: "Thời gian",
-                    seconds: "giây", detect: "Đang nghe...", library: "Nốt", chords: "Hợp âm",
-                    settings: "Cài đặt", theme: "Giao diện", lang: "Ngôn ngữ", answer: "Đáp án",
-                    tapToStart: "Chạm để bắt đầu",
-                    sol: "Sol", fa: "Fa", do: "Đô", re: "Rê", mi: "Mi", fa_note: "Fa", sol_note: "Sol", la: "La", si: "Si",
-                    soundOn: "Bật tiếng", soundOff: "Tắt tiếng", soundType: "Âm thanh"
-                }
+            vi: { 
+                flag: "🇻🇳", name: "Tiếng Việt", 
+                modes: ["Khóa Sol", "Khóa Fa", "Hai khóa", "Học thụ động", "Feel the beat", "Tra cứu nốt", "Thư viện", "Luyện tai", "Dò nốt", "Metronome"], 
+                ui: { 
+                    level: "Cấp độ", next: "Tiếp theo", result: "Kết quả", listen: "Nghe", check: "Kiểm tra", start: "Bắt đầu", stop: "Dừng", bpm: "Nhịp (BPM)", notes: "Số nốt", time: "Thời gian", seconds: "giây", detect: "Đang nghe...", library: "Thư viện", chords: "Hợp âm", settings: "Cài đặt", theme: "Giao diện", lang: "Ngôn ngữ", answer: "Đáp án", tapToStart: "Chạm để bắt đầu", soundOn: "Bật tiếng", soundOff: "Tắt tiếng", soundType: "Âm thanh", 
+                    passiveSetup: "Cấu hình Học thụ động", interval: "Chuyển câu sau (s)", pauseTime: "Thời gian dừng (s)", target: "Số câu mục tiêu", noteCount: "Số lượng nốt", clefMode: "Chế độ khóa", clefSol: "Chỉ Khóa Sol", clefFa: "Chỉ Khóa Fa", clefMix: "Trộn lẫn Sol/Fa", clefGrand: "Hai khóa song song", progress: "Câu", waiting: "Đang chờ...", nextIn: "Tiếp theo: ",
+                    fbSetup: "Cấu hình Feel the Beat", fbTimeSig: "Số chỉ nhịp", fbSound: "Âm beat", fbReplay: "Chơi", fbNew: "Bài mới", fbPlaying: "Đang chơi...", fbInst1: "Tick (Mặc định)", fbInst2: "Woodblock", fbInst3: "Digital", fbInst4: "Drum", fbInst5: "Bell",
+                    fbMeasureCount: "Số ô nhịp"
+                } 
             },
-            en: {
-                flag: "🇬🇧", name: "English",
-                modes: ["Treble Clef", "Bass Clef", "Grand Staff", "Library", "Ear Training", "Note Check", "Metronome"],
-                ui: {
-                    level: "Level", next: "Next", result: "Reveal", listen: "Listen", check: "Check",
-                    start: "Start", stop: "Stop", bpm: "BPM", notes: "Notes", time: "Time",
-                    seconds: "s", detect: "Listening...", library: "Notes", chords: "Chords",
-                    settings: "Settings", theme: "Theme", lang: "Language", answer: "Answer",
-                    tapToStart: "Tap to Start",
-                    sol: "G", fa: "F", do: "C", re: "D", mi: "E", fa_note: "F", sol_note: "G", la: "A", si: "B",
-                    soundOn: "Sound On", soundOff: "Mute", soundType: "Sound"
-                }
+            en: { 
+                flag: "🇬🇧", name: "English", 
+                modes: ["Treble Clef", "Bass Clef", "Grand Staff", "Passive Learning", "Feel the beat", "Finding Notes", "Library", "Ear Training", "Note Check", "Metronome"], 
+                ui: { 
+                    level: "Level", next: "Next", result: "Reveal", listen: "Listen", check: "Check", start: "Start", stop: "Stop", bpm: "BPM", notes: "Notes", time: "Time", seconds: "s", detect: "Listening...", library: "Library", chords: "Chords", settings: "Settings", theme: "Theme", lang: "Language", answer: "Answer", tapToStart: "Tap to Start", soundOn: "Sound On", soundOff: "Mute", soundType: "Sound", 
+                    passiveSetup: "Passive Learning Setup", interval: "Interval (s)", pauseTime: "Pause Time (s)", target: "Target Count", noteCount: "Note Count", clefMode: "Clef Mode", clefSol: "Treble Only", clefFa: "Bass Only", clefMix: "Mixed Treble/Bass", clefGrand: "Grand Staff", progress: "Question", waiting: "Waiting...", nextIn: "Next in: ",
+                    fbSetup: "Feel the Beat Setup", fbTimeSig: "Time Signature", fbSound: "Beat Sound", fbReplay: "Play", fbNew: "New Sheet", fbPlaying: "Playing...", fbInst1: "Tick (Default)", fbInst2: "Woodblock", fbInst3: "Digital", fbInst4: "Drum", fbInst5: "Bell",
+                    fbMeasureCount: "Measures"
+                } 
             },
-            fr: { flag: "🇫🇷", name: "Français", modes: ["Clé de Sol", "Clé de Fa", "Grande Portée", "Bibliothèque", "Oreille", "Note Check", "Métronome"], ui: { level: "Niveau", next: "Suivant", result: "Résultat", listen: "Écouter", check: "Vérifier", start: "Démarrer", stop: "Arrêter", bpm: "BPM", notes: "Notes", time: "Temps", seconds: "s", detect: "Écoute...", library: "Notes", chords: "Accords", settings: "Paramètres", theme: "Thème", lang: "Langue", answer: "Réponse", tapToStart: "Appuyez pour commencer", sol: "Sol", fa: "Fa", do: "Do", re: "Ré", mi: "Mi", fa_note: "Fa", sol_note: "Sol", la: "La", si: "Si", soundOn: "Son activé", soundOff: "Muet", soundType: "Son" } },
-            zh: { flag: "🇨🇳", name: "Chinese", modes: ["高音谱号", "低音谱号", "大谱表", "资料库", "练耳", "音准检查", "节拍器"], ui: { level: "等级", next: "下一个", result: "结果", listen: "听", check: "检查", start: "开始", stop: "停止", bpm: "BPM", notes: "音符", time: "时间", seconds: "秒", detect: "正在听...", library: "音符", chords: "和弦", settings: "设置", theme: "主题", lang: "语言", answer: "答案", tapToStart: "点击开始", sol: "Sol", fa: "Fa", do: "Do", re: "Re", mi: "Mi", fa_note: "Fa", sol_note: "Sol", la: "La", si: "Si", soundOn: "开音", soundOff: "静音", soundType: "声音" } },
-            th: { flag: "🇹🇭", name: "Thai", modes: ["กุญแจซอล", "กุญแจฟา", "บรรทัด 5 เส้น", "ห้องสมุด", "ฝึกฟัง", "เช็คโน้ต", "เมโทรนอม"], ui: { level: "ระดับ", next: "ถัดไป", result: "เฉลย", listen: "ฟัง", check: "ตรวจ", start: "เริ่ม", stop: "หยุด", bpm: "BPM", notes: "โน้ต", time: "เวลา", seconds: "วิ", detect: "กำลังฟัง...", library: "โน้ต", chords: "คอร์ด", settings: "ตั้งค่า", theme: "ธีม", lang: "ภาษา", answer: "คำตอบ", tapToStart: "แตะเพื่อเริ่ม", sol: "Sol", fa: "Fa", do: "Do", re: "Re", mi: "Mi", fa_note: "Fa", sol_note: "Sol", la: "La", si: "Si", soundOn: "เปิดเสียง", soundOff: "ปิดเสียง", soundType: "เสียง" } },
+            fr: { flag: "🇫🇷", name: "Français", modes: ["Clé de Sol", "Clé de Fa", "Grande Portée", "Apprentissage Passif", "Feel the beat", "Finding Notes", "Bibliothèque", "Oreille", "Note Check", "Métronome"], ui: { level: "Niveau", next: "Suivant", result: "Résultat", listen: "Écouter", check: "Vérifier", start: "Démarrer", stop: "Arrêter", bpm: "BPM", notes: "Notes", time: "Temps", seconds: "s", detect: "Écoute...", library: "Notes", chords: "Accords", settings: "Paramètres", theme: "Thème", lang: "Langue", answer: "Réponse", tapToStart: "Appuyez pour commencer", soundOn: "Son activé", soundOff: "Muet", soundType: "Son", passiveSetup: "Config Passif", interval: "Intervalle (s)", pauseTime: "Pause (s)", target: "Cible", noteCount: "Nb Notes", clefMode: "Mode Clé", clefSol: "Sol Seule", clefFa: "Fa Seule", clefMix: "Mixte", clefGrand: "Grande Portée", progress: "Question", waiting: "Attente...", nextIn: "Suivant: ", fbSetup: "Config Feel the Beat", fbTimeSig: "Signature", fbSound: "Son Beat", fbReplay: "Jouer", fbNew: "Nouveau", fbPlaying: "Lecture...", fbInst1: "Tick", fbInst2: "Woodblock", fbInst3: "Digital", fbInst4: "Drum", fbInst5: "Bell", fbMeasureCount: "Mesures" } },
+            zh: { flag: "🇨🇳", name: "Chinese", modes: ["高音谱号", "低音谱号", "大谱表", "被动学习", "Feel the beat", "Finding Notes", "资料库", "练耳", "音准检查", "节拍器"], ui: { level: "等级", next: "下一个", result: "结果", listen: "听", check: "检查", start: "开始", stop: "停止", bpm: "BPM", notes: "音符", time: "时间", seconds: "秒", detect: "正在听...", library: "资料库", chords: "和弦", settings: "设置", theme: "主题", lang: "语言", answer: "答案", tapToStart: "点击开始", soundOn: "开音", soundOff: "静音", soundType: "声音", passiveSetup: "被动学习设置", interval: "间隔 (秒)", pauseTime: "暂停 (秒)", target: "目标数量", noteCount: "音符数量", clefMode: "谱号模式", clefSol: "仅高音", clefFa: "仅低音", clefMix: "混合", clefGrand: "大谱表", progress: "问题", waiting: "等待...", nextIn: "下一个: ", fbSetup: "Feel the Beat设置", fbTimeSig: "拍号", fbSound: "节拍音", fbReplay: "播放", fbNew: "新乐谱", fbPlaying: "播放中...", fbInst1: "Tick", fbInst2: "Woodblock", fbInst3: "Digital", fbInst4: "Drum", fbInst5: "Bell", fbMeasureCount: "小节数" } },
+            th: { flag: "🇹🇭", name: "Thai", modes: ["กุญแจซอล", "กุญแจฟา", "บรรทัด 5 เส้น", "เรียนรู้แบบพาสซีฟ", "ห้องสมุด", "ฝึกฟัง", "เช็คโน้ต", "เมโทรนอม", "Finding Notes"], ui: { level: "ระดับ", next: "ถัดไป", result: "เฉลย", listen: "ฟัง", check: "ตรวจ", start: "เริ่ม", stop: "หยุด", bpm: "BPM", notes: "โน้ต", time: "เวลา", seconds: "วิ", detect: "กำลังฟัง...", library: "ห้องสมุด", chords: "คอร์ด", settings: "ตั้งค่า", theme: "ธีม", lang: "ภาษา", answer: "คำตอบ", tapToStart: "แตะเพื่อเริ่ม", soundOn: "เปิดเสียง", soundOff: "ปิดเสียง", soundType: "เสียง", passiveSetup: "ตั้งค่าพาสซีฟ", interval: "ระยะเวลา (วิ)", pauseTime: "หยุดชั่วคราว (วิ)", target: "เป้าหมาย", noteCount: "จำนวนโน้ต", clefMode: "โหมดกุญแจ", clefSol: "ซอลเท่านั้น", clefFa: "ฟาเท่านั้น", clefMix: "ผสม", clefGrand: "บรรทัด 5 เส้นคู่", progress: "คำถาม", waiting: "กำลังรอ...", nextIn: "ถัดไป: ", fbSetup: "ตั้งค่า Feel the Beat", fbTimeSig: "เครื่องหมายกำหนดจังหวะ", fbSound: "เสียงจังหวะ", fbReplay: "เล่น", fbNew: "เพลงใหม่", fbPlaying: "กำลังเล่น...", fbInst1: "Tick", fbInst2: "Woodblock", fbInst3: "Digital", fbInst4: "Drum", fbInst5: "Bell", fbMeasureCount: "ห้องเพลง" } },
         };
 
         const THEMES = [
             { id: "classic", name: "Classic", icon: "fa-music" },
             { id: "dark", name: "Dark", icon: "fa-moon" },
             { id: "ocean", name: "Ocean", icon: "fa-water" },
-            { id: "coder", name: "Coder (Matrix)", icon: "fa-terminal" },
+            { id: "coder", name: "Coder", icon: "fa-terminal" },
             { id: "love", name: "Love", icon: "fa-heart" },
             { id: "christmas", name: "Christmas", icon: "fa-tree" },
             { id: "retro", name: "Retro", icon: "fa-coffee" }
         ];
 
         const METRO_SOUNDS = [
-            { id: 'wood', name: 'Woodblock (Mõ)' },
-            { id: 'tick', name: 'Tick (Tích tắc)' },
-            { id: 'click', name: 'Digital (Điện tử)' },
-            { id: 'drop', name: 'Drop (Giọt nước)' },
-            { id: 'drum', name: 'Drum (Trống)' },
-            { id: 'bell', name: 'Bell (Chuông)' }
+            { id: 'wood', name: 'Woodblock' }, { id: 'tick', name: 'Tick' }, { id: 'drop', name: 'Drop' }, { id: 'click', name: 'Digital' }, { id: 'drum', name: 'Drum' }, { id: 'bell', name: 'Bell' }
         ];
 
-        const DURATION_MAP = {
-            'w': { tone: '1n', time: 4 },
-            'h': { tone: '2n', time: 2 },
-            'q': { tone: '4n', time: 1 },
-            '8': { tone: '8n', time: 0.5 },
-            '16': { tone: '16n', time: 0.25 }
-        };
+        const DURATION_MAP = { 'w': { tone: '1n', time: 4 }, 'h': { tone: '2n', time: 2 }, 'q': { tone: '4n', time: 1 }, '8': { tone: '8n', time: 0.5 }, '16': { tone: '16n', time: 0.25 } };
 
         let state = {
             lang: 'vi', theme: DEFAULT_THEME, mode: 0, level: 1,
-            flashcardData: { treble: [], bass: [] }, 
+            flashcardData: { treble: [], bass: [] }, timeSignature: '4/4',
             isRevealed: false, audioEnabled: false, isMuted: false,
-            earTrainingNotes: 1, checkTime: 5, 
-            metronomeBpm: 60, metronomeActive: false, metroSound: 'tick'
+            earTrainingNotes: 1, checkTime: 5, metronomeBpm: 60, metronomeActive: false, metroSound: 'tick',
+            passiveRunning: false, passivePaused: false, passiveConfig: { interval: 3, pauseTime: 2, target: 25, noteCount: 1, clefMode: 0 }, 
+            passiveCount: 0, passiveTimer: null, passiveNextTimer: null, passiveTimeLeft: 0, passivePauseLeft: 0, passiveCountdownInterval: null, passivePauseInterval: null,
+            fbConfig: { bpm: 60, timeSig: '4/4', clef: 'treble', beatSound: 'tick', measureCount: 3 }, fbData: [], fbIsPlaying: false,
+            findingNotes: new Set()
         };
 
-        let synth;
-        let metronomeLoop;
-        let playbackTimeout;
+        let synth, beatSynth, metronomeLoop, playbackTimeout;
 
-        // --- HELPERS ---
+        // -- HELPER FUNCTIONS --
         function stopSound() {
             if (playbackTimeout) { clearTimeout(playbackTimeout); playbackTimeout = null; }
-            if (synth) {
-                try { synth.releaseAll(); synth.dispose(); } catch(e) {}
-                synth = new Tone.PolySynth(Tone.Synth).toDestination();
-                if (state.isMuted) Tone.Destination.mute = true;
-            }
+            if (state.fbIsPlaying) { state.fbIsPlaying = false; FEEL_BEAT_LOGIC.stop(); }
+            if (synth) { try { synth.releaseAll(); synth.dispose(); } catch(e) {} synth = new Tone.PolySynth(Tone.Synth).toDestination(); if (state.isMuted) Tone.Destination.mute = true; }
+            if (beatSynth) { try { beatSynth.dispose(); } catch(e) {} beatSynth = null; }
+            Tone.Transport.stop(); Tone.Transport.cancel();
         }
 
         function getNoteName(noteStr) { 
-            const toneMap = { 'C': 'do', 'D': 're', 'E': 'mi', 'F': 'fa_note', 'G': 'sol_note', 'A': 'la', 'B': 'si' };
             const noteChar = noteStr.charAt(0);
             const accidental = noteStr.includes('#') ? '#' : (noteStr.includes('b') ? 'b' : '');
             const octave = noteStr.slice(-1);
-            const localized = `${LANGUAGES[state.lang].ui[toneMap[noteChar]]}${accidental}`;
-            return `${localized} ${octave} (${noteChar}${accidental}${octave})`;
+            const solfegeName = SOLFEGE[noteChar];
+            return `${solfegeName}${accidental} ${octave} (${noteChar}${accidental}${octave})`;
         }
         function rnd(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
 
         function playTone(note, durationVex) {
-            initAudioIfNeeded();
-            if (!state.audioEnabled || !synth) return;
+            initAudioIfNeeded(); if (!state.audioEnabled || !synth) return;
             const dur = DURATION_MAP[durationVex] ? DURATION_MAP[durationVex].tone : '8n';
             synth.triggerAttackRelease(note, dur);
         }
         function playChord(notes) {
-            initAudioIfNeeded();
-            if (!state.audioEnabled || !synth) return;
+            initAudioIfNeeded(); if (!state.audioEnabled || !synth) return;
             synth.triggerAttackRelease(notes, "2n");
         }
-
-        function toggleMute() {
-            initAudioIfNeeded();
-            state.isMuted = !state.isMuted;
-            Tone.Destination.mute = state.isMuted;
-            renderControls(); 
+        function toggleMute() { initAudioIfNeeded(); state.isMuted = !state.isMuted; Tone.Destination.mute = state.isMuted; renderControls(); }
+        function autoCorrelate(buf, sampleRate) {
+            let size = buf.length; let rms = 0; for (let i = 0; i < size; i++) { let val = buf[i]; rms += val * val; }
+            rms = Math.sqrt(rms / size); if (rms < 0.01) return '-';
+            let r1 = 0, r2 = size - 1, thres = 0.2;
+            for (let i = 0; i < size / 2; i++) if (Math.abs(buf[i]) < thres) { r1 = i; break; }
+            for (let i = 1; i < size / 2; i++) if (Math.abs(buf[size - i]) < thres) { r2 = size - i; break; }
+            buf = buf.slice(r1, r2); size = buf.length;
+            let c = new Array(size).fill(0); for (let i = 0; i < size; i++) for (let j = 0; j < size - i; j++) c[i] = c[i] + buf[j] * buf[j + i];
+            let d = 0; while (c[d] > c[d + 1]) d++;
+            let maxval = -1, maxpos = -1; for (let i = d; i < size; i++) if (c[i] > maxval) { maxval = c[i]; maxpos = i; }
+            let T0 = maxpos; let x1 = c[T0 - 1], x2 = c[T0], x3 = c[T0 + 1];
+            let a = (x1 + x3 - 2 * x2) / 2; let b = (x3 - x1) / 2;
+            if (a) T0 = T0 - b / (2 * a);
+            let freq = sampleRate / T0;
+            let noteStrings = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+            let noteNum = 12 * (Math.log(freq / 440) / Math.log(2));
+            let note = Math.round(noteNum) + 69;
+            let noteName = noteStrings[note % 12];
+            let octave = Math.floor(note / 12) - 1;
+            return `${noteName}${octave}`;
         }
 
         let audioInitialized = false;
         async function initAudioIfNeeded() {
             if (audioInitialized) return;
-            await Tone.start();
-            state.audioEnabled = true;
-            synth = new Tone.PolySynth(Tone.Synth).toDestination();
-            audioInitialized = true;
+            await Tone.start(); state.audioEnabled = true; synth = new Tone.PolySynth(Tone.Synth).toDestination(); audioInitialized = true;
         }
         document.body.addEventListener('click', initAudioIfNeeded, { once: true });
         document.body.addEventListener('touchstart', initAudioIfNeeded, { once: true });
 
-        // --- RENDER UI ---
+        // -- DEFINE addClick GLOBALLY --
+        function addClick(el, tone, durationVex) {
+            if(!el) return; 
+            el.style.cursor = 'pointer'; 
+            el.onclick = (e) => { 
+                e.stopPropagation(); 
+                playTone(tone, durationVex || '8'); 
+                const p = el.querySelectorAll('path, rect'); 
+                p.forEach(x => x.style.fill = 'var(--accent-color)'); 
+                setTimeout(() => { if(!el.classList.contains('active-note')) p.forEach(x => x.style.fill = '') }, 300); 
+            };
+        }
+
         function renderControls() {
             const container = document.getElementById('controls-bar');
-            const soundBtn = `<button onclick="toggleMute()" class="theme-card h-10 w-10 flex items-center justify-center rounded-full shadow-sm transition hover:scale-105 ${state.isMuted ? 'bg-gray-300 text-gray-600' : 'bg-[var(--primary-color)] text-white'}" title="${state.isMuted ? 'Unmute' : 'Mute'}"><i class="fas ${state.isMuted ? 'fa-volume-mute' : 'fa-volume-up'}"></i></button>`;
-            const themeSelect = `<div class="relative group h-10"><select onchange="state.theme=this.value;initUI()" class="h-full appearance-none theme-card border-none pl-3 pr-8 rounded-full focus:outline-none cursor-pointer font-bold text-sm min-w-[80px]">${THEMES.map(th => `<option value="${th.id}" ${state.theme===th.id?'selected':''}>${th.name.split(' ')[0]}</option>`).join('')}</select><div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[var(--primary-color)]"><i class="fas fa-palette text-xs"></i></div></div>`;
-            const langSelect = `<div class="relative group h-10"><select onchange="state.lang=this.value;initUI()" class="h-full appearance-none theme-card border-none pl-3 pr-8 rounded-full focus:outline-none cursor-pointer font-bold text-sm min-w-[80px]">${Object.keys(LANGUAGES).map(l => `<option value="${l}" ${state.lang===l?'selected':''}>${LANGUAGES[l].flag} ${l.toUpperCase()}</option>`).join('')}</select><div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[var(--primary-color)]"><i class="fas fa-globe text-xs"></i></div></div>`;
+            const soundBtn = `<button onclick="toggleMute()" class="theme-card h-9 w-9 flex items-center justify-center rounded-full shadow-sm transition hover:scale-105 ${state.isMuted ? 'bg-gray-300 text-gray-600' : 'bg-[var(--primary-color)] text-white'}" title="${state.isMuted ? 'Unmute' : 'Mute'}"><i class="fas ${state.isMuted ? 'fa-volume-mute' : 'fa-volume-up'} text-sm"></i></button>`;
+            const themeSelect = `<div class="relative group h-9"><select onchange="state.theme=this.value;initUI()" class="h-full appearance-none theme-card border-none pl-3 pr-8 rounded-full focus:outline-none cursor-pointer font-bold text-sm min-w-[80px]">${THEMES.map(th => `<option value="${th.id}" ${state.theme===th.id?'selected':''}>${th.name.split(' ')[0]}</option>`).join('')}</select><div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[var(--primary-color)]"><i class="fas fa-palette text-xs"></i></div></div>`;
+            const langSelect = `<div class="relative group h-9"><select onchange="state.lang=this.value;initUI()" class="h-full appearance-none theme-card border-none pl-3 pr-8 rounded-full focus:outline-none cursor-pointer font-bold text-sm min-w-[80px]">${Object.keys(LANGUAGES).map(l => `<option value="${l}" ${state.lang===l?'selected':''}>${LANGUAGES[l].flag} ${l.toUpperCase()}</option>`).join('')}</select><div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[var(--primary-color)]"><i class="fas fa-globe text-xs"></i></div></div>`;
             container.innerHTML = soundBtn + themeSelect + langSelect;
         }
 
         function renderTabs() {
             const t = LANGUAGES[state.lang];
             const tabs = document.getElementById('mode-tabs');
-            tabs.innerHTML = t.modes.map((m, i) => `<button onclick="switchMode(${i})" class="whitespace-nowrap px-5 py-2 rounded-full text-sm font-bold shadow-sm transition hover:scale-105 border ${state.mode === i ? 'active-tab bg-[var(--primary-color)] text-white border-[var(--primary-color)]' : 'theme-card hover:text-[var(--primary-color)]'}">${m}</button>`).join('');
+            tabs.innerHTML = t.modes.map((m, i) => `<button onclick="switchMode(${i})" class="whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-bold shadow-sm transition hover:scale-105 border ${state.mode === i ? 'active-tab bg-[var(--primary-color)] text-white border-[var(--primary-color)]' : 'theme-card hover:text-[var(--primary-color)]'}">${m}</button>`).join('');
         }
 
-        function initUI() {
-            document.body.setAttribute('data-theme', state.theme);
-            const xmasIcon = document.getElementById('xmas-icon');
-            if(state.theme === 'christmas') { xmasIcon.classList.remove('hidden'); } else { xmasIcon.classList.add('hidden'); }
-            renderControls(); renderTabs(); switchMode(state.mode); 
-        }
-
-        // --- FLASHCARD LOGIC ---
-        const FLASHCARD_LOGIC = {
-            generateCard: () => {
-                stopSound();
-                const levelCounts = {1: 1, 2: 3, 3: 5, 4: 8};
-                const count = levelCounts[state.level];
-                state.flashcardData = { treble: [], bass: [] };
+        const NOTE_GENERATOR = {
+            generate: (count, clefMode) => {
                 const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-                let durationPool = ['w', 'h', 'q'];
-                if (state.level > 1) durationPool = ['q', '8', '8', '16', '16', '16', '16'];
-
-                const generateNote = (clef) => {
+                const createNote = (clef, dur) => {
                     const minMidi = clef === 'treble' ? 60 : 40; 
                     const maxMidi = clef === 'treble' ? 84 : 60;
                     const midi = rnd(minMidi, maxMidi);
                     const noteName = noteNames[midi % 12];
                     const octave = Math.floor(midi / 12) - 1;
-                    return { key: `${noteName.toLowerCase()}/${octave}`, toneKey: `${noteName}${octave}`, midi, clef };
+                    return { key: `${noteName.toLowerCase()}/${octave}`, toneKey: `${noteName}${octave}`, midi, clef, duration: dur || 'q', type: 'note' };
                 };
+                const createRest = (clef, dur) => ({ type: 'rest', duration: (dur || 'q') + 'r', clef, value: 0 });
+                let data = { treble: [], bass: [] };
+                let targetMode = clefMode; if (clefMode === 3) targetMode = Math.random() > 0.5 ? 0 : 1; 
+                let durationPool = ['w', 'h', 'q', '8', '16'];
+                if (targetMode === 2) { 
+                     for(let i=0; i<count; i++) { 
+                         let dur = durationPool[rnd(0, durationPool.length-1)];
+                         const dist = rnd(0, 2);
+                         if (dist === 0) { data.treble.push(createNote('treble', dur)); data.bass.push(createRest('bass', dur)); } 
+                         else if (dist === 1) { data.treble.push(createRest('treble', dur)); data.bass.push(createNote('bass', dur)); } 
+                         else { data.treble.push(createNote('treble', dur)); data.bass.push(createNote('bass', dur)); }
+                     }
+                } else { 
+                     const c = targetMode === 0 ? 'treble' : 'bass';
+                     for(let i=0; i<count; i++) { let dur = durationPool[rnd(0, durationPool.length-1)]; data[c].push(createNote(c, dur)); }
+                }
+                return { data, mode: targetMode === 2 ? 2 : (targetMode === 0 ? 0 : 1) };
+            }
+        };
 
-                if (state.mode === 2) {
-                    for (let i = 0; i < count; i++) {
-                        let dur = durationPool[rnd(0, durationPool.length - 1)];
-                        if (i === count - 1 && state.level > 1) dur = 'h'; 
-                        const tNote = generateNote('treble'); const bNote = generateNote('bass');
-                        tNote.duration = dur; bNote.duration = dur;
-                        state.flashcardData.treble.push(tNote); state.flashcardData.bass.push(bNote);
+        const FEEL_BEAT_LOGIC = {
+            setSound: (v) => { state.fbConfig.beatSound = v; },
+            setTimeSig: (v) => { state.fbConfig.timeSig = v; FEEL_BEAT_LOGIC.generate(); },
+            setClef: (v) => { state.fbConfig.clef = v; FEEL_BEAT_LOGIC.generate(); },
+            setMeasureCount: (v) => { state.fbConfig.measureCount = v; FEEL_BEAT_LOGIC.generate(); },
+            setBpm: (v) => { state.fbConfig.bpm = parseInt(v); document.getElementById('fb-bpm-disp').innerText = v; },
+            generate: () => {
+                stopSound();
+                state.fbData = []; 
+                const numMeasures = state.fbConfig.measureCount;
+                const [beatsPerMeasure, beatUnit] = state.fbConfig.timeSig.split('/').map(Number);
+                const isGrand = state.fbConfig.clef === 'grand';
+                const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+                const durVals = { 'w': 4, 'h': 2, 'q': 1, '8': 0.5 };
+                const targetTotal = beatUnit === 8 ? beatsPerMeasure * 0.5 : beatsPerMeasure;
+                for (let m = 0; m < numMeasures; m++) {
+                    let measureObj = { treble: [], bass: [] };
+                    let currentBeats = 0;
+                    while (currentBeats < targetTotal) {
+                        const remaining = targetTotal - currentBeats;
+                        let possible = Object.keys(durVals).filter(d => durVals[d] <= remaining);
+                        if (remaining < 0.5) break; 
+                        let dur = possible[rnd(0, possible.length - 1)];
+                        if (beatUnit === 8 && remaining % 0.5 === 0 && Math.random() > 0.5) dur = '8';
+                        else if (possible.includes('q') && Math.random() > 0.4) dur = 'q';
+                        const durationValue = durVals[dur];
+                        let dist = isGrand ? rnd(0, 2) : 0; 
+                        const createItem = (clef, type) => {
+                            if (type === 'rest') { return { type: 'rest', duration: dur + 'r', value: durationValue, clef: clef }; }
+                            const minMidi = clef === 'treble' ? 60 : 43; const maxMidi = clef === 'treble' ? 79 : 60;
+                            const midi = rnd(minMidi, maxMidi); const noteName = noteNames[midi % 12]; const octave = Math.floor(midi / 12) - 1;
+                            return { type: 'note', key: `${noteName.toLowerCase()}/${octave}`, toneKey: `${noteName}${octave}`, duration: dur, value: durationValue, clef: clef };
+                        };
+                        if (isGrand) {
+                            if (dist === 0) { measureObj.treble.push(createItem('treble', 'note')); measureObj.bass.push(createItem('bass', 'rest')); } 
+                            else if (dist === 1) { measureObj.treble.push(createItem('treble', 'rest')); measureObj.bass.push(createItem('bass', 'note')); } 
+                            else { measureObj.treble.push(createItem('treble', 'note')); measureObj.bass.push(createItem('bass', 'note')); }
+                        } else { const clef = state.fbConfig.clef; measureObj[clef].push(createItem(clef, 'note')); }
+                        currentBeats += durationValue;
+                    }
+                    state.fbData.push(measureObj);
+                }
+                FEEL_BEAT_LOGIC.render();
+            },
+            render: () => {
+                const t = LANGUAGES[state.lang].ui;
+                const btn = (label, active, click) => `<button onclick="${click}" class="px-3 py-2 rounded-lg text-sm font-bold border transition ${active ? 'bg-[var(--primary-color)] text-white border-[var(--primary-color)]' : 'bg-white text-[var(--text-color)] border-gray-300 hover:border-[var(--primary-color)]'} w-full">${label}</button>`;
+                const html = `
+                <div class="theme-card p-4 rounded-2xl shadow-xl w-full max-w-5xl border-t-4 theme-border relative">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 items-end relative z-10">
+                        <div class="flex flex-col gap-1"><label class="text-xs font-bold uppercase opacity-60">${t.fbTimeSig}</label><div class="grid grid-cols-2 gap-1">${['2/4','3/4','4/4','6/8'].map(s => btn(s, state.fbConfig.timeSig===s, `FEEL_BEAT_LOGIC.setTimeSig('${s}')`)).join('')}</div></div>
+                        <div class="flex flex-col gap-1"><label class="text-xs font-bold uppercase opacity-60">${t.clefMode}</label><div class="grid grid-cols-3 gap-1">${btn(t.clefSol, state.fbConfig.clef==='treble', `FEEL_BEAT_LOGIC.setClef('treble')`)}${btn(t.clefFa, state.fbConfig.clef==='bass', `FEEL_BEAT_LOGIC.setClef('bass')`)}${btn(t.clefGrand || '2 Khóa', state.fbConfig.clef==='grand', `FEEL_BEAT_LOGIC.setClef('grand')`)}</div></div>
+                        <div class="flex flex-col gap-1"><label class="text-xs font-bold uppercase opacity-60">${t.fbMeasureCount}</label><div class="grid grid-cols-3 gap-1">${[1, 2, 3].map(n => btn(n, state.fbConfig.measureCount===n, `FEEL_BEAT_LOGIC.setMeasureCount(${n})`)).join('')}</div></div>
+                         <div class="flex flex-col gap-1"><label class="text-xs font-bold uppercase opacity-60">${t.bpm}: <span id="fb-bpm-disp" class="text-[var(--primary-color)]">${state.fbConfig.bpm}</span></label><input type="range" min="40" max="240" step="5" value="${state.fbConfig.bpm}" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[var(--primary-color)]" oninput="FEEL_BEAT_LOGIC.setBpm(this.value)"></div>
+                    </div>
+                    <div id="feel-beat-scroll" class="overflow-x-auto w-full bg-white rounded-xl shadow-inner border border-gray-100 mb-4 p-0 flex justify-center min-h-[180px] relative z-10"><div id="feel-beat-canvas"></div></div>
+                    <div class="flex justify-between items-center gap-4 relative z-10 px-4">
+                         <div class="flex-grow"></div>
+                         <div class="flex gap-4 items-center">
+                            <div id="fb-counter" class="text-6xl font-bold text-gray-200 transition-all duration-100 opacity-50 select-none">1</div>
+                            <button id="fb-play-btn" onclick="FEEL_BEAT_LOGIC.play()" class="${state.fbIsPlaying ? 'bg-red-500 hover:bg-red-600' : 'theme-btn-accent'} px-8 py-3 rounded-full font-bold shadow-lg transform transition hover:scale-105 text-white min-w-[140px]"><i class="fas ${state.fbIsPlaying ? 'fa-stop' : 'fa-play'} mr-2"></i> ${state.fbIsPlaying ? t.stop : t.fbReplay}</button>
+                            <button onclick="FEEL_BEAT_LOGIC.generate()" class="theme-btn-primary px-8 py-3 rounded-full font-bold shadow-lg transform transition hover:scale-105 min-w-[140px] ${state.fbIsPlaying ? 'opacity-50 pointer-events-none' : ''}"><i class="fas fa-random mr-2"></i> ${t.fbNew}</button>
+                         </div>
+                    </div>
+                </div>`;
+                document.getElementById('app-container').innerHTML = html;
+                FEEL_BEAT_LOGIC.drawVex();
+            },
+            drawVex: () => {
+                const div = document.getElementById('feel-beat-canvas');
+                if(!div || state.fbData.length === 0) return;
+                div.innerHTML = '';
+                const VF = Vex.Flow;
+                const containerWidth = div.parentElement.offsetWidth; 
+                const minMeasureWidth = 280;
+                const maxPerRow = Math.floor(containerWidth / minMeasureWidth);
+                const itemsPerRow = Math.max(1, Math.min(state.fbData.length, maxPerRow));
+                const measureWidth = Math.floor((containerWidth - 2) / itemsPerRow); 
+                const isGrand = state.fbConfig.clef === 'grand';
+                const systemHeight = isGrand ? 260 : 160; 
+                const measures = [];
+                let x = 0, y = 10;
+                state.fbData.forEach((m, i) => { if (x + measureWidth > containerWidth && x > 0) { x = 0; y += systemHeight + 20; } measures.push({x, y, data: m, index: i}); x += measureWidth; });
+                const totalHeight = y + systemHeight + 20;
+                const renderer = new VF.Renderer(div, VF.Renderer.Backends.SVG);
+                renderer.resize(containerWidth, totalHeight);
+                const ctx = renderer.getContext();
+                measures.forEach((mObj) => {
+                    let staves = []; let trebleNotes = [], bassNotes = [];
+                    const staveX = mObj.x; const staveY = mObj.y; const isStartOfLine = (staveX === 0);
+                    if (state.fbConfig.clef === 'treble' || isGrand) {
+                        const trebleStave = new VF.Stave(staveX, staveY + 10, measureWidth);
+                        if (mObj.index === 0 || isStartOfLine) trebleStave.addClef('treble').addTimeSignature(state.fbConfig.timeSig);
+                        trebleStave.setContext(ctx).draw(); staves.push(trebleStave);
+                        trebleNotes = mObj.data.treble.map(n => {
+                            if (n.type === 'rest') return new VF.StaveNote({ clef: 'treble', keys: ['b/4'], duration: n.duration });
+                            const note = new VF.StaveNote({ clef: 'treble', keys: [n.key], duration: n.duration, auto_stem: true });
+                            if(n.key.includes('#')) note.addModifier(new VF.Accidental('#')); if(n.key.includes('b') && n.key[0] !== 'b') note.addModifier(new VF.Accidental('b'));
+                            const tonePart = n.toneKey.slice(0, -1); const solfegeRoot = SOLFEGE[tonePart.replace(/[#b]/g, '')]; const accidental = tonePart.includes('#') ? '#' : (tonePart.includes('b') ? 'b' : '');
+                            note.addModifier(new VF.Annotation(`${solfegeRoot}${accidental}`).setVerticalJustification(VF.Annotation.VerticalJustify.BOTTOM).setFont("Nunito", 11, "bold"));
+                            note.addModifier(new VF.Annotation(`(${n.toneKey})`).setVerticalJustification(VF.Annotation.VerticalJustify.BOTTOM).setFont("Nunito", 9, "normal"));
+                            n.vexNote = note; return note;
+                        });
+                    }
+                    if (state.fbConfig.clef === 'bass' || isGrand) {
+                        const currentY = isGrand ? staveY + 140 : staveY + 10;
+                        const bassStave = new VF.Stave(staveX, currentY, measureWidth);
+                        if (mObj.index === 0 || isStartOfLine) bassStave.addClef('bass').addTimeSignature(state.fbConfig.timeSig);
+                        bassStave.setContext(ctx).draw(); staves.push(bassStave);
+                        bassNotes = mObj.data.bass.map(n => {
+                            if (n.type === 'rest') return new VF.StaveNote({ clef: 'bass', keys: ['d/3'], duration: n.duration });
+                            const note = new VF.StaveNote({ clef: 'bass', keys: [n.key], duration: n.duration, auto_stem: true });
+                            if(n.key.includes('#')) note.addModifier(new VF.Accidental('#')); if(n.key.includes('b') && n.key[0] !== 'b') note.addModifier(new VF.Accidental('b'));
+                            const tonePart = n.toneKey.slice(0, -1); const solfegeRoot = SOLFEGE[tonePart.replace(/[#b]/g, '')]; const accidental = tonePart.includes('#') ? '#' : (tonePart.includes('b') ? 'b' : '');
+                            note.addModifier(new VF.Annotation(`${solfegeRoot}${accidental}`).setVerticalJustification(VF.Annotation.VerticalJustify.BOTTOM).setFont("Nunito", 11, "bold"));
+                            note.addModifier(new VF.Annotation(`(${n.toneKey})`).setVerticalJustification(VF.Annotation.VerticalJustify.BOTTOM).setFont("Nunito", 9, "normal"));
+                            n.vexNote = note; return note;
+                        });
+                    }
+                    const [numBeats, beatValue] = state.fbConfig.timeSig.split('/').map(Number);
+                    const formatter = new VF.Formatter();
+                    const voiceWidth = measureWidth - (isStartOfLine ? 50 : 20);
+                    if (isGrand) {
+                        const vT = new VF.Voice({num_beats: numBeats, beat_value: beatValue}).addTickables(trebleNotes);
+                        const vB = new VF.Voice({num_beats: numBeats, beat_value: beatValue}).addTickables(bassNotes);
+                        formatter.joinVoices([vT]).joinVoices([vB]).format([vT, vB], voiceWidth);
+                        vT.draw(ctx, staves[0]); vB.draw(ctx, staves[1]);
+                        if (mObj.index === 0 || isStartOfLine) { new VF.StaveConnector(staves[0], staves[1]).setType(VF.StaveConnector.type.BRACE).setContext(ctx).draw(); new VF.StaveConnector(staves[0], staves[1]).setType(VF.StaveConnector.type.SINGLE_LEFT).setContext(ctx).draw(); }
+                        new VF.StaveConnector(staves[0], staves[1]).setType(VF.StaveConnector.type.SINGLE_RIGHT).setContext(ctx).draw();
+                        VF.Beam.generateBeams(trebleNotes.filter(n => n instanceof VF.StaveNote && n.getNoteType() !== 'r')).forEach(b => b.setContext(ctx).draw());
+                        VF.Beam.generateBeams(bassNotes.filter(n => n instanceof VF.StaveNote && n.getNoteType() !== 'r')).forEach(b => b.setContext(ctx).draw());
+                    } else if (state.fbConfig.clef === 'treble') {
+                        const vT = new VF.Voice({num_beats: numBeats, beat_value: beatValue}).addTickables(trebleNotes);
+                        formatter.joinVoices([vT]).format([vT], voiceWidth);
+                        vT.draw(ctx, staves[0]);
+                        VF.Beam.generateBeams(trebleNotes.filter(n => n instanceof VF.StaveNote && n.getNoteType() !== 'r')).forEach(b => b.setContext(ctx).draw());
+                    } else {
+                        const vB = new VF.Voice({num_beats: numBeats, beat_value: beatValue}).addTickables(bassNotes);
+                        formatter.joinVoices([vB]).format([vB], voiceWidth);
+                        vB.draw(ctx, staves[0]);
+                        VF.Beam.generateBeams(bassNotes.filter(n => n instanceof VF.StaveNote && n.getNoteType() !== 'r')).forEach(b => b.setContext(ctx).draw());
+                    }
+                });
+            },
+            play: async () => {
+                if (state.fbIsPlaying) { FEEL_BEAT_LOGIC.stop(); return; }
+                await initAudioIfNeeded(); stopSound();
+                Tone.Transport.stop(); Tone.Transport.position = 0; state.fbIsPlaying = true;
+                const t = LANGUAGES[state.lang].ui;
+                const btn = document.getElementById('fb-play-btn');
+                if(btn) { btn.innerHTML = `<i class="fas fa-stop mr-2"></i> ${t.stop}`; btn.className = "bg-red-500 hover:bg-red-600 px-8 py-3 rounded-full font-bold shadow-lg transform transition hover:scale-105 text-white min-w-[140px]"; }
+                synth = new Tone.PolySynth(Tone.Synth, { oscillator: { type: "triangle" }, envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 1 } }).toDestination();
+                if (state.fbConfig.beatSound === 'wood') beatSynth = new Tone.MembraneSynth().toDestination();
+                else if (state.fbConfig.beatSound === 'tick') beatSynth = new Tone.MembraneSynth({envelope:{attack:0.001,decay:0.05,sustain:0},pitchDecay:0}).toDestination();
+                else if (state.fbConfig.beatSound === 'click') beatSynth = new Tone.MembraneSynth({envelope:{attack:0.001,decay:0.1,sustain:0}}).toDestination();
+                else if (state.fbConfig.beatSound === 'drum') beatSynth = new Tone.MembraneSynth({pitchDecay:0.05,octaves:4}).toDestination();
+                else if (state.fbConfig.beatSound === 'bell') beatSynth = new Tone.MetalSynth({frequency:200,envelope:{attack:0.001,decay:0.1,release:0.01},harmonicity:5.1,modulationIndex:32,resonance:4000,octaves:1.5}).toDestination();
+                else beatSynth = new Tone.MembraneSynth().toDestination();
+                Tone.Transport.bpm.value = state.fbConfig.bpm;
+                let events = []; let currentTime = 0;
+                state.fbData.forEach(measure => {
+                    const tracks = []; if (measure.treble.length) tracks.push(measure.treble); if (measure.bass.length) tracks.push(measure.bass);
+                    const noteCount = tracks[0].length; let measureTime = 0;
+                    for(let i=0; i<noteCount; i++) {
+                        let rawDur = tracks[0][i].duration; let dur = rawDur.replace('r', '');
+                        const toneDur = DURATION_MAP[dur].tone; const timeVal = DURATION_MAP[dur].time;
+                        if (measure.treble[i] && measure.treble[i].type === 'note') { events.push({ time: (currentTime + measureTime) * (60/state.fbConfig.bpm), note: measure.treble[i].toneKey, duration: toneDur, vexNote: measure.treble[i].vexNote }); }
+                        if (measure.bass[i] && measure.bass[i].type === 'note') { events.push({ time: (currentTime + measureTime) * (60/state.fbConfig.bpm), note: measure.bass[i].toneKey, duration: toneDur, vexNote: measure.bass[i].vexNote }); }
+                        measureTime += timeVal;
+                    }
+                    currentTime += measureTime;
+                });
+                let maxTime = 0; events.forEach(e => { const end = e.time + Tone.Time(e.duration).toSeconds(); if(end > maxTime) maxTime = end; });
+                const melodyPart = new Tone.Part((time, value) => {
+                    synth.triggerAttackRelease(value.note, value.duration, time);
+                    Tone.Draw.schedule(() => {
+                        let el = null;
+                        if (value.vexNote) { if (value.vexNote.attrs && value.vexNote.attrs.el) el = value.vexNote.attrs.el; else if (typeof value.vexNote.getSVGElement === 'function') el = value.vexNote.getSVGElement(); }
+                        if (el) { el.classList.add('active-note'); setTimeout(() => el.classList.remove('active-note'), Tone.Time(value.duration).toMilliseconds() * 0.9); }
+                    }, time);
+                }, events).start(0);
+                Tone.Transport.schedule(() => { FEEL_BEAT_LOGIC.stop(); }, maxTime + 0.5);
+                const [numerator, denominator] = state.fbConfig.timeSig.split('/').map(Number);
+                let beatCount = 0; const loopInterval = denominator === 8 ? "8n" : "4n";
+                const beatLoop = new Tone.Loop((time) => {
+                    let note = "C2";
+                    if (state.fbConfig.beatSound === 'tick') note = beatCount === 0 ? "G6" : "C6";
+                    else if (state.fbConfig.beatSound === 'wood') note = beatCount === 0 ? "C2" : "C1";
+                    else if (state.fbConfig.beatSound === 'bell') note = beatCount === 0 ? "C5" : "G4";
+                    beatSynth.triggerAttackRelease(note, "32n", time);
+                    const currentBeatNum = beatCount + 1;
+                    Tone.Draw.schedule(() => {
+                        const cnt = document.getElementById('fb-counter');
+                        if (cnt) { cnt.innerText = currentBeatNum; cnt.classList.remove('beat-pop'); void cnt.offsetWidth; cnt.classList.add('beat-pop'); cnt.style.opacity = '1'; cnt.style.color = currentBeatNum === 1 ? 'var(--primary-color)' : 'var(--text-color)'; }
+                    }, time);
+                    beatCount = (beatCount + 1) % numerator;
+                }, loopInterval).start(0);
+                Tone.Transport.start();
+            },
+            stop: () => {
+                state.fbIsPlaying = false; Tone.Transport.stop(); Tone.Transport.cancel();
+                if (beatSynth) { try { beatSynth.dispose(); } catch(e) {} beatSynth = null; }
+                document.querySelectorAll('.vf-stavenote').forEach(el => el.classList.remove('active-note'));
+                const btn = document.getElementById('fb-play-btn'); const t = LANGUAGES[state.lang].ui;
+                if(btn) { btn.innerHTML = `<i class="fas fa-play mr-2"></i> ${t.fbReplay}`; btn.className = "theme-btn-accent px-8 py-3 rounded-full font-bold shadow-lg transform transition hover:scale-105 text-white min-w-[140px]"; }
+                const cnt = document.getElementById('fb-counter'); if(cnt) { cnt.innerText = "1"; cnt.style.opacity = '0.5'; }
+            }
+        };
+
+        const FLASHCARD_LOGIC = {
+            generateCard: () => {
+                stopSound();
+                let count = state.level === 4 ? 8 : [1, 3, 5][state.level-1];
+                state.flashcardData = { treble: [], bass: [] };
+                const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+                const generateNote = (clef) => {
+                    const minMidi = clef === 'treble' ? 60 : 40; const maxMidi = clef === 'treble' ? 84 : 60;
+                    const midi = rnd(minMidi, maxMidi); const noteName = noteNames[midi % 12]; const octave = Math.floor(midi / 12) - 1;
+                    return { key: `${noteName.toLowerCase()}/${octave}`, toneKey: `${noteName}${octave}`, midi, clef, type: 'note' };
+                };
+                const generateRest = (clef) => ({ type: 'rest', clef }); 
+                const PATTERNS = [['q'], ['8','8'], ['16','16','16','16'], ['8','16','16'], ['16','16','8']];
+                if (state.level === 4) {
+                    const timeSigs = ['4/4', '3/4', '2/4']; state.timeSignature = timeSigs[rnd(0, timeSigs.length - 1)];
+                    let totalNotes = 0; let currentBeatInMeasure = 0; let maxBeatsPerMeasure = parseInt(state.timeSignature.split('/')[0]);
+                    while (totalNotes < 8) {
+                        const remainingSlots = 8 - totalNotes; const validPatterns = PATTERNS.filter(p => p.length <= remainingSlots);
+                        if (validPatterns.length === 0) break; 
+                        const pat = validPatterns[rnd(0, validPatterns.length - 1)];
+                        if (state.mode === 2) { 
+                            const dist = rnd(0, 2); 
+                            pat.forEach(d => { 
+                                if (dist === 0) { const t = generateNote('treble'); t.duration=d; const b = generateRest('bass'); b.duration=d+'r'; state.flashcardData.treble.push(t); state.flashcardData.bass.push(b); } 
+                                else if (dist === 1) { const t = generateRest('treble'); t.duration=d+'r'; const b = generateNote('bass'); b.duration=d; state.flashcardData.treble.push(t); state.flashcardData.bass.push(b); } 
+                                else { const t = generateNote('treble'); t.duration=d; const b = generateNote('bass'); b.duration=d; state.flashcardData.treble.push(t); state.flashcardData.bass.push(b); }
+                            }); 
+                        } 
+                        else { 
+                            const clef = state.mode === 0 ? 'treble' : 'bass'; 
+                            pat.forEach(d => { const n = generateNote(clef); n.duration=d; state.flashcardData[clef].push(n); }); 
+                        }
+                        totalNotes += pat.length; currentBeatInMeasure++;
+                        if (currentBeatInMeasure >= maxBeatsPerMeasure && totalNotes < 8) {
+                             if (state.mode === 2) { state.flashcardData.treble.push({ type: 'bar' }); state.flashcardData.bass.push({ type: 'bar' }); } 
+                             else { const clef = state.mode === 0 ? 'treble' : 'bass'; state.flashcardData[clef].push({ type: 'bar' }); }
+                            currentBeatInMeasure = 0;
+                        }
                     }
                 } else {
-                    const clef = state.mode === 0 ? 'treble' : 'bass';
-                    for (let i = 0; i < count; i++) {
-                        let dur = durationPool[rnd(0, durationPool.length - 1)];
-                        if (i === count - 1 && state.level > 1) dur = 'h';
-                        const n = generateNote(clef); n.duration = dur;
-                        state.flashcardData[clef].push(n);
+                    let durationPool = ['w', 'h', 'q']; if (state.level > 1) durationPool = ['q', '8', '8', '16'];
+                    for(let i=0; i<count; i++) {
+                         let dur = durationPool[rnd(0, durationPool.length-1)]; if(i===count-1) dur='q'; 
+                         if (state.mode === 2) { 
+                             const dist = rnd(0, 2);
+                             if (dist === 0) { const t = generateNote('treble'); t.duration=dur; const b = generateRest('bass'); b.duration=dur+'r'; state.flashcardData.treble.push(t); state.flashcardData.bass.push(b); } 
+                             else if (dist === 1) { const t = generateRest('treble'); t.duration=dur+'r'; const b = generateNote('bass'); b.duration=dur; state.flashcardData.treble.push(t); state.flashcardData.bass.push(b); } 
+                             else { const t = generateNote('treble'); t.duration=dur; const b = generateNote('bass'); b.duration=dur; state.flashcardData.treble.push(t); state.flashcardData.bass.push(b); }
+                         } 
+                         else { const clef = state.mode === 0 ? 'treble' : 'bass'; const n = generateNote(clef); n.duration=dur; state.flashcardData[clef].push(n); }
                     }
                 }
                 state.isRevealed = false; FLASHCARD_LOGIC.render();
             },
             render: () => {
                 const t = LANGUAGES[state.lang].ui;
-                let answers = [];
-                if (state.mode === 2) {
-                    state.flashcardData.treble.forEach((n, i) => {
-                        const b = state.flashcardData.bass[i];
-                        answers.push(`[${getNoteName(n.toneKey)} + ${getNoteName(b.toneKey)}]`);
-                    });
-                } else {
-                    const data = state.mode === 0 ? state.flashcardData.treble : state.flashcardData.bass;
-                    answers = data.map(n => getNoteName(n.toneKey));
-                }
-
+                let levels = [ {val: 1, txt: 'Lvl 1 (1)'}, {val: 2, txt: 'Lvl 2 (3)'}, {val: 3, txt: 'Lvl 3 (5)'}, {val: 4, txt: 'Lvl 4 (8 with Rhythm)'} ];
                 let html = `
-                    <div class="theme-card p-6 rounded-2xl shadow-xl w-full text-center border-t-4 theme-border flex flex-col relative">
-                        <div class="flex justify-between items-center mb-4">
-                            <select id="level-select" onchange="state.level=parseInt(this.value); FLASHCARD_LOGIC.generateCard()" class="p-2 rounded-lg bg-[var(--bg-color)] border border-[var(--primary-color)] text-sm font-bold focus:outline-none">
-                                <option value="1" ${state.level===1?'selected':''}>Lvl 1 (1 Note)</option>
-                                <option value="2" ${state.level===2?'selected':''}>Lvl 2 (3 Notes)</option>
-                                <option value="3" ${state.level===3?'selected':''}>Lvl 3 (5 Notes)</option>
-                                <option value="4" ${state.level===4?'selected':''}>Lvl 4 (8 Notes)</option>
-                            </select>
+                    <div class="theme-card p-3 rounded-2xl shadow-xl w-full text-center border-t-4 theme-border flex flex-col relative h-auto min-h-[400px]">
+                        <div class="flex flex-col items-center mb-4">
+                            <div class="flex gap-2 mb-1 justify-center flex-wrap">
+                                ${levels.map(l => `<button onclick="state.level=${l.val}; FLASHCARD_LOGIC.generateCard()" class="btn-group-btn ${state.level === l.val ? 'active' : ''}">${l.txt}</button>`).join('')}
+                            </div>
                             <span class="text-xs font-bold uppercase tracking-wider opacity-60">Tap note to play</span>
                         </div>
-                        
-                        <div class="flex flex-col justify-center items-center w-full">
-                            <div id="flashcard-canvas" class="flex justify-center items-center bg-white rounded-xl p-2 mb-4 overflow-x-auto shadow-inner border border-gray-100 w-full"></div>
-                            
-                            <!-- Answers Container - flexible height -->
-                            <div class="w-full mt-2 mb-4 min-h-[3rem] flex items-center justify-center">
-                                ${state.isRevealed 
-                                    ? `<div class="flex flex-wrap gap-2 justify-center animate-fade-in">${answers.map(a => `<span class="bg-[var(--primary-color)] text-white px-3 py-1 rounded-lg font-bold shadow-md text-base">${a}</span>`).join('')}</div>`
-                                    : `<div class="text-gray-300 italic opacity-0 h-0">...</div>`
-                                }
-                            </div>
+                        <div class="flex flex-col justify-center items-center w-full flex-grow">
+                            <div id="flashcard-canvas" class="flex justify-center items-center bg-white rounded-xl p-1 mb-1 overflow-x-auto shadow-inner border border-gray-100 w-full min-h-[160px] relative z-10"></div>
                         </div>
-
-                        <!-- Button Area with fixed min-width class -->
-                        <div class="flex items-center justify-center mt-2 mb-2">
-                            <button onclick="${state.isRevealed ? 'FLASHCARD_LOGIC.generateCard()' : 'FLASHCARD_LOGIC.reveal()'}" 
-                                class="${state.isRevealed ? 'theme-btn-primary' : 'theme-btn-accent'} px-10 py-3 rounded-full text-xl font-bold shadow-xl transform transition hover:scale-105 active:scale-95 fixed-action-btn">
-                                ${state.isRevealed ? `${t.next} <i class="fas fa-arrow-right ml-2"></i>` : t.result}
-                            </button>
+                        <div class="flex items-center justify-center mt-auto pb-2">
+                            <button onclick="${state.isRevealed ? 'FLASHCARD_LOGIC.generateCard()' : 'FLASHCARD_LOGIC.reveal()'}" class="${state.isRevealed ? 'theme-btn-primary' : 'theme-btn-accent'} px-10 py-3 rounded-full text-xl font-bold shadow-xl transform transition hover:scale-105 active:scale-95 fixed-action-btn">${state.isRevealed ? `${t.next} <i class="fas fa-arrow-right ml-2"></i>` : t.result}</button>
                         </div>
-                    </div>
-                `;
+                    </div>`;
                 document.getElementById('app-container').innerHTML = html;
-                const div = document.getElementById('flashcard-canvas');
-                if (!div) return;
-                div.innerHTML = '';
-                const { Renderer, Stave, StaveNote, Formatter, StaveConnector, Accidental, Beam } = Vex.Flow;
+                const div = document.getElementById('flashcard-canvas'); if (!div) return; div.innerHTML = '';
+                const { Renderer, Stave, StaveNote, Formatter, StaveConnector, Accidental, Beam, BarNote } = Vex.Flow;
+                // Calculate width logic:
                 const count = Math.max(state.flashcardData.treble.length, state.flashcardData.bass.length);
-                const width = Math.max(320, count * 70 + 100);
-                
-                const canvasHeight = state.mode === 2 ? 220 : 120;
-                
-                const renderer = new Renderer(div, Renderer.Backends.SVG);
-                renderer.resize(width, canvasHeight);
+                let multiplier = 85; if(state.level === 4) multiplier = 100; 
+                const computedWidth = Math.max(320, count * multiplier + 100);
+                const isGrand = state.mode === 2;
+                const canvasHeight = isGrand ? 320 : 200; 
+                const renderer = new Renderer(div, Renderer.Backends.SVG); 
+                renderer.resize(computedWidth, canvasHeight); 
                 const ctx = renderer.getContext();
-                
+                const staveX = 10; 
                 const makeNotes = (d, c) => d.map(n => {
+                    if(n.type === 'bar') return new BarNote();
+                    if(n.type === 'rest') return new StaveNote({ clef: c, keys: c==='treble'?['b/4']:['d/3'], duration: n.duration, type: 'r' });
                     const note = new StaveNote({ clef: c, keys: [n.key], duration: n.duration, auto_stem: true });
                     if(n.key.includes('#')) note.addModifier(new Accidental('#'));
                     if(n.key.includes('b') && n.key[0] !== 'b') note.addModifier(new Accidental('b'));
+                    if (state.isRevealed && n.type === 'note') {
+                        const tonePart = n.toneKey.slice(0, -1); const solfegeRoot = SOLFEGE[tonePart.replace(/[#b]/g, '')]; const accidental = tonePart.includes('#') ? '#' : (tonePart.includes('b') ? 'b' : '');
+                        note.addModifier(new Vex.Flow.Annotation(`${solfegeRoot}${accidental}`).setVerticalJustification(Vex.Flow.Annotation.VerticalJustify.BOTTOM).setFont("Nunito", 11, "bold"));
+                        note.addModifier(new Vex.Flow.Annotation(`(${n.toneKey})`).setVerticalJustification(Vex.Flow.Annotation.VerticalJustify.BOTTOM).setFont("Nunito", 9, "normal"));
+                    }
                     return note;
                 });
-
                 if (state.mode === 2) {
-                    const st = new Stave(10, 10, width - 20).addClef('treble').setContext(ctx).draw();
-                    const sb = new Stave(10, 110, width - 20).addClef('bass').setContext(ctx).draw();
+                    const trebleY = 20; 
+                    const bassY = 160; 
+                    const st = new Stave(staveX, trebleY, computedWidth - 20).addClef('treble').setContext(ctx); 
+                    const sb = new Stave(staveX, bassY, computedWidth - 20).addClef('bass').setContext(ctx);
+                    if(state.level===4) { st.addTimeSignature(state.timeSignature); sb.addTimeSignature(state.timeSignature); }
+                    st.draw(); sb.draw();
                     new StaveConnector(st, sb).setType(StaveConnector.type.BRACE).setContext(ctx).draw();
                     new StaveConnector(st, sb).setType(StaveConnector.type.SINGLE_LEFT).setContext(ctx).draw();
                     new StaveConnector(st, sb).setType(StaveConnector.type.SINGLE_RIGHT).setContext(ctx).draw();
-                    const tn = makeNotes(state.flashcardData.treble, 'treble');
+                    const tn = makeNotes(state.flashcardData.treble, 'treble'); 
                     const bn = makeNotes(state.flashcardData.bass, 'bass');
-                    const beamsT = Beam.generateBeams(tn); const beamsB = Beam.generateBeams(bn);
+                    const beamsT = Beam.generateBeams(tn.filter(n=>n instanceof StaveNote && n.getNoteType()!=='r')); 
+                    const beamsB = Beam.generateBeams(bn.filter(n=>n instanceof StaveNote && n.getNoteType()!=='r'));
                     const fmt = new Formatter();
-                    fmt.joinVoices([new Vex.Flow.Voice({num_beats:4,beat_value:4}).setMode(Vex.Flow.Voice.Mode.SOFT).addTickables(tn)]).format([new Vex.Flow.Voice({num_beats:4,beat_value:4}).setMode(Vex.Flow.Voice.Mode.SOFT).addTickables(tn)], width - 50);
+                    const voiceT = new Vex.Flow.Voice({num_beats: state.level===4?8:4, beat_value:4}).setMode(Vex.Flow.Voice.Mode.SOFT).addTickables(tn);
+                    const voiceB = new Vex.Flow.Voice({num_beats: state.level===4?8:4, beat_value:4}).setMode(Vex.Flow.Voice.Mode.SOFT).addTickables(bn);
+                    fmt.joinVoices([voiceT]).joinVoices([voiceB]).format([voiceT, voiceB], computedWidth - 50);
                     tn.forEach(n => n.setStave(st).setContext(ctx).draw()); beamsT.forEach(b => b.setContext(ctx).draw());
-                    fmt.format([new Vex.Flow.Voice({num_beats:4,beat_value:4}).setMode(Vex.Flow.Voice.Mode.SOFT).addTickables(bn)], width - 50);
                     bn.forEach(n => n.setStave(sb).setContext(ctx).draw()); beamsB.forEach(b => b.setContext(ctx).draw());
-                    const svgs = div.querySelectorAll('.vf-stavenote');
-                    state.flashcardData.treble.forEach((n,i)=>addClick(svgs[i], n.toneKey, n.duration));
-                    state.flashcardData.bass.forEach((n,i)=>addClick(svgs[state.flashcardData.treble.length+i], n.toneKey, n.duration));
+                    const svgs = div.querySelectorAll('.vf-stavenote'); 
+                    let svgIdx = 0;
+                    state.flashcardData.treble.forEach(n=>{ if(n.type==='note'){ addClick(svgs[svgIdx], n.toneKey, n.duration); n.svgElement = svgs[svgIdx]; svgIdx++; } else if(n.type==='rest'){ svgIdx++; }});
+                    state.flashcardData.bass.forEach(n=>{ if(n.type==='note'){ addClick(svgs[svgIdx], n.toneKey, n.duration); n.svgElement = svgs[svgIdx]; svgIdx++; } else if(n.type==='rest'){ svgIdx++; }});
                 } else {
                     const clef = state.mode === 0 ? 'treble' : 'bass';
-                    const st = new Stave(10, 10, width - 20).addClef(clef).setContext(ctx).draw();
+                    const staveY = 50; 
+                    const st = new Stave(staveX, staveY, computedWidth - 20).addClef(clef).setContext(ctx);
+                    if(state.level===4) st.addTimeSignature(state.timeSignature); st.draw();
                     const n = makeNotes(state.mode === 0 ? state.flashcardData.treble : state.flashcardData.bass, clef);
-                    const beams = Beam.generateBeams(n);
+                    const beams = Beam.generateBeams(n.filter(note => note instanceof StaveNote && note.getNoteType() !== 'r'));
                     Formatter.FormatAndDraw(ctx, st, n);
                     beams.forEach(b => b.setContext(ctx).draw());
                     const svgs = div.querySelectorAll('.vf-stavenote');
-                    n.forEach((note, i) => addClick(svgs[i], state.flashcardData[state.mode === 0 ? 'treble' : 'bass'][i].toneKey, state.flashcardData[state.mode === 0 ? 'treble' : 'bass'][i].duration));
+                    let svgIdx = 0;
+                    const data = state.mode === 0 ? state.flashcardData.treble : state.flashcardData.bass;
+                    data.forEach(n => {
+                        if(n.type === 'note') { addClick(svgs[svgIdx], n.toneKey, n.duration); n.svgElement = svgs[svgIdx]; svgIdx++; }
+                        else if(n.type==='rest') { svgIdx++; }
+                    });
                 }
             },
             reveal: () => {
-                stopSound();
-                state.isRevealed = true;
-                FLASHCARD_LOGIC.render();
-                
+                stopSound(); state.isRevealed = true; FLASHCARD_LOGIC.render();
                 initAudioIfNeeded().then(() => {
-                    const now = Tone.now();
-                    let currentTime = now;
-                    const bpm = 100; 
-                    const beatTime = 60 / bpm; 
-                    const getDurTime = (d) => DURATION_MAP[d].time * beatTime;
-
+                    const now = Tone.now(); let currentTime = now; const beatTime = 60/100; 
+                    const getDurTime = (d) => DURATION_MAP[d.replace('r','')].time * beatTime;
+                    const animateNote = (element, duration) => { if(element) { Tone.Draw.schedule(() => { element.classList.add('active-note'); setTimeout(() => element.classList.remove('active-note'), duration * 1000 * 0.9); }, currentTime); } };
                     if (state.mode === 2) {
-                        state.flashcardData.treble.forEach((t, i) => {
-                            const b = state.flashcardData.bass[i];
-                            const durationTime = getDurTime(t.duration);
-                            const durTone = DURATION_MAP[t.duration].tone;
-                            synth.triggerAttackRelease([t.toneKey, b.toneKey], durTone, currentTime);
-                            currentTime += durationTime;
+                        state.flashcardData.treble.forEach((t, i) => { 
+                            if (t.type === 'bar') return; 
+                            const b = state.flashcardData.bass[i]; 
+                            const durationSec = getDurTime(t.duration);
+                            if (t.type === 'note') { synth.triggerAttackRelease(t.toneKey, "8n", currentTime); animateNote(t.svgElement, durationSec); }
+                            if (b.type === 'note') { synth.triggerAttackRelease(b.toneKey, "8n", currentTime); animateNote(b.svgElement, durationSec); }
+                            currentTime += durationSec; 
                         });
                     } else {
                         const data = state.mode === 0 ? state.flashcardData.treble : state.flashcardData.bass;
-                        data.forEach((n, i) => {
-                            const durationTime = getDurTime(n.duration);
-                            const durTone = DURATION_MAP[n.duration].tone;
-                            synth.triggerAttackRelease(n.toneKey, durTone, currentTime);
-                            currentTime += durationTime;
+                        data.forEach((n, i) => { 
+                            if (n.type === 'bar') return; 
+                            const durationSec = getDurTime(n.duration);
+                            if (n.type === 'note') { synth.triggerAttackRelease(n.toneKey, "8n", currentTime); animateNote(n.svgElement, durationSec); }
+                            currentTime += durationSec; 
                         });
                     }
                 });
             }
         };
 
-        function addClick(el, tone, durationVex) {
-            if(!el) return;
-            el.style.cursor = 'pointer';
-            el.onclick = (e) => { e.stopPropagation(); playTone(tone, durationVex || '8'); const p=el.querySelectorAll('path,rect'); p.forEach(x=>x.style.fill='var(--accent-color)'); setTimeout(()=>p.forEach(x=>x.style.fill=''),300); };
-        }
+        const PASSIVE_LOGIC = {
+            renderSetup: () => {
+                if (state.passiveRunning) { PASSIVE_LOGIC.renderActive(); return; }
+                const t = LANGUAGES[state.lang].ui;
+                const btnGroup = (label, val, setter, opts) => `
+                    <div class="mb-4">
+                        <label class="block font-bold opacity-70 mb-1">${label}</label>
+                        <div class="flex gap-2 justify-center flex-wrap">
+                            ${opts.map(o => `<button onclick="${setter}(${o.v})" class="btn-group-btn ${val === o.v ? 'active' : ''}">${o.l}</button>`).join('')}
+                        </div>
+                    </div>
+                `;
+                const html = `
+                    <div class="theme-card p-8 rounded-2xl shadow-xl w-full max-w-lg border-t-4 theme-border">
+                        <h2 class="text-2xl font-bold mb-6 text-center">${t.passiveSetup}</h2>
+                        ${btnGroup(t.interval, state.passiveConfig.interval, 'PASSIVE_LOGIC.setInterval', [{v:2,l:'2s'}, {v:3,l:'3s'}, {v:5,l:'5s'}, {v:7,l:'7s'}, {v:10,l:'10s'}])}
+                        ${btnGroup(t.pauseTime, state.passiveConfig.pauseTime, 'PASSIVE_LOGIC.setPause', [{v:1,l:'1s'}, {v:2,l:'2s'}, {v:3,l:'3s'}, {v:5,l:'5s'}, {v:10,l:'10s'}])}
+                        <div class="mb-4">
+                            <label class="block font-bold opacity-70 mb-1">${t.target}</label>
+                            <div class="flex items-center gap-4"><input type="range" min="5" max="100" step="5" value="${state.passiveConfig.target}" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[var(--primary-color)]" oninput="this.nextElementSibling.innerText = this.value; state.passiveConfig.target = parseInt(this.value)"><span class="font-bold text-[var(--primary-color)] w-8 text-center">${state.passiveConfig.target}</span></div>
+                        </div>
+                        ${btnGroup(t.noteCount, state.passiveConfig.noteCount, 'PASSIVE_LOGIC.setNoteCount', [{v:1,l:'1 Note'}, {v:2,l:'2 Notes'}, {v:3,l:'3 Notes'}])}
+                        ${btnGroup(t.clefMode, state.passiveConfig.clefMode, 'PASSIVE_LOGIC.setClefMode', [{v:0,l:t.clefSol}, {v:1,l:t.clefFa}, {v:3,l:t.clefMix}, {v:2,l:t.clefGrand}])}
+                        <div class="text-center mt-6"><button onclick="PASSIVE_LOGIC.start()" class="theme-btn-primary px-10 py-3 rounded-full text-xl font-bold shadow-lg transform transition hover:scale-105 active:scale-95 w-full">${t.start}</button></div>
+                    </div>`;
+                document.getElementById('app-container').innerHTML = html;
+            },
+            setInterval: (v) => { state.passiveConfig.interval = v; PASSIVE_LOGIC.renderSetup(); },
+            setPause: (v) => { state.passiveConfig.pauseTime = v; PASSIVE_LOGIC.renderSetup(); },
+            setTarget: (v) => { state.passiveConfig.target = v; PASSIVE_LOGIC.renderSetup(); },
+            setNoteCount: (v) => { state.passiveConfig.noteCount = v; PASSIVE_LOGIC.renderSetup(); },
+            setClefMode: (v) => { state.passiveConfig.clefMode = v; PASSIVE_LOGIC.renderSetup(); },
+            togglePause: () => { state.passivePaused = !state.passivePaused; PASSIVE_LOGIC.renderActive(); },
+            renderActive: () => {
+                const t = LANGUAGES[state.lang].ui;
+                const timerDisplay = state.passivePaused ? "PAUSED" : (state.isRevealed ? `${t.nextIn} ${state.passivePauseLeft}s` : `${state.passiveTimeLeft}s`);
+                const pauseIcon = state.passivePaused ? "fa-play" : "fa-pause";
+                const html = `
+                    <div class="theme-card p-3 rounded-2xl shadow-xl w-full text-center border-t-4 theme-border flex flex-col relative h-auto min-h-[400px]">
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="text-lg font-bold text-[var(--primary-color)]">${t.progress}: ${state.passiveCount} / ${state.passiveConfig.target === 999 ? '∞' : state.passiveConfig.target}</span>
+                            <button onclick="PASSIVE_LOGIC.togglePause()" class="flex items-center gap-2 px-3 py-1 rounded-full bg-gray-100 hover:bg-gray-200 transition"><i class="fas ${pauseIcon} text-[var(--accent-color)]"></i><span id="passive-timer" class="text-lg font-bold text-[var(--accent-color)] min-w-[3rem] text-left">${timerDisplay}</span></button>
+                        </div>
+                        <div class="flex flex-col justify-center items-center w-full flex-grow">
+                            <div id="passive-canvas" class="flex justify-center items-center bg-white rounded-xl p-1 mb-1 overflow-hidden shadow-inner border border-gray-100 w-full relative z-10"></div>
+                            <div class="w-full mt-2 mb-4 flex items-center justify-center min-h-[4rem]">
+                                ${state.isRevealed ? `<div class="text-gray-500 font-bold opacity-0">...</div>` : `<div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden"><div class="h-full bg-[var(--accent-color)] animate-[width_3s_linear]" style="animation-duration: ${state.passiveConfig.interval}s; animation-play-state: ${state.passivePaused ? 'paused' : 'running'}"></div></div>`}
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-center mt-auto pb-2"><button id="passive-btn" onclick="PASSIVE_LOGIC.stop()" class="bg-red-500 hover:bg-red-600 text-white px-10 py-3 rounded-full text-xl font-bold shadow-xl transform transition hover:scale-105 active:scale-95 fixed-action-btn">${t.stop}</button></div>
+                    </div>`;
+                document.getElementById('app-container').innerHTML = html;
+                const div = document.getElementById('passive-canvas'); if(!div) return;
+                const { Renderer, Stave, StaveNote, Formatter, StaveConnector, Accidental, Beam } = Vex.Flow;
+                const containerWidth = div.clientWidth;
+                const count = Math.max(state.flashcardData.treble.length, state.flashcardData.bass.length);
+                const computedWidth = Math.min(containerWidth - 20, Math.max(320, count * 70 + 100));
+                const mode = state.passiveRenderMode;
+                const isGrand = mode === 2;
+                const canvasHeight = isGrand ? 320 : 200; 
+                const renderer = new Renderer(div, Renderer.Backends.SVG);
+                renderer.resize(computedWidth, canvasHeight);
+                const ctx = renderer.getContext();
+                const staveX = (computedWidth - (computedWidth - 20)) / 2;
+                const makeNotes = (d, c) => d.map(n => {
+                    if(n.type === 'rest') return new StaveNote({ clef: c, keys: c==='treble'?['b/4']:['d/3'], duration: n.duration, type: 'r' });
+                    const note = new StaveNote({ clef: c, keys: [n.key], duration: n.duration, auto_stem: true });
+                    if(n.key.includes('#')) note.addModifier(new Accidental('#'));
+                    if(n.key.includes('b') && n.key[0] !== 'b') note.addModifier(new Accidental('b'));
+                    if (state.isRevealed && n.type === 'note') {
+                        const tonePart = n.toneKey.slice(0, -1);
+                        const solfegeRoot = SOLFEGE[tonePart.replace(/[#b]/g, '')];
+                        const accidental = tonePart.includes('#') ? '#' : (tonePart.includes('b') ? 'b' : '');
+                        note.addModifier(new Vex.Flow.Annotation(`${solfegeRoot}${accidental}`).setVerticalJustification(Vex.Flow.Annotation.VerticalJustify.BOTTOM).setFont("Nunito", 11, "bold"));
+                        note.addModifier(new Vex.Flow.Annotation(`(${n.toneKey})`).setVerticalJustification(Vex.Flow.Annotation.VerticalJustify.BOTTOM).setFont("Nunito", 9, "normal"));
+                    }
+                    return note;
+                });
+                if (mode === 2) {
+                    const trebleY = 20; const bassY = 160;
+                    const st = new Stave(staveX, trebleY, computedWidth - 20).addClef('treble').setContext(ctx).draw();
+                    const sb = new Stave(staveX, bassY, computedWidth - 20).addClef('bass').setContext(ctx).draw();
+                    new StaveConnector(st, sb).setType(StaveConnector.type.BRACE).setContext(ctx).draw();
+                    new StaveConnector(st, sb).setType(StaveConnector.type.SINGLE_LEFT).setContext(ctx).draw();
+                    new StaveConnector(st, sb).setType(StaveConnector.type.SINGLE_RIGHT).setContext(ctx).draw();
+                    const tn = makeNotes(state.flashcardData.treble, 'treble');
+                    const bn = makeNotes(state.flashcardData.bass, 'bass');
+                    const beamsT = Beam.generateBeams(tn.filter(n=>n instanceof StaveNote && n.getNoteType()!=='r')); 
+                    const beamsB = Beam.generateBeams(bn.filter(n=>n instanceof StaveNote && n.getNoteType()!=='r'));
+                    const fmt = new Formatter();
+                    const vT = new Vex.Flow.Voice({num_beats: 4, beat_value:4}).setMode(Vex.Flow.Voice.Mode.SOFT).addTickables(tn);
+                    const vB = new Vex.Flow.Voice({num_beats: 4, beat_value:4}).setMode(Vex.Flow.Voice.Mode.SOFT).addTickables(bn);
+                    fmt.joinVoices([vT]).joinVoices([vB]).format([vT, vB], computedWidth - 50);
+                    tn.forEach(n => n.setStave(st).setContext(ctx).draw()); beamsT.forEach(b => b.setContext(ctx).draw());
+                    bn.forEach(n => n.setStave(sb).setContext(ctx).draw()); beamsB.forEach(b => b.setContext(ctx).draw());
+                    const svgs = div.querySelectorAll('.vf-stavenote');
+                    let svgIdx = 0;
+                    state.flashcardData.treble.forEach(n => { if(n.type === 'note') { n.svgElement = svgs[svgIdx]; svgIdx++; } else if(n.type === 'rest') { svgIdx++; } });
+                    state.flashcardData.bass.forEach(n => { if(n.type === 'note') { n.svgElement = svgs[svgIdx]; svgIdx++; } else if(n.type === 'rest') { svgIdx++; } });
+                } else {
+                    const clef = mode === 0 ? 'treble' : 'bass';
+                    const staveY = 50; 
+                    const st = new Stave(staveX, staveY, computedWidth - 20).addClef(clef).setContext(ctx).draw();
+                    const n = makeNotes(mode === 0 ? state.flashcardData.treble : state.flashcardData.bass, clef);
+                    const beams = Beam.generateBeams(n.filter(n=>n instanceof StaveNote && n.getNoteType()!=='r'));
+                    Formatter.FormatAndDraw(ctx, st, n);
+                    beams.forEach(b => b.setContext(ctx).draw());
+                    const svgs = div.querySelectorAll('.vf-stavenote');
+                    let svgIdx = 0;
+                    const data = mode === 0 ? state.flashcardData.treble : state.flashcardData.bass;
+                    data.forEach(n => { if(n.type === 'note') { n.svgElement = svgs[svgIdx]; svgIdx++; } else if(n.type === 'rest') { svgIdx++; } });
+                }
+            },
+            start: () => {
+                initAudioIfNeeded();
+                if(!state.audioEnabled) return alert("Tap screen to enable audio first!");
+                state.passiveRunning = true; state.passivePaused = false; state.passiveCount = 0;
+                PASSIVE_LOGIC.loop();
+            },
+            loop: () => {
+                if (!state.passiveRunning) return;
+                stopSound(); state.passiveCount++;
+                if (state.passiveCount > state.passiveConfig.target) { PASSIVE_LOGIC.stop(); return; }
+                const res = NOTE_GENERATOR.generate(state.passiveConfig.noteCount, state.passiveConfig.clefMode);
+                state.flashcardData = res.data; state.passiveRenderMode = res.mode; 
+                state.isRevealed = false; state.passiveTimeLeft = state.passiveConfig.interval;
+                PASSIVE_LOGIC.renderActive();
+                if (state.passiveCountdownInterval) clearInterval(state.passiveCountdownInterval);
+                state.passiveCountdownInterval = setInterval(() => {
+                    if (!state.passiveRunning || state.passivePaused) return;
+                    state.passiveTimeLeft--;
+                    const timerEl = document.getElementById('passive-timer');
+                    if (timerEl && !state.isRevealed) timerEl.innerText = state.passiveTimeLeft + "s";
+                    if (state.passiveTimeLeft <= 0) {
+                        clearInterval(state.passiveCountdownInterval);
+                        state.passiveCountdownInterval = null;
+                        state.isRevealed = true; state.passivePauseLeft = state.passiveConfig.pauseTime;
+                        PASSIVE_LOGIC.renderActive();
+                        
+                        Tone.Transport.bpm.value = 100; // FIX: Reset BPM
+                        const now = Tone.now(); const beatTime = 60/100; const getDurTime = (d) => DURATION_MAP[d.replace('r','')].time * beatTime;
+                        let currentTime = now; let totalPlayTime = 0;
+                        const animateNote = (element, duration) => { if(element) { Tone.Draw.schedule(() => { element.classList.add('active-note'); setTimeout(() => element.classList.remove('active-note'), duration * 1000 * 0.9); }, currentTime); } };
+                        if (state.passiveRenderMode === 2) {
+                            state.flashcardData.treble.forEach((t, i) => {
+                                const durStr = t.duration.replace('r',''); const dur = DURATION_MAP[durStr].tone; const timeVal = getDurTime(t.duration); const b = state.flashcardData.bass[i];
+                                if (t.type === 'note') { synth.triggerAttackRelease(t.toneKey, dur, currentTime); animateNote(t.svgElement, timeVal); }
+                                if (b.type === 'note') { synth.triggerAttackRelease(b.toneKey, dur, currentTime); animateNote(b.svgElement, timeVal); }
+                                currentTime += timeVal; totalPlayTime += timeVal;
+                            });
+                        } else {
+                             const data = state.passiveRenderMode === 0 ? state.flashcardData.treble : state.flashcardData.bass;
+                             data.forEach((n, i) => {
+                                 const durStr = n.duration.replace('r',''); const dur = DURATION_MAP[durStr].tone; const timeVal = getDurTime(n.duration);
+                                 if (n.type === 'note') { synth.triggerAttackRelease(n.toneKey, dur, currentTime); animateNote(n.svgElement, timeVal); }
+                                 currentTime += timeVal; totalPlayTime += timeVal;
+                             });
+                        }
+                        if (state.passivePauseInterval) clearInterval(state.passivePauseInterval);
+                        setTimeout(() => {
+                            if (!state.passiveRunning) return;
+                            state.passivePauseInterval = setInterval(() => {
+                                if (!state.passiveRunning || state.passivePaused) return;
+                                state.passivePauseLeft--;
+                                PASSIVE_LOGIC.renderActive(); 
+                                if (state.passivePauseLeft <= 0) { clearInterval(state.passivePauseInterval); state.passivePauseInterval = null; PASSIVE_LOGIC.loop(); }
+                            }, 1000);
+                        }, totalPlayTime * 1000);
+                    }
+                }, 1000);
+            },
+            stop: () => {
+                state.passiveRunning = false;
+                if(state.passiveCountdownInterval) clearInterval(state.passiveCountdownInterval);
+                if(state.passivePauseInterval) clearInterval(state.passivePauseInterval);
+                if(state.passiveNextTimer) clearTimeout(state.passiveNextTimer);
+                stopSound(); PASSIVE_LOGIC.renderSetup();
+            }
+        };
 
-        // --- LIBRARY LOGIC ---
+        const FINDING_LOGIC = {
+            render: () => {
+                document.getElementById('app-container').innerHTML = `
+                    <div class="theme-card p-4 rounded-2xl shadow-xl w-full max-w-lg border-t-4 theme-border overflow-hidden">
+                        <div class="text-center mb-4">
+                            <h2 class="text-2xl font-bold text-[var(--primary-color)]">Tra cứu nốt nhạc</h2>
+                            <p class="text-sm opacity-70">Chạm vào nốt nhạc để xem tên nốt</p>
+                        </div>
+                        <div id="finding-notes-scroll" class="overflow-x-auto w-full bg-white rounded-xl shadow-inner border border-gray-100 mb-4 p-2 flex justify-center min-h-[460px]">
+                            <div id="finding-notes-canvas"></div>
+                        </div>
+                    </div>
+                `;
+                setTimeout(FINDING_LOGIC.draw, 100);
+            },
+            draw: () => {
+                const div = document.getElementById('finding-notes-canvas');
+                if(!div) return;
+                div.innerHTML = '';
+                
+                const VF = Vex.Flow;
+                // --- SCALE 1.3 ---
+                const scale = 1.3; 
+                
+                const noteNames = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+                
+                // Helper to generate full range
+                const generateRange = (startOctave, endOctave, startNoteIdx, endNoteIdx) => {
+                    let pitches = [];
+                    for(let o = startOctave; o <= endOctave; o++) {
+                        noteNames.forEach((n, i) => {
+                            if(o === startOctave && i < startNoteIdx) return;
+                            if(o === endOctave && i > endNoteIdx) return;
+                            pitches.push(`${n}/${o}`);
+                        });
+                    }
+                    return pitches;
+                }
+                
+                // Full Range with ledger lines
+                // Bass: C2 to E4 (covers low F2 to Middle C and above)
+                const bassKeys = generateRange(2, 4, 0, 2); 
+                // Treble: A3 to C6 (covers below Middle C to high C6)
+                const trebleKeys = generateRange(3, 6, 5, 0); 
+                
+                // Fixed Width for column style
+                const staveWidth = 150; // Tăng width một chút cho thoải mái
+                const height = 450;
+                
+                const renderer = new VF.Renderer(div, VF.Renderer.Backends.SVG);
+                // Adjust renderer size to account for scale
+                renderer.resize((staveWidth + 100) * scale, height * scale);
+                const ctx = renderer.getContext();
+                ctx.scale(scale, scale); // Apply scale
+                
+                // Treble Stave
+                const trebleStave = new VF.Stave(10, 20, staveWidth);
+                trebleStave.addClef("treble");
+                trebleStave.setContext(ctx).draw();
+                
+                // Bass Stave
+                const bassStave = new VF.Stave(10, 240, staveWidth);
+                bassStave.addClef("bass");
+                bassStave.setContext(ctx).draw();
+                
+                new VF.StaveConnector(trebleStave, bassStave).setType(VF.StaveConnector.type.BRACE).setContext(ctx).draw();
+
+                // Create Notes - ALL at X center
+                // Use a fixed X offset relative to stave start
+                const noteX = 10 + (staveWidth / 2); // Center of stave which starts at 10
+
+                const createFindingNotes = (keys, clef, stave) => {
+                    keys.forEach(key => {
+                        // Create Ghost Note (Gray)
+                        const note = new VF.StaveNote({ 
+                            clef: clef, 
+                            keys: [key], 
+                            duration: 'q', 
+                            auto_stem: true
+                        });
+                        
+                        const id = `${clef}-${key}`;
+                        const isActive = state.findingNotes.has(id);
+                        
+                        // Style based on active state
+                        if (isActive) {
+                             const tonePart = key.split('/')[0].toUpperCase();
+                             const octave = key.split('/')[1];
+                             const solfege = SOLFEGE[tonePart];
+                             const text = `${solfege} (${tonePart}${octave})`;
+                             
+                             // Add text to the RIGHT
+                             // Use manual text draw instead of Annotation for precise placement "bên cạnh"
+                             // We do this in post-render step
+                             
+                             note.setStyle({ fillStyle: "black", strokeStyle: "black" });
+                        } else {
+                             // Ghost style - lighter gray
+                             note.setStyle({ fillStyle: "#cbd5e1", strokeStyle: "#cbd5e1" });
+                        }
+                        
+                        // Manually Draw Note using TickContext to position
+                        const tickContext = new VF.TickContext();
+                        tickContext.addTickable(note);
+                        tickContext.preFormat().setX(noteX); // Force X position
+                        
+                        note.setStave(stave);
+                        note.setContext(ctx);
+                        note.setModifierContext(new VF.ModifierContext()); // Needed for ledger lines
+                        note.draw();
+                        
+                        // Custom Text Drawing for Active Note
+                        if (isActive) {
+                            const tonePart = key.split('/')[0].toUpperCase();
+                            const octave = key.split('/')[1];
+                            const solfege = SOLFEGE[tonePart];
+                            const text = `${solfege} (${tonePart}${octave})`;
+                            
+                            ctx.save();
+                            ctx.setFont("Nunito", 14, "800"); // Bold, larger
+                            ctx.setFillStyle("var(--primary-color)");
+                            // Draw text to the right of the notehead
+                            // note.getNoteHeadBeginX() gives X. 
+                            // note.ys[0] gives Y of the first notehead.
+                            const textX = note.getNoteHeadBeginX() + 25; // Shift right
+                            const textY = note.getYs()[0] + 4; // Center vertically roughly
+                            ctx.fillText(text, textX, textY);
+                            ctx.restore();
+                        }
+                        
+                        // Interaction
+                        let el = null;
+                        if (note.attrs && note.attrs.el) el = note.attrs.el;
+                        else if (typeof note.getSVGElement === 'function') el = note.getSVGElement();
+                        
+                        if (el) {
+                            el.style.cursor = 'pointer';
+                            el.onclick = (e) => {
+                                e.stopPropagation();
+                                FINDING_LOGIC.toggleNote(id, key);
+                            };
+                            
+                            if (isActive) el.classList.add('finding-note-active');
+                            else el.classList.add('finding-note-ghost');
+                        }
+                    });
+                };
+                
+                createFindingNotes(trebleKeys, 'treble', trebleStave);
+                createFindingNotes(bassKeys, 'bass', bassStave);
+            },
+            toggleNote: (id, keyString) => {
+                if (state.findingNotes.has(id)) {
+                    state.findingNotes.delete(id);
+                } else {
+                    state.findingNotes.clear(); // Exclusive
+                    state.findingNotes.add(id);
+                    const toneKey = keyString.replace('/', '');
+                    playTone(toneKey, '2n');
+                }
+                FINDING_LOGIC.draw(); 
+            }
+        };
+
         const LIBRARY_LOGIC = {
             render: () => {
                 const t = LANGUAGES[state.lang].ui;
-                document.getElementById('app-container').innerHTML = `
-                    <div class="grid md:grid-cols-2 gap-6 w-full h-[80vh]">
-                        <div class="theme-card p-0 rounded-2xl shadow-xl overflow-hidden flex flex-col relative">
-                            <h2 class="text-2xl font-bold sticky-header p-4 z-10 flex items-center gap-2"><i class="fas fa-book-open text-[var(--primary-color)]"></i> ${t.library}</h2>
-                            <div class="overflow-y-auto library-scroll p-6" id="notes-lib-content"></div>
-                        </div>
-                        <div class="theme-card p-0 rounded-2xl shadow-xl overflow-hidden flex flex-col relative">
-                            <h2 class="text-2xl font-bold sticky-header p-4 z-10 flex items-center gap-2"><i class="fas fa-guitar text-[var(--primary-color)]"></i> ${t.chords}</h2>
-                            <div class="overflow-y-auto library-scroll p-6" id="chords-lib-content"></div>
-                        </div>
-                    </div>`;
+                document.getElementById('app-container').innerHTML = `<div class="grid md:grid-cols-2 gap-6 w-full h-[80vh]"><div class="theme-card p-0 rounded-2xl shadow-xl overflow-hidden flex flex-col relative"><h2 class="text-2xl font-bold sticky-header p-4 z-10 flex items-center gap-2"><i class="fas fa-book-open text-[var(--primary-color)]"></i> ${t.library}</h2><div class="overflow-y-auto library-scroll p-6" id="notes-lib-content"></div></div><div class="theme-card p-0 rounded-2xl shadow-xl overflow-hidden flex flex-col relative"><h2 class="text-2xl font-bold sticky-header p-4 z-10 flex items-center gap-2"><i class="fas fa-guitar text-[var(--primary-color)]"></i> ${t.chords}</h2><div class="overflow-y-auto library-scroll p-6" id="chords-lib-content"></div></div></div>`;
                 setTimeout(LIBRARY_LOGIC.fillContent, 100);
             },
             fillContent: () => {
-                const nDiv = document.getElementById('notes-lib-content');
-                if(!nDiv) return;
+                const nDiv = document.getElementById('notes-lib-content'); if(!nDiv) return;
                 for (let o = 0; o <= 8; o++) {
-                    const id = `lib-oct-${o}`;
-                    let lst = ['C','D','E','F','G','A','B']; if(o===0) lst=['A','B']; if(o===8) lst=['C'];
-                    const clef = o < 4 ? 'bass' : 'treble';
-                    const w = document.createElement('div');
+                    const id = `lib-oct-${o}`; let lst = ['C','D','E','F','G','A','B']; if(o===0) lst=['A','B']; if(o===8) lst=['C'];
+                    const clef = o < 4 ? 'bass' : 'treble'; const w = document.createElement('div');
                     w.innerHTML = `<h3 class="font-bold text-md text-[var(--primary-color)] mb-2 uppercase tracking-wide">Octave ${o} (${clef})</h3><div id="${id}" class="bg-white rounded-xl p-2 overflow-x-auto cursor-pointer border border-gray-200 shadow-sm hover:shadow-md transition"></div>`;
-                    nDiv.appendChild(w);
-                    const notes = lst.map(n => ({ key: `${n.toLowerCase()}/${o}`, toneKey: `${n}${o}`, duration: 'q', midi: 0 }));
-                    renderNotation(id, notes, clef, 600, 0.85);
+                    nDiv.appendChild(w); const notes = lst.map(n => ({ key: `${n.toLowerCase()}/${o}`, toneKey: `${n}${o}`, duration: 'q', midi: 0 })); renderNotation(id, notes, clef, 600, 0.85);
                 }
-                const cDiv = document.getElementById('chords-lib-content');
-                if(!cDiv) return;
+                const cDiv = document.getElementById('chords-lib-content'); if(!cDiv) return;
                 ['C','D','E','F','G','A','B'].forEach(r => {
                     [{t:'M',s:'Major'},{t:'m',s:'Minor'}].forEach(v => {
-                        const id = `chord-${r}-${v.t}`;
-                        const w = document.createElement('div');
+                        const id = `chord-${r}-${v.t}`; const w = document.createElement('div');
                         w.className = "flex flex-col sm:flex-row items-center gap-4 bg-[var(--bg-color)] p-3 rounded-xl hover:brightness-95 transition cursor-pointer border border-transparent hover:border-[var(--primary-color)]";
-                        const d = getChordKeys(r, v.t);
-                        w.onclick = () => playChord(d.tones);
+                        const d = getChordKeys(r, v.t); w.onclick = () => playChord(d.tones);
                         w.innerHTML = `<div class="font-bold w-full sm:w-24 text-center sm:text-left text-lg text-[var(--text-color)]">${r} ${v.s}</div><div id="${id}" class="bg-white rounded-lg flex-grow w-full sm:w-auto shadow-sm"></div>`;
-                        cDiv.appendChild(w);
-                        renderChord(id, d.keys);
+                        cDiv.appendChild(w); renderChord(id, d.keys);
                     });
                 });
             }
         };
 
-        function getChordKeys(r, t) {
-            const m = { 'C':{M:['c/4','e/4','g/4'],m:['c/4','eb/4','g/4']}, 'D':{M:['d/4','f#/4','a/4'],m:['d/4','f/4','a/4']}, 'E':{M:['e/4','g#/4','b/4'],m:['e/4','g/4','b/4']}, 'F':{M:['f/4','a/4','c/5'],m:['f/4','ab/4','c/5']}, 'G':{M:['g/4','b/4','d/5'],m:['g/4','bb/4','d/5']}, 'A':{M:['a/4','c#/5','e/5'],m:['a/4','c/5','e/5']}, 'B':{M:['b/4','d#/5','f#/5'],m:['b/4','d/5','f#/5']} };
-            const tm = { 'C':{M:['C4','E4','G4'],m:['C4','Eb4','G4']}, 'D':{M:['D4','F#4','A4'],m:['D4','F4','A4']}, 'E':{M:['E4','G#4','B4'],m:['E4','G4','B4']}, 'F':{M:['F4','A4','C5'],m:['F4','Ab4','C5']}, 'G':{M:['G4','B4','D5'],m:['G4','Bb4','D5']}, 'A':{M:['A4','C#5','E5'],m:['A4','C5','E5']}, 'B':{M:['B4','D#5','F#5'],m:['B4','D5','F#5']} };
-            return { keys: m[r][t], tones: tm[r][t] };
+        function getChordKeys(r, t) { const m = { 'C':{M:['c/4','e/4','g/4'],m:['c/4','eb/4','g/4']}, 'D':{M:['d/4','f#/4','a/4'],m:['d/4','f/4','a/4']}, 'E':{M:['e/4','g#/4','b/4'],m:['e/4','g/4','b/4']}, 'F':{M:['f/4','a/4','c/5'],m:['f/4','ab/4','c/5']}, 'G':{M:['g/4','b/4','d/5'],m:['g/4','bb/4','d/5']}, 'A':{M:['a/4','c#/5','e/5'],m:['a/4','c/5','e/5']}, 'B':{M:['b/4','d#/5','f#/5'],m:['b/4','d/5','f#/5']} }; const tm = { 'C':{M:['C4','E4','G4'],m:['C4','Eb4','G4']}, 'D':{M:['D4','F#4','A4'],m:['D4','F4','A4']}, 'E':{M:['E4','G#4','B4'],m:['E4','G4','B4']}, 'F':{M:['F4','A4','C5'],m:['F4','Ab4','C5']}, 'G':{M:['G4','B4','D5'],m:['G4','Bb4','D5']}, 'A':{M:['A4','C#5','E5'],m:['A4','C5','E5']}, 'B':{M:['B4','D#5','F#5'],m:['B4','D5','F#5']} }; return { keys: m[r][t], tones: tm[r][t] }; }
+        function renderNotation(eid, data, clef, w, s) { const div = document.getElementById(eid); if(!div) return; div.innerHTML=''; const r = new Vex.Flow.Renderer(div, Vex.Flow.Renderer.Backends.SVG); r.resize(w, 250 * s); const ctx = r.getContext(); ctx.scale(s, s); const st = new Vex.Flow.Stave(10, 50, w - 20).addClef(clef).setContext(ctx).draw(); const n = data.map(d => { const note = new Vex.Flow.StaveNote({clef, keys:[d.key], duration:d.duration, auto_stem:true}); if(d.key.includes('#')) note.addModifier(new Vex.Flow.Accidental('#')); if(d.key.includes('b') && d.key[0]!=='b') note.addModifier(new Vex.Flow.Accidental('b')); return note; }); Vex.Flow.Formatter.FormatAndDraw(ctx, st, n); const svgs = div.querySelectorAll('.vf-stavenote'); data.forEach((d,i) => addClick(svgs[i], d.toneKey)); }
+        function renderChord(eid, keys) { const div = document.getElementById(eid); if(!div) return; const r = new Vex.Flow.Renderer(div, Vex.Flow.Renderer.Backends.SVG); r.resize(250, 150); const ctx = r.getContext(); ctx.scale(0.55, 0.55); const st = new Vex.Flow.Stave(0, 30, 240).addClef('treble').setContext(ctx).draw(); const n = new Vex.Flow.StaveNote({clef:'treble',keys,duration:'w'}); keys.forEach((k,i)=>{ if(k.includes('#')) n.addModifier(new Vex.Flow.Accidental('#'),i); if(k.includes('b') && k[0]!=='b') n.addModifier(new Vex.Flow.Accidental('b'),i); }); st.setNoteStartX(st.getNoteStartX()+20); Vex.Flow.Formatter.FormatAndDraw(ctx, st, [n]); }
+        
+        const EAR_LOGIC={targetNotes:[],render:()=>{const t=LANGUAGES[state.lang].ui;document.getElementById('app-container').innerHTML=`<div class="theme-card p-8 rounded-2xl shadow-xl w-full text-center max-w-md border-t-4 theme-border min-h-[450px] flex flex-col justify-between"><h2 class="text-2xl font-bold mb-6">${t.ui&&t.ui.modes?t.modes[6]:'Ear Training'}</h2><div class="mb-6 flex items-center justify-center gap-4"><label class="font-bold opacity-70">${t.notes}:</label><div class="flex items-center gap-2"><button onclick="EAR_LOGIC.changeCount(-1)" class="w-10 h-10 rounded-full bg-white border border-[var(--primary-color)] text-[var(--primary-color)] font-bold hover:bg-[var(--primary-color)] hover:text-white transition shadow-sm flex items-center justify-center"><i class="fas fa-minus"></i></button><span class="text-2xl font-bold w-8">${state.earTrainingNotes}</span><button onclick="EAR_LOGIC.changeCount(1)" class="w-10 h-10 rounded-full bg-white border border-[var(--primary-color)] text-[var(--primary-color)] font-bold hover:bg-[var(--primary-color)] hover:text-white transition shadow-sm flex items-center justify-center"><i class="fas fa-plus"></i></button></div></div><div class="flex-grow flex flex-col justify-center"><div id="ear-canvas-container" class="bg-white rounded-xl p-4 mb-4 shadow-inner border border-gray-200 min-h-[160px] flex items-center justify-center">${!state.isRevealed?`<i class="fas fa-headphones-alt text-6xl text-[var(--placeholder-color)] animate-pulse"></i>`:`<div id="ear-vexflow"></div>`}</div><div class="h-12 flex items-center justify-center mb-2">${state.isRevealed?`<div class="flex flex-wrap gap-2 justify-center animate-fade-in">${state.targetNotes.map(n=>`<span class="bg-[var(--primary-color)] text-white px-3 py-1 rounded-lg font-bold shadow-sm text-base">${getNoteName(n)}</span>`).join('')}</div>`:`<span class="text-3xl font-bold text-gray-400 opacity-50">? ? ?</span>`}</div></div><div class="flex gap-4 justify-center h-16 items-center"><button onclick="EAR_LOGIC.play()" class="theme-btn-accent px-8 py-3 rounded-full font-bold shadow-lg transform transition hover:scale-105 active:scale-95"><i class="fas fa-volume-up mr-2"></i> ${t.listen}</button><button onclick="${state.isRevealed?'EAR_LOGIC.newQuestion()':'EAR_LOGIC.reveal()'}" class="theme-btn-primary px-8 py-3 rounded-full font-bold shadow-lg transform transition hover:scale-105 active:scale-95 w-40 fixed-action-btn">${state.isRevealed?t.next:t.result}</button></div></div>`;if(state.isRevealed){const w=Math.min(350,document.getElementById('ear-canvas-container').offsetWidth-20);const no=state.targetNotes.map(s=>({key:`${s.charAt(0).toLowerCase()}${s.includes('#')?'#':s.includes('b')?'b':''}/${s.slice(-1)}`,toneKey:s,duration:'q',midi:0}));renderNotation('ear-vexflow',no,'treble',w,0.85);}if(state.targetNotes.length===0)EAR_LOGIC.newQuestion();},changeCount:(d)=>{let v=state.earTrainingNotes+d;if(v<1)v=1;if(v>10)v=10;state.earTrainingNotes=v;EAR_LOGIC.newQuestion();},newQuestion:()=>{stopSound();state.targetNotes=[];const p=['C4','D4','E4','F4','G4','A4','B4','C5'];for(let i=0;i<state.earTrainingNotes;i++)state.targetNotes.push(p[rnd(0,p.length-1)]);state.isRevealed=false;EAR_LOGIC.render();},play:()=>{initAudioIfNeeded();const n=Tone.now();state.targetNotes.forEach((x,i)=>synth.triggerAttackRelease(x,"8n",n+i*0.6));},reveal:()=>{state.isRevealed=true;EAR_LOGIC.render();}};
+        const CHECK_LOGIC={isListening:false,detectedNotes:[],timer:null,timeLeft:0,render:()=>{const t=LANGUAGES[state.lang].ui;document.getElementById('app-container').innerHTML=`<div class="theme-card p-8 rounded-2xl shadow-xl w-full text-center max-w-lg border-t-4 theme-border"><h2 class="text-2xl font-bold mb-6">${t.ui&&t.ui.modes?t.modes[7]:'Note Checking'}</h2><div class="mb-6"><label class="block mb-2 font-bold opacity-80">${t.time}:</label><div class="flex gap-2 justify-center">${[1,3,5,7,10].map(s=>`<button onclick="state.checkTime=${s};CHECK_LOGIC.render()" class="px-4 py-2 rounded-full border border-[var(--primary-color)] transition ${state.checkTime===s?'bg-[var(--primary-color)] text-white shadow-md':'text-[var(--card-text)] hover:bg-gray-200'}">${s}s</button>`).join('')}</div></div><div class="min-h-[120px] flex items-center justify-center bg-[var(--bg-color)] text-[var(--text-color)] rounded-xl mb-8 text-3xl font-mono p-4 border border-dashed border-[var(--primary-color)]">${CHECK_LOGIC.isListening?`<span class="animate-pulse text-red-500 font-bold"><i class="fas fa-microphone mr-2"></i> ${CHECK_LOGIC.timeLeft}s</span>`:(CHECK_LOGIC.detectedNotes.length?`<span class="text-[var(--primary-color)] font-bold">${CHECK_LOGIC.detectedNotes.map(n=>getNoteName(n)).join(", ")}</span>`:"Ready")}</div><button onclick="CHECK_LOGIC.startListening()" ${CHECK_LOGIC.isListening?'disabled':''} class="theme-btn-primary px-10 py-4 rounded-full text-xl font-bold shadow-xl disabled:opacity-50 transform transition hover:scale-105 active:scale-95 fixed-action-btn">${CHECK_LOGIC.isListening?t.detect:`<i class="fas fa-microphone mr-2"></i> ${t.start}`}</button></div>`;},startListening:async()=>{if(!state.audioEnabled){alert("Please click Start first.");return;}CHECK_LOGIC.isListening=true;CHECK_LOGIC.timeLeft=state.checkTime;CHECK_LOGIC.detectedNotes=[];CHECK_LOGIC.render();try{const st=await navigator.mediaDevices.getUserMedia({audio:true});const ac=new(window.AudioContext||window.webkitAudioContext)();const an=ac.createAnalyser();an.fftSize=2048;ac.createMediaStreamSource(st).connect(an);const detect=()=>{if(!CHECK_LOGIC.isListening)return;const b=new Float32Array(an.fftSize);an.getFloatTimeDomainData(b);const n=autoCorrelate(b,ac.sampleRate);if(n&&n!=='-'&&CHECK_LOGIC.detectedNotes[CHECK_LOGIC.detectedNotes.length-1]!==n)CHECK_LOGIC.detectedNotes.push(n);requestAnimationFrame(detect);};detect();CHECK_LOGIC.timer=setInterval(()=>{CHECK_LOGIC.timeLeft--;CHECK_LOGIC.render();if(CHECK_LOGIC.timeLeft<=0){CHECK_LOGIC.isListening=false;clearInterval(CHECK_LOGIC.timer);st.getTracks().forEach(t=>t.stop());ac.close();CHECK_LOGIC.detectedNotes=[...new Set(CHECK_LOGIC.detectedNotes)];CHECK_LOGIC.render();}},1000);}catch(e){alert("Microphone Error");CHECK_LOGIC.isListening=false;CHECK_LOGIC.render();}}};
+        const METRO_LOGIC={countdown:0,countdownInterval:null,render:()=>{const t=LANGUAGES[state.lang].ui;const sounds=[{id:'wood',name:'Woodblock'},{id:'tick',name:'Tick'},{id:'drop',name:'Drop'},{id:'click',name:'Digital'},{id:'drum',name:'Drum'},{id:'bell',name:'Bell'}];document.getElementById('app-container').innerHTML=`<div class="theme-card p-10 rounded-2xl shadow-xl w-full text-center max-w-md border-t-4 theme-border"><h2 class="text-3xl font-bold mb-8">${t.ui&&t.ui.modes?t.modes[8]:'Metronome'}</h2><div class="mb-4 w-full"><label class="text-sm font-bold opacity-70 block mb-1 text-left px-2">${t.soundType||'Sound'}:</label><select onchange="state.metroSound=this.value" class="w-full p-2 rounded-lg bg-[var(--bg-color)] border border-[var(--primary-color)] font-bold focus:outline-none">${sounds.map(s=>`<option value="${s.id}" ${state.metroSound===s.id?'selected':''}>${s.name}</option>`).join('')}</select></div><div class="mb-10 flex flex-col items-center"><div class="flex items-center gap-2 mb-4"><input type="number" min="40" max="200" value="${state.metronomeBpm}" onchange="let v=parseInt(this.value);if(isNaN(v))v=60;if(v<40)v=40;if(v>200)v=200;state.metronomeBpm=v;METRO_LOGIC.render()" class="text-6xl font-bold font-mono text-[var(--primary-color)] text-center bg-transparent border-b-2 border-transparent hover:border-[var(--primary-color)] focus:border-[var(--primary-color)] focus:outline-none w-48"></div><div class="text-sm font-bold opacity-60 tracking-widest uppercase mb-4">BPM</div><input type="range" min="40" max="200" value="${state.metronomeBpm}" oninput="state.metronomeBpm=this.value;document.querySelector('input[type=number]').value=this.value" onchange="METRO_LOGIC.render()" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[var(--primary-color)]"></div><div class="flex justify-center gap-6 mb-10">${[1,2,3,4].map(i=>`<div id="metro-dot-${i}" class="metronome-dot shadow-sm"></div>`).join('')}</div>${METRO_LOGIC.countdown>0?`<div class="text-6xl font-bold text-red-500 mb-6 animate-ping">${METRO_LOGIC.countdown}</div>`:''}<button onclick="METRO_LOGIC.toggle()" class="${state.metronomeActive?'bg-red-500 hover:bg-red-600':'theme-btn-primary'} text-white px-10 py-4 rounded-full text-xl font-bold shadow-lg w-full transition transform hover:scale-105 active:scale-95">${state.metronomeActive?`<i class="fas fa-stop mr-2"></i> ${t.stop}`:`<i class="fas fa-play mr-2"></i> ${t.start}`}</button></div>`;},toggle:()=>{if(state.metronomeActive){Tone.Transport.stop();if(metronomeLoop)metronomeLoop.stop();if(METRO_LOGIC.countdownInterval){clearInterval(METRO_LOGIC.countdownInterval);METRO_LOGIC.countdownInterval=null;}state.metronomeActive=false;METRO_LOGIC.countdown=0;METRO_LOGIC.render();}else{initAudioIfNeeded();if(!state.audioEnabled)return;let c=5;METRO_LOGIC.countdown=c;state.metronomeActive=true;METRO_LOGIC.render();METRO_LOGIC.countdownInterval=setInterval(()=>{c--;METRO_LOGIC.countdown=c;METRO_LOGIC.render();if(c===0){clearInterval(METRO_LOGIC.countdownInterval);METRO_LOGIC.countdownInterval=null;METRO_LOGIC.startTone();}},1000);}},startTone:()=>{Tone.Transport.bpm.value=state.metronomeBpm;let b=0;let s;if(state.metroSound==='wood')s=new Tone.MembraneSynth().toDestination();else if(state.metroSound==='tick')s=new Tone.MembraneSynth({envelope:{attack:0.001,decay:0.05,sustain:0},pitchDecay:0}).toDestination();else if(state.metroSound==='drop')s=new Tone.MembraneSynth({envelope:{attack:0.001,decay:0.3,sustain:0},pitchDecay:0.1,octaves:2}).toDestination();else if(state.metroSound==='click')s=new Tone.MembraneSynth({envelope:{attack:0.001,decay:0.1,sustain:0}}).toDestination();else if(state.metroSound==='drum')s=new Tone.MembraneSynth({pitchDecay:0.05,octaves:4}).toDestination();else if(state.metroSound==='metal')s=new Tone.MetalSynth({frequency:200,envelope:{attack:0.001,decay:0.1,release:0.01},harmonicity:5.1,modulationIndex:32,resonance:4000,octaves:1.5}).toDestination();else s=new Tone.Synth({oscillator:{type:"square"},envelope:{attack:0.01,decay:0.1,sustain:0}}).toDestination();metronomeLoop=new Tone.Loop(t=>{let nh,nl;if(state.metroSound==='wood'){nh="C2";nl="C1";}else if(state.metroSound==='tick'){nh="G6";nl="C6";}else if(state.metroSound==='drop'){nh="A5";nl="D5";}else if(state.metroSound==='click'){nh="C6";nl="G5";}else if(state.metroSound==='drum'){nh="G2";nl="C2";}else if(state.metroSound==='metal'){nh="C5";nl="G4";}else{nh="C5";nl="C4";}s.triggerAttackRelease(b===0?nh:nl,"32n",t);Tone.Draw.schedule(()=>{document.querySelectorAll('.metronome-dot').forEach(d=>d.classList.remove('active'));document.getElementById(`metro-dot-${b+1}`)?.classList.add('active');},t);b=(b+1)%4;},"4n").start(0);Tone.Transport.start();}};
+
+        function switchMode(i){stopSound();if(state.mode===3&&i!==3)PASSIVE_LOGIC.stop();if(state.mode===4&&i!==4)FEEL_BEAT_LOGIC.stop();state.mode=i;renderTabs();if(state.metronomeActive)METRO_LOGIC.toggle();if(CHECK_LOGIC.isListening){CHECK_LOGIC.isListening=false;if(CHECK_LOGIC.timer)clearInterval(CHECK_LOGIC.timer);}if(i<=2)FLASHCARD_LOGIC.generateCard();else if(i===3)PASSIVE_LOGIC.renderSetup();else if(i===4){FEEL_BEAT_LOGIC.generate();}else if(i===5)FINDING_LOGIC.render();else if(i===6)LIBRARY_LOGIC.render();else if(i===7)EAR_LOGIC.newQuestion();else if(i===8)CHECK_LOGIC.render();else if(i===9)METRO_LOGIC.render();}
+        
+        function initUI() {
+            document.body.setAttribute('data-theme', state.theme);
+            const xmasIcon = document.getElementById('xmas-icon');
+            if(state.theme === 'christmas') { xmasIcon.classList.remove('hidden'); } else { xmasIcon.classList.add('hidden'); }
+            renderControls(); renderTabs(); switchMode(state.mode); 
         }
-
-        function renderNotation(eid, data, clef, w, s) {
-            const div = document.getElementById(eid); if(!div) return; div.innerHTML='';
-            const r = new Vex.Flow.Renderer(div, Vex.Flow.Renderer.Backends.SVG);
-            r.resize(w, 250 * s); const ctx = r.getContext(); ctx.scale(s, s);
-            const st = new Vex.Flow.Stave(10, 50, w - 20).addClef(clef).setContext(ctx).draw();
-            const n = data.map(d => {
-                const note = new Vex.Flow.StaveNote({clef, keys:[d.key], duration:d.duration, auto_stem:true});
-                if(d.key.includes('#')) note.addModifier(new Vex.Flow.Accidental('#'));
-                if(d.key.includes('b') && d.key[0]!=='b') note.addModifier(new Vex.Flow.Accidental('b'));
-                return note;
-            });
-            Vex.Flow.Formatter.FormatAndDraw(ctx, st, n);
-            const svgs = div.querySelectorAll('.vf-stavenote');
-            data.forEach((d,i) => addClick(svgs[i], d.toneKey));
-        }
-
-        function renderChord(eid, keys) {
-            const div = document.getElementById(eid); if(!div) return;
-            const r = new Vex.Flow.Renderer(div, Vex.Flow.Renderer.Backends.SVG);
-            r.resize(250, 150); const ctx = r.getContext(); ctx.scale(0.55, 0.55);
-            const st = new Vex.Flow.Stave(0, 30, 240).addClef('treble').setContext(ctx).draw();
-            const n = new Vex.Flow.StaveNote({clef:'treble',keys,duration:'w'});
-            keys.forEach((k,i)=>{
-                if(k.includes('#')) n.addModifier(new Vex.Flow.Accidental('#'),i);
-                if(k.includes('b') && k[0]!=='b') n.addModifier(new Vex.Flow.Accidental('b'),i);
-            });
-            st.setNoteStartX(st.getNoteStartX()+20);
-            Vex.Flow.Formatter.FormatAndDraw(ctx, st, [n]);
-        }
-
-        // --- EAR LOGIC ---
-        const EAR_LOGIC = {
-            targetNotes: [],
-            render: () => {
-                const t = LANGUAGES[state.lang].ui;
-                document.getElementById('app-container').innerHTML = `
-                    <div class="theme-card p-8 rounded-2xl shadow-xl w-full text-center max-w-md border-t-4 theme-border min-h-[450px] flex flex-col justify-between">
-                        <h2 class="text-2xl font-bold mb-6">${t.ui && t.ui.modes ? t.modes[4] : 'Ear Training'}</h2>
-                        <div class="mb-6 flex items-center justify-center gap-4">
-                            <label class="font-bold opacity-70">${t.notes}:</label>
-                            <div class="flex items-center gap-2">
-                                <button onclick="EAR_LOGIC.changeCount(-1)" class="w-10 h-10 rounded-full bg-white border border-[var(--primary-color)] text-[var(--primary-color)] font-bold hover:bg-[var(--primary-color)] hover:text-white transition shadow-sm flex items-center justify-center"><i class="fas fa-minus"></i></button>
-                                <span class="text-2xl font-bold w-8">${state.earTrainingNotes}</span>
-                                <button onclick="EAR_LOGIC.changeCount(1)" class="w-10 h-10 rounded-full bg-white border border-[var(--primary-color)] text-[var(--primary-color)] font-bold hover:bg-[var(--primary-color)] hover:text-white transition shadow-sm flex items-center justify-center"><i class="fas fa-plus"></i></button>
-                            </div>
-                        </div>
-                        <div class="flex-grow flex flex-col justify-center">
-                            <div id="ear-canvas-container" class="bg-white rounded-xl p-4 mb-4 shadow-inner border border-gray-200 min-h-[160px] flex items-center justify-center">
-                                ${!state.isRevealed ? `<i class="fas fa-headphones-alt text-6xl text-[var(--placeholder-color)] animate-pulse"></i>` : `<div id="ear-vexflow"></div>`}
-                            </div>
-                            
-                            <div class="h-12 flex items-center justify-center mb-2">
-                                ${state.isRevealed 
-                                    ? `<div class="flex flex-wrap gap-2 justify-center animate-fade-in">${state.targetNotes.map(n => `<span class="bg-[var(--primary-color)] text-white px-3 py-1 rounded-lg font-bold shadow-sm text-base">${getNoteName(n)}</span>`).join('')}</div>`
-                                    : `<span class="text-3xl font-bold text-gray-400 opacity-50">? ? ?</span>`
-                                }
-                            </div>
-                        </div>
-
-                        <div class="flex gap-4 justify-center h-16 items-center">
-                            <button onclick="EAR_LOGIC.play()" class="theme-btn-accent px-8 py-3 rounded-full font-bold shadow-lg transform transition hover:scale-105 active:scale-95"><i class="fas fa-volume-up mr-2"></i> ${t.listen}</button>
-                            <button onclick="${state.isRevealed ? 'EAR_LOGIC.newQuestion()' : 'EAR_LOGIC.reveal()'}" 
-                                class="theme-btn-primary px-8 py-3 rounded-full font-bold shadow-lg transform transition hover:scale-105 active:scale-95 w-40 fixed-action-btn">
-                                ${state.isRevealed ? `${t.next} <i class="fas fa-arrow-right ml-2"></i>` : t.result}
-                            </button>
-                        </div>
-                    </div>`;
-                if(state.isRevealed) {
-                    const containerWidth = document.getElementById('ear-canvas-container').offsetWidth;
-                    const width = Math.min(350, containerWidth - 20); 
-                    const no = state.targetNotes.map(s => ({ key: `${s.charAt(0).toLowerCase()}${s.includes('#')?'#':s.includes('b')?'b':''}/${s.slice(-1)}`, toneKey: s, duration:'q', midi:0 }));
-                    renderNotation('ear-vexflow', no, 'treble', width, 0.85);
-                }
-                if(state.targetNotes.length===0) EAR_LOGIC.newQuestion();
-            },
-            changeCount: (delta) => {
-                let v = state.earTrainingNotes + delta;
-                if (v < 1) v = 1; if (v > 10) v = 10;
-                state.earTrainingNotes = v;
-                EAR_LOGIC.newQuestion();
-            },
-            newQuestion: () => {
-                stopSound(); state.targetNotes = [];
-                const pool = ['C4','D4','E4','F4','G4','A4','B4','C5'];
-                for(let i=0; i<state.earTrainingNotes; i++) state.targetNotes.push(pool[rnd(0, pool.length-1)]);
-                state.isRevealed = false; EAR_LOGIC.render(); 
-            },
-            play: () => { initAudioIfNeeded(); const now = Tone.now(); state.targetNotes.forEach((n,i) => synth.triggerAttackRelease(n, "8n", now + i * 0.6)); },
-            reveal: () => { state.isRevealed = true; EAR_LOGIC.render(); }
-        };
-
-        const CHECK_LOGIC = {
-            isListening: false, detectedNotes: [], timer: null, timeLeft: 0,
-            render: () => {
-                const t = LANGUAGES[state.lang].ui;
-                document.getElementById('app-container').innerHTML = `<div class="theme-card p-8 rounded-2xl shadow-xl w-full text-center max-w-lg border-t-4 theme-border"><h2 class="text-2xl font-bold mb-6">${t.ui && t.ui.modes ? t.modes[5] : 'Note Checking'}</h2><div class="mb-6"><label class="block mb-2 font-bold opacity-80">${t.time}:</label><div class="flex gap-2 justify-center">${[1,3,5,7,10].map(s=>`<button onclick="state.checkTime=${s};CHECK_LOGIC.render()" class="px-4 py-2 rounded-full border border-[var(--primary-color)] transition ${state.checkTime===s?'bg-[var(--primary-color)] text-white shadow-md':'text-[var(--card-text)] hover:bg-gray-200'}">${s}s</button>`).join('')}</div></div><div class="min-h-[120px] flex items-center justify-center bg-[var(--bg-color)] text-[var(--text-color)] rounded-xl mb-8 text-3xl font-mono p-4 border border-dashed border-[var(--primary-color)]">${CHECK_LOGIC.isListening ? `<span class="animate-pulse text-red-500 font-bold"><i class="fas fa-microphone mr-2"></i> ${CHECK_LOGIC.timeLeft}s</span>` : (CHECK_LOGIC.detectedNotes.length?`<span class="text-[var(--primary-color)] font-bold">${CHECK_LOGIC.detectedNotes.map(n => getNoteName(n)).join(", ")}</span>`:"Ready")}</div><button onclick="CHECK_LOGIC.startListening()" ${CHECK_LOGIC.isListening?'disabled':''} class="theme-btn-primary px-10 py-4 rounded-full text-xl font-bold shadow-xl disabled:opacity-50 transform transition hover:scale-105 active:scale-95 fixed-action-btn">${CHECK_LOGIC.isListening?t.detect:`<i class="fas fa-microphone mr-2"></i> ${t.start}`}</button></div>`;
-            },
-            startListening: async () => {
-                if(!state.audioEnabled) { alert("Please click Start first."); return; }
-                CHECK_LOGIC.isListening=true; CHECK_LOGIC.timeLeft=state.checkTime; CHECK_LOGIC.detectedNotes=[]; CHECK_LOGIC.render();
-                try {
-                    const st = await navigator.mediaDevices.getUserMedia({audio:true});
-                    const ac = new (window.AudioContext||window.webkitAudioContext)();
-                    const an = ac.createAnalyser(); an.fftSize=2048; ac.createMediaStreamSource(st).connect(an);
-                    const detect = () => {
-                        if(!CHECK_LOGIC.isListening) return;
-                        const b = new Float32Array(an.fftSize); an.getFloatTimeDomainData(b);
-                        const n = autoCorrelate(b, ac.sampleRate);
-                        if(n && n!=='-' && CHECK_LOGIC.detectedNotes[CHECK_LOGIC.detectedNotes.length-1]!==n) CHECK_LOGIC.detectedNotes.push(n);
-                        requestAnimationFrame(detect);
-                    }; detect();
-                    CHECK_LOGIC.timer = setInterval(() => {
-                        CHECK_LOGIC.timeLeft--; CHECK_LOGIC.render();
-                        if(CHECK_LOGIC.timeLeft<=0) { CHECK_LOGIC.isListening=false; clearInterval(CHECK_LOGIC.timer); st.getTracks().forEach(t=>t.stop()); ac.close(); CHECK_LOGIC.detectedNotes=[...new Set(CHECK_LOGIC.detectedNotes)]; CHECK_LOGIC.render(); }
-                    }, 1000);
-                } catch(e) { alert("Microphone Error"); CHECK_LOGIC.isListening=false; CHECK_LOGIC.render(); }
-            }
-        };
-
-        function autoCorrelate(b, r) {
-            let s=b.length, rms=0; for(let i=0;i<s;i++) rms+=b[i]*b[i]; if(Math.sqrt(rms/s)<0.01) return '-';
-            let r1=0,r2=s-1; for(let i=0;i<s/2;i++) if(Math.abs(b[i])<0.2){r1=i;break;} for(let i=1;i<s/2;i++) if(Math.abs(b[s-i])<0.2){r2=s-i;break;}
-            b=b.slice(r1,r2); s=b.length; let c=new Array(s).fill(0); for(let i=0;i<s;i++) for(let j=0;j<s-i;j++) c[i]+=b[j]*b[j+i];
-            let d=0; while(c[d]>c[d+1]) d++; let max=-1,t0=-1; for(let i=d;i<s;i++) if(c[i]>max){max=c[i];t0=i;}
-            if(t0===-1) return '-';
-            let f = r/t0; const nn=["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
-            const n = Math.round(12*(Math.log(f/440)/Math.log(2))+69); return (n<21||n>108)?null:nn[n%12];
-        }
-
-        const METRO_LOGIC = {
-            countdown: 0,
-            countdownInterval: null,
-            render: () => {
-                const t = LANGUAGES[state.lang].ui;
-                const metroSounds = [
-                    {id: 'wood', name: 'Woodblock (Mõ)'},
-                    {id: 'tick', name: 'Tick (Tích tắc)'},
-                    {id: 'drop', name: 'Drop (Giọt nước)'},
-                    {id: 'click', name: 'Digital (Điện tử)'},
-                    {id: 'drum', name: 'Drum (Trống)'},
-                    {id: 'bell', name: 'Bell (Chuông)'}
-                ];
-                
-                document.getElementById('app-container').innerHTML = `
-                    <div class="theme-card p-10 rounded-2xl shadow-xl w-full text-center max-w-md border-t-4 theme-border">
-                        <h2 class="text-3xl font-bold mb-8">${t.ui && t.ui.modes ? t.modes[6] : 'Metronome'}</h2>
-                        
-                        <div class="mb-4 w-full">
-                            <label class="text-sm font-bold opacity-70 block mb-1 text-left px-2">${t.soundType || 'Sound'}:</label>
-                            <select onchange="state.metroSound=this.value" class="w-full p-2 rounded-lg bg-[var(--bg-color)] border border-[var(--primary-color)] font-bold focus:outline-none">
-                                ${metroSounds.map(s => `<option value="${s.id}" ${state.metroSound === s.id ? 'selected' : ''}>${s.name}</option>`).join('')}
-                            </select>
-                        </div>
-
-                        <div class="mb-10 flex flex-col items-center">
-                            <div class="flex items-center gap-2 mb-4">
-                                <input type="number" min="40" max="200" value="${state.metronomeBpm}" 
-                                    onchange="let v=parseInt(this.value); if(isNaN(v))v=60; if(v<40)v=40; if(v>200)v=200; state.metronomeBpm=v; METRO_LOGIC.render()"
-                                    class="text-6xl font-bold font-mono text-[var(--primary-color)] text-center bg-transparent border-b-2 border-transparent hover:border-[var(--primary-color)] focus:border-[var(--primary-color)] focus:outline-none w-48">
-                            </div>
-                            <div class="text-sm font-bold opacity-60 tracking-widest uppercase mb-4">BPM</div>
-                            <input type="range" min="40" max="200" value="${state.metronomeBpm}" 
-                                oninput="state.metronomeBpm=this.value; document.querySelector('input[type=number]').value=this.value" 
-                                onchange="METRO_LOGIC.render()"
-                                class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[var(--primary-color)]">
-                        </div>
-                        <div class="flex justify-center gap-6 mb-10">
-                            ${[1,2,3,4].map(i=>`<div id="metro-dot-${i}" class="metronome-dot shadow-sm"></div>`).join('')}
-                        </div>
-                        ${METRO_LOGIC.countdown>0?`<div class="text-6xl font-bold text-red-500 mb-6 animate-ping">${METRO_LOGIC.countdown}</div>`:''}
-                        <button onclick="METRO_LOGIC.toggle()" class="${state.metronomeActive?'bg-red-500 hover:bg-red-600':'theme-btn-primary'} text-white px-10 py-4 rounded-full text-xl font-bold shadow-lg w-full transition transform hover:scale-105 active:scale-95">
-                            ${state.metronomeActive?`<i class="fas fa-stop mr-2"></i> ${t.stop}`:`<i class="fas fa-play mr-2"></i> ${t.start}`}
-                        </button>
-                    </div>`;
-            },
-            toggle: () => {
-                if(state.metronomeActive) { 
-                    // Stop Logic
-                    Tone.Transport.stop(); 
-                    if(metronomeLoop) metronomeLoop.stop(); 
-                    if(METRO_LOGIC.countdownInterval) { clearInterval(METRO_LOGIC.countdownInterval); METRO_LOGIC.countdownInterval = null; }
-                    state.metronomeActive=false; 
-                    METRO_LOGIC.countdown=0;
-                    METRO_LOGIC.render(); 
-                }
-                else { 
-                    // Start Logic
-                    initAudioIfNeeded(); // Ensure audio context is ready
-                    if(!state.audioEnabled) return; // Should be ready by now due to global listener
-                    
-                    let c=5; 
-                    METRO_LOGIC.countdown=c; 
-                    state.metronomeActive=true; 
-                    METRO_LOGIC.render(); 
-                    
-                    METRO_LOGIC.countdownInterval = setInterval(()=>{
-                        c--; 
-                        METRO_LOGIC.countdown=c; 
-                        METRO_LOGIC.render(); 
-                        if(c===0){
-                            clearInterval(METRO_LOGIC.countdownInterval); 
-                            METRO_LOGIC.countdownInterval = null;
-                            METRO_LOGIC.startTone();
-                        }
-                    },1000); 
-                }
-            },
-            startTone: () => {
-                Tone.Transport.bpm.value = state.metronomeBpm; 
-                let b=0; 
-                
-                // Synth Factory
-                let s;
-                if (state.metroSound === 'wood') s = new Tone.MembraneSynth().toDestination();
-                else if (state.metroSound === 'tick') s = new Tone.MembraneSynth({envelope:{attack:0.001, decay:0.05, sustain:0}, pitchDecay: 0}).toDestination(); // Short tick
-                else if (state.metroSound === 'drop') s = new Tone.MembraneSynth({envelope:{attack:0.001, decay:0.3, sustain:0}, pitchDecay: 0.1, octaves: 2}).toDestination(); // Water drop ish
-                else if (state.metroSound === 'click') s = new Tone.MembraneSynth({envelope:{attack:0.001, decay:0.1, sustain:0}}).toDestination();
-                else if (state.metroSound === 'drum') s = new Tone.MembraneSynth({pitchDecay:0.05, octaves:4}).toDestination();
-                else if (state.metroSound === 'metal') s = new Tone.MetalSynth({frequency:200, envelope:{attack:0.001, decay:0.1, release:0.01}, harmonicity:5.1, modulationIndex:32, resonance:4000, octaves:1.5}).toDestination();
-                else s = new Tone.Synth({oscillator:{type:"square"}, envelope:{attack:0.01, decay:0.1, sustain:0}}).toDestination(); // Beep fallback
-
-                metronomeLoop = new Tone.Loop(t=>{ 
-                    // Different pitch/tone for first beat
-                    let noteHigh, noteLow;
-                    if (state.metroSound === 'wood') { noteHigh="C2"; noteLow="C1"; }
-                    else if (state.metroSound === 'tick') { noteHigh="G6"; noteLow="C6"; }
-                    else if (state.metroSound === 'drop') { noteHigh="A5"; noteLow="D5"; }
-                    else if (state.metroSound === 'click') { noteHigh="C6"; noteLow="G5"; }
-                    else if (state.metroSound === 'drum') { noteHigh="G2"; noteLow="C2"; }
-                    else if (state.metroSound === 'metal') { noteHigh="C5"; noteLow="G4"; } 
-                    else { noteHigh="C5"; noteLow="C4"; } 
-
-                    s.triggerAttackRelease(b===0?noteHigh:noteLow, "32n", t);
-                    
-                    Tone.Draw.schedule(()=>{
-                        document.querySelectorAll('.metronome-dot').forEach(d=>d.classList.remove('active'));
-                        document.getElementById(`metro-dot-${b+1}`)?.classList.add('active');
-                    },t); 
-                    b=(b+1)%4; 
-                },"4n").start(0); 
-                Tone.Transport.start();
-            }
-        };
-
-        function switchMode(i) { stopSound(); state.mode=i; renderTabs(); if(state.metronomeActive) METRO_LOGIC.toggle(); if(CHECK_LOGIC.isListening) {CHECK_LOGIC.isListening=false; if(CHECK_LOGIC.timer) clearInterval(CHECK_LOGIC.timer);} if(i<=2) FLASHCARD_LOGIC.generateCard(); else if(i===3) LIBRARY_LOGIC.render(); else if(i===4) EAR_LOGIC.newQuestion(); else if(i===5) CHECK_LOGIC.render(); else if(i===6) METRO_LOGIC.render(); }
 
         initUI();
     </script>
