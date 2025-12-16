@@ -1,728 +1,100 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Piano Master Pro</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/abcjs/6.2.2/abcjs-basic-min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <style>
-        :root {
-            --bg-color: #f4f1ea;
-            --text-color: #2c3e50;
-            --accent-color: #8e44ad;
-            --panel-bg: #ffffff;
-            --border-color: #dcdcdc;
-            --shadow: 0 4px 10px rgba(0,0,0,0.1);
-            --font-main: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            --success: #27ae60;
-            --error: #c0392b;
-            --warning: #f39c12;
-            --bt-color: #2980b9;
-        }
+  <meta charset="UTF-8" />
+  <title>MIDI Test</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #111;
+      color: #eee;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
 
-        [data-theme="ocean"] { --bg-color: #e0f7fa; --text-color: #006064; --accent-color: #00bcd4; --panel-bg: rgba(255, 255, 255, 0.95); --border-color: #b2ebf2; }
-        [data-theme="dark"] { --bg-color: #121212; --text-color: #e0e0e0; --accent-color: #bb86fc; --panel-bg: #1e1e1e; --border-color: #333; }
-        [data-theme="musical"] { --bg-color: #2c003e; --text-color: #ffd700; --accent-color: #ff007f; --panel-bg: #4a006a; --border-color: #ffd700; }
-        [data-theme="christmas"] { --bg-color: #c0392b; --text-color: #ffffff; --accent-color: #27ae60; --panel-bg: #a93226; --border-color: #ecf0f1; }
+    .card {
+      background: #1e1e1e;
+      border-radius: 16px;
+      padding: 32px 40px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,.5);
+      width: 320px;
+    }
 
-        * { box-sizing: border-box; transition: all 0.2s ease; }
-        body { margin: 0; padding: 0; font-family: var(--font-main); background-color: var(--bg-color); color: var(--text-color); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+    .status {
+      margin-top: 16px;
+      font-size: 14px;
+      opacity: .8;
+    }
 
-        /* COMPACT HEADER */
-        header {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0 20px; height: 60px;
-            background: var(--panel-bg); box-shadow: var(--shadow); z-index: 100;
-        }
-        
-        .brand { display: flex; align-items: center; gap: 10px; font-weight: bold; font-size: 1.1rem; min-width: 150px; }
-        .brand i { color: var(--accent-color); }
+    .note {
+      margin-top: 24px;
+      font-size: 48px;
+      font-weight: bold;
+      color: #7cff7c;
+      min-height: 56px;
+    }
 
-        /* CENTER TABS */
-        .nav-tabs { display: flex; gap: 5px; background: rgba(0,0,0,0.05); padding: 3px; border-radius: 8px; }
-        .tab-btn {
-            padding: 8px 15px; cursor: pointer; border: none; background: transparent;
-            font-size: 0.9rem; font-weight: 600; color: var(--text-color); opacity: 0.7; border-radius: 6px;
-        }
-        .tab-btn.active { opacity: 1; background: var(--panel-bg); box-shadow: 0 2px 4px rgba(0,0,0,0.1); color: var(--accent-color); }
-
-        /* RIGHT TOOLS */
-        .tools { display: flex; gap: 15px; align-items: center; }
-        .status-icon { font-size: 1.2rem; color: #95a5a6; cursor: pointer; position: relative; display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; background: rgba(0,0,0,0.05); }
-        .status-icon.active-usb { color: var(--success); background: rgba(39, 174, 96, 0.1); }
-        .status-icon.active-bt { color: var(--bt-color); background: rgba(41, 128, 185, 0.1); }
-        .status-icon.error { color: var(--error); }
-        
-        .settings-btn { border: none; background: transparent; font-size: 1.2rem; cursor: pointer; color: var(--text-color); }
-        
-        /* SETTINGS POPUP */
-        #settings-panel {
-            position: absolute; top: 65px; right: 20px; width: 200px;
-            background: var(--panel-bg); padding: 15px; border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2); display: none; border: 1px solid var(--border-color); z-index: 200;
-        }
-        #settings-panel.show { display: block; animation: fadeIn 0.2s; }
-        #settings-panel label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.8rem; }
-        #settings-panel select { width: 100%; padding: 5px; margin-bottom: 10px; border-radius: 5px; border: 1px solid var(--border-color); }
-
-        /* MAIN */
-        main { flex: 1; overflow-y: auto; padding: 20px; position: relative; }
-        .screen { display: none; max-width: 1000px; margin: 0 auto; animation: fadeIn 0.3s; }
-        .screen.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* UI ELEMENTS */
-        .control-group { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 15px; }
-        .btn {
-            padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer;
-            background: var(--accent-color); color: #fff; font-weight: 600; font-size: 0.9rem;
-            display: flex; align-items: center; gap: 6px;
-        }
-        .btn:hover { filter: brightness(1.1); }
-        .btn:active { transform: scale(0.96); }
-        .btn-outline { background: transparent; border: 1px solid var(--accent-color); color: var(--accent-color); }
-        .btn-outline.selected { background: var(--accent-color); color: white; }
-        .btn-icon { padding: 8px; }
-        .btn-toggle.active { background: #e67e22; border-color: #e67e22; color: white; }
-        .btn-hint.active { background: #f1c40f; border-color: #f1c40f; color: #333; }
-
-        /* FLASHCARD */
-        #flashcard-display {
-            background: #fff; border-radius: 12px; box-shadow: var(--shadow);
-            min-height: 280px; display: flex; justify-content: center; align-items: center;
-            overflow: auto; margin-bottom: 10px;
-        }
-        .feedback-msg { text-align: center; font-size: 1.1rem; font-weight: bold; height: 24px; margin-bottom: 10px; }
-        .feedback-msg.correct { color: var(--success); }
-        .feedback-msg.wrong { color: var(--error); }
-
-        /* CHALLENGE */
-        textarea {
-            width: 100%; height: 80px; padding: 10px; border-radius: 8px;
-            border: 1px solid var(--border-color); background: var(--panel-bg); color: var(--text-color);
-            font-family: 'Courier New', monospace; font-size: 0.9rem; resize: vertical;
-        }
-        #sheet-music { background: #fff; padding: 15px; border-radius: 8px; overflow-x: auto; min-height: 150px; margin-bottom: 15px; box-shadow: inset 0 0 10px rgba(0,0,0,0.05); }
-        
-        .abcjs-note.correct { fill: var(--success) !important; }
-        .abcjs-note.wrong { fill: var(--error) !important; }
-
-        .practice-zone { background: rgba(0,0,0,0.03); padding: 15px; border-radius: 10px; border: 1px solid var(--border-color); }
-        
-        .mentor-panel {
-            background: var(--panel-bg); padding: 15px; border-radius: 10px; border-left: 4px solid var(--accent-color);
-            margin-top: 15px; display: none; box-shadow: var(--shadow);
-        }
-        .score-badges { display: flex; gap: 8px; margin-top: 8px; }
-        .badge { padding: 4px 8px; border-radius: 12px; font-size: 0.75rem; color: white; font-weight: bold; }
-        .bg-perfect { background: #8e44ad; }
-        .bg-good { background: #27ae60; }
-        .bg-bad { background: #c0392b; }
-
-        @media (max-width: 600px) {
-            header { height: auto; flex-wrap: wrap; padding: 10px; gap: 10px; }
-            .nav-tabs { order: 3; width: 100%; justify-content: center; }
-            .tools { margin-left: auto; }
-        }
-    </style>
+    .active {
+      background: #0a3;
+      color: #000;
+      transition: background .1s;
+    }
+  </style>
 </head>
 <body>
 
-<header>
-    <div class="brand"><i class="fa-solid fa-music"></i> Piano Master</div>
-    
-    <div class="nav-tabs">
-        <button class="tab-btn active" onclick="switchTab('flashcard')">Flashcard</button>
-        <button class="tab-btn" onclick="switchTab('challenge')">Challenge</button>
-    </div>
+  <div class="card" id="card">
+    <h2>🎹 MIDI INPUT TEST</h2>
+    <div class="status" id="status">Đang chờ MIDI...</div>
+    <div class="note" id="note">—</div>
+    <div class="status">Ấn phím đàn để test</div>
+  </div>
 
-    <div class="tools">
-        <!-- Bluetooth Button -->
-        <div class="status-icon" id="bt-btn" title="Scan Bluetooth MIDI" onclick="midiMaster.requestBluetooth()">
-            <i class="fa-brands fa-bluetooth-b"></i>
-        </div>
-        <!-- Status Indicator -->
-        <div class="status-icon" id="midi-status" title="MIDI Status">
-            <i class="fa-solid fa-plug"></i>
-        </div>
-        <!-- Settings -->
-        <button class="settings-btn" onclick="document.getElementById('settings-panel').classList.toggle('show')">
-            <i class="fa-solid fa-gear"></i>
-        </button>
-    </div>
-</header>
+  <script>
+    const statusEl = document.getElementById("status");
+    const noteEl = document.getElementById("note");
+    const card = document.getElementById("card");
 
-<!-- Settings Dropdown -->
-<div id="settings-panel">
-    <label>Theme</label>
-    <select id="theme-selector">
-        <option value="classic">Classic</option>
-        <option value="ocean">Ocean</option>
-        <option value="dark">Dark Mode</option>
-        <option value="musical">Musical Vibe</option>
-        <option value="christmas">Christmas</option>
-    </select>
-    <label>Audio</label>
-    <div style="font-size: 0.8rem; color: #777;">Volume handled by OS</div>
-</div>
-
-<main>
-    <!-- FLASHCARD SECTION -->
-    <section id="flashcard" class="screen active">
-        <div class="flashcard-container">
-            <!-- Group 0: Clef -->
-            <div class="control-group">
-                <button class="btn btn-outline selected" onclick="fcGame.setClef('treble')">Treble</button>
-                <button class="btn btn-outline" onclick="fcGame.setClef('bass')">Bass</button>
-                <button class="btn btn-outline" onclick="fcGame.setClef('grand')">Grand</button>
-            </div>
-            <!-- Group 1: Level -->
-            <div class="control-group">
-                <button class="btn btn-outline selected" onclick="fcGame.setLevel(1)">Lv 1</button>
-                <button class="btn btn-outline" onclick="fcGame.setLevel(2)">Lv 2</button>
-                <button class="btn btn-outline" onclick="fcGame.setLevel(3)">Lv 3</button>
-                <button class="btn btn-outline" onclick="fcGame.setLevel(4)">Lv 4</button>
-                <button class="btn btn-outline" onclick="fcGame.setLevel(5)">Lv 5</button>
-            </div>
-            
-            <div class="control-group">
-                <button class="btn btn-outline btn-toggle" id="rhythm-toggle" onclick="fcGame.toggleRhythm()">Rhythm ⏱️</button>
-                <button class="btn btn-outline btn-hint" id="hint-toggle" onclick="fcGame.toggleHint()">Hint 💡</button>
-                <button class="btn" onclick="fcGame.start()">START</button>
-            </div>
-            
-            <div id="flashcard-feedback" class="feedback-msg">Ready?</div>
-
-            <div id="flashcard-display">
-                <div id="fc-notation"></div>
-            </div>
-        </div>
-    </section>
-
-    <!-- CHALLENGE SECTION -->
-    <section id="challenge" class="screen">
-        <div class="challenge-container">
-            <!-- Default Song: Minuet in G (Bach/Petzold) - Rose Method -->
-            <textarea id="abc-input" placeholder="Paste ABC Notation here...">
-X:1
-T:Minuet in G (BWV Anh. 114)
-C:Christian Petzold
-M:3/4
-L:1/8
-Q:1/4=100
-K:G
-d2 G2 A2 | B2 c2 d2 | e2 g2 e2 | d4 B2 | c2 A2 c2 | B2 G2 B2 | A2 d2 F2 | G6 |
-d2 G2 G2 | e2 c2 c2 | d2 B2 B2 | c6 | d2 G2 G2 | e2 c2 c2 | d2 B2 A2 | G6 |]
-            </textarea>
-            
-            <div class="control-group">
-                <button class="btn btn-outline btn-hint" id="chal-hint-toggle" onclick="chalGame.toggleHint()">Hint 💡</button>
-                <button class="btn" onclick="chalGame.render()">Render</button>
-                
-                <div style="width: 10px;"></div> <!-- Spacer -->
-                
-                <button class="btn btn-outline btn-icon" onclick="chalGame.playDemo()" title="Play"><i class="fa-solid fa-play"></i></button>
-                <button class="btn btn-outline btn-icon" onclick="chalGame.pauseDemo()" title="Pause"><i class="fa-solid fa-pause"></i></button>
-                <button class="btn btn-outline btn-icon" onclick="chalGame.stopDemo()" title="Stop"><i class="fa-solid fa-stop"></i></button>
-                <button class="btn btn-outline btn-icon" id="loop-btn" onclick="chalGame.toggleLoop()" title="Loop"><i class="fa-solid fa-repeat"></i></button>
-            </div>
-
-            <div id="sheet-music"></div>
-
-            <div class="practice-zone">
-                <div class="control-group" style="align-items: center;">
-                    <label style="font-weight: bold; margin-right: 5px;">BPM:</label>
-                    <input type="number" id="bpm-input" value="100" style="width: 60px; padding: 5px; border-radius: 5px; border: 1px solid #ccc;">
-                    
-                    <button class="btn btn-outline selected" onclick="chalGame.setMode('normal')">Normal</button>
-                    <button class="btn btn-outline" onclick="chalGame.setMode('sudden')">Sudden Death</button>
-                    
-                    <button class="btn" style="background-color: var(--warning); color: #000; margin-left: 10px;" onclick="chalGame.startPractice()">PRACTICE</button>
-                </div>
-                <h3 id="hint-display-chal" style="text-align:center; color:#555; height: 20px; font-size: 0.9rem;"></h3>
-                <h2 id="practice-status" style="text-align: center; color: var(--accent-color); margin: 10px 0;"></h2>
-            </div>
-
-            <div id="mentor-feedback" class="mentor-panel">
-                <div style="display: flex; align-items: flex-start;">
-                    <div class="mentor-avatar" style="font-size: 2rem; margin-right: 15px;">👨‍🏫</div>
-                    <div>
-                        <h4 style="margin: 0 0 5px 0;">Mentor's Analysis</h4>
-                        <p id="mentor-text" style="font-style: italic; line-height: 1.4; font-size: 0.95rem;"></p>
-                        <div class="score-badges" id="mentor-stats"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-</main>
-
-<script>
-/* =========================================
-   CORE & MIDI SYSTEM (UPDATED FOR BLUETOOTH)
-   ========================================= */
-const themeSelector = document.getElementById('theme-selector');
-themeSelector.addEventListener('change', (e) => {
-    document.body.setAttribute('data-theme', e.target.value);
-    document.getElementById('settings-panel').classList.remove('show');
-});
-
-function switchTab(tabId) {
-    document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-    document.getElementById(tabId).classList.add('active');
-    // Find button by text roughly or logic
-    const btns = document.querySelectorAll('.tab-btn');
-    if(tabId === 'flashcard') btns[0].classList.add('active');
-    else btns[1].classList.add('active');
-    
-    if(chalGame) chalGame.stopDemo();
-}
-
-class MidiHandler {
-    constructor() {
-        this.midiAccess = null; 
-        this.inputs = []; 
-        this.listeners = []; 
-        this.connectionType = 'none'; // 'usb' | 'bluetooth'
-        this.kbMap = { 'a':60, 'w':61, 's':62, 'e':63, 'd':64, 'f':65, 't':66, 'g':67, 'y':68, 'h':69, 'u':70, 'j':71, 'k':72, 'l':73, 'z':48, 'x':50, 'c':52, 'v':53, ' ': 'pedal' };
+    function midiNoteName(note) {
+      const names = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+      return names[note % 12] + Math.floor(note / 12 - 1);
     }
 
-    async init() {
-        if (navigator.requestMIDIAccess) {
-            try {
-                this.midiAccess = await navigator.requestMIDIAccess();
-                this.updateInputs();
-                this.midiAccess.onstatechange = () => this.updateInputs();
-            } catch (err) { this.activateKeyboardFallback(err.message); }
-        } else { 
-            this.activateKeyboardFallback("No Web MIDI"); 
-        }
-        this.setupKeyboardListeners();
-    }
+    if (!navigator.requestMIDIAccess) {
+      statusEl.textContent = "❌ Trình duyệt không hỗ trợ Web MIDI";
+    } else {
+      navigator.requestMIDIAccess().then(midi => {
+        statusEl.textContent = "✅ MIDI sẵn sàng – chờ đàn";
 
-    async requestBluetooth() {
-        // Feature detection for Web Bluetooth MIDI
-        if (navigator.bluetooth) {
-            try {
-                const device = await navigator.bluetooth.requestDevice({
-                    filters: [{ services: ['03b80e5a-ede8-4b33-a751-6ce34ec4c700'] }] // MIDI Service UUID
-                });
-                if (device.gatt) {
-                    await device.gatt.connect();
-                    alert("Bluetooth Connected! Waiting for MIDI Service...");
-                    // Note: Web MIDI API usually picks up the device after OS pairing
-                    // This creates the physical link.
-                }
-            } catch (error) {
-                console.error(error);
-                alert("Bluetooth connection failed or cancelled.");
+        for (let input of midi.inputs.values()) {
+          console.log("MIDI device:", input.name);
+
+          input.onmidimessage = e => {
+            const [cmd, note, velocity] = e.data;
+
+            // Note ON
+            if (cmd === 144 && velocity > 0) {
+              const name = midiNoteName(note);
+              noteEl.textContent = name;
+              card.classList.add("active");
             }
-        } else {
-            alert("This browser does not support Web Bluetooth.");
-        }
-    }
 
-    activateKeyboardFallback(reason) {
-        const s = document.getElementById('midi-status');
-        s.className = 'status-icon error';
-        s.title = "Using Keyboard (A-K). " + reason;
-    }
-
-    updateInputs() {
-        this.inputs = Array.from(this.midiAccess.inputs.values());
-        const s = document.getElementById('midi-status');
-        const b = document.getElementById('bt-btn');
-        
-        if (this.inputs.length > 0) {
-            const name = this.inputs[0].name.toLowerCase();
-            // Simple heuristic for icon
-            if (name.includes('blue') || name.includes('ble') || name.includes('bt')) {
-                this.connectionType = 'bluetooth';
-                s.className = 'status-icon active-bt';
-                s.innerHTML = '<i class="fa-brands fa-bluetooth-b"></i>';
-                s.title = "Connected (Bluetooth): " + this.inputs[0].name;
-            } else {
-                this.connectionType = 'usb';
-                s.className = 'status-icon active-usb';
-                s.innerHTML = '<i class="fa-solid fa-plug"></i>';
-                s.title = "Connected (USB): " + this.inputs[0].name;
+            // Note OFF
+            if (cmd === 128 || (cmd === 144 && velocity === 0)) {
+              card.classList.remove("active");
             }
-            
-            this.inputs.forEach(i => i.onmidimessage = (msg) => this.handleMessage(msg));
-        } else { 
-            s.className = 'status-icon';
-            s.innerHTML = '<i class="fa-solid fa-plug"></i>';
-            s.title = "No Devices";
-            this.connectionType = 'none';
+          };
         }
+      }).catch(err => {
+        statusEl.textContent = "❌ Không truy cập được MIDI";
+        console.error(err);
+      });
     }
+  </script>
 
-    handleMessage(msg) { this.broadcast(msg.data[0], msg.data[1], msg.data[2]); }
-
-    setupKeyboardListeners() {
-        document.addEventListener('keydown', (e) => {
-            if(e.repeat) return;
-            const k = e.key.toLowerCase();
-            if(this.kbMap[k]) {
-                const v = this.kbMap[k];
-                v==='pedal' ? this.broadcast(176,64,127) : this.broadcast(144,v,100);
-            }
-        });
-        document.addEventListener('keyup', (e) => {
-            const k = e.key.toLowerCase();
-            if(this.kbMap[k]) {
-                const v = this.kbMap[k];
-                v==='pedal' ? this.broadcast(176,64,0) : this.broadcast(128,v,0);
-            }
-        });
-    }
-
-    broadcast(c,n,v) { this.listeners.forEach(l => l.callback(c,n,v)); }
-    subscribe(id, cb) { this.listeners = this.listeners.filter(l => l.id !== id); this.listeners.push({id, callback: cb}); }
-}
-const midiMaster = new MidiHandler(); midiMaster.init();
-
-/* =========================================
-   UTILS & NOTE MAPPING
-   ========================================= */
-const NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-const SOLFEGE = ['Do', 'Do#', 'Re', 'Re#', 'Mi', 'Fa', 'Fa#', 'Sol', 'Sol#', 'La', 'La#', 'Si'];
-
-function midiToNoteName(midi) {
-    const note = NOTES[midi % 12];
-    const octave = Math.floor(midi / 12) - 1;
-    return note + octave;
-}
-
-function midiToAbc(midi, duration = 1) {
-    const names = ['C','^C','D','^D','E','F','^F','G','^G','A','^A','B'];
-    let n = names[midi % 12];
-    let oct = Math.floor(midi / 12) - 1;
-    
-    let abcNote = n;
-    if (oct === 5) abcNote = n.toLowerCase();
-    else if (oct === 3) abcNote = n + ",";
-    else if (oct === 6) abcNote = n.toLowerCase() + "'";
-    else if (oct === 2) abcNote = n + ",,";
-    else if (oct === 1) abcNote = n + ",,,";
-    
-    let durStr = "";
-    if (duration === 4) durStr = "4";
-    else if (duration === 2) durStr = "2";
-    else if (duration === 1.5) durStr = "3/2";
-    else if (duration === 0.5) durStr = "/2";
-    else if (duration === 0.25) durStr = "/4";
-    
-    return abcNote + durStr; 
-}
-
-/* =========================================
-   GAME 1: FLASHCARD (ENHANCED ALIGNMENT)
-   ========================================= */
-class FlashcardGame {
-    constructor() {
-        this.clef = 'treble'; this.level = 1; this.withRhythm = false; this.showHint = false;
-        this.challengeSequence = []; this.currentIndex = 0; this.isPlaying = false;
-        this.heldKeys = new Set(); this.pedalPressed = false; this.startTime = 0; this.bpm = 100;
-    }
-
-    setClef(c) { this.clef = c; this.updateUIButtons(0, c==='treble'?0:c==='bass'?1:2); }
-    setLevel(l) { this.level = l; this.updateUIButtons(1, l-1); }
-    toggleRhythm() { this.withRhythm = !this.withRhythm; document.getElementById('rhythm-toggle').classList.toggle('active'); }
-    toggleHint() { this.showHint = !this.showHint; document.getElementById('hint-toggle').classList.toggle('active'); if(this.isPlaying) this.renderABC(); }
-
-    // Fixed: Correctly targets buttons inside #flashcard .control-group
-    updateUIButtons(groupIdx, btnIdx) {
-        const groups = document.querySelectorAll('#flashcard .control-group');
-        if (!groups[groupIdx]) return;
-        
-        const buttons = groups[groupIdx].getElementsByTagName('button');
-        for(let btn of buttons) btn.classList.remove('selected');
-        if(buttons[btnIdx]) buttons[btnIdx].classList.add('selected');
-    }
-
-    start() {
-        if (typeof ABCJS === 'undefined') return alert("Library loading...");
-        if (this.withRhythm) {
-            let count = 3;
-            const el = document.getElementById('flashcard-feedback');
-            el.className = "feedback-msg";
-            const timer = setInterval(() => {
-                el.innerText = `Ready: ${count}`; count--;
-                if(count < 0) { clearInterval(timer); el.innerText = "GO!"; this.runSession(); }
-            }, 1000);
-        } else { this.runSession(); }
-    }
-
-    runSession() {
-        this.isPlaying = true; this.generateChallenge(); this.heldKeys.clear(); this.pedalPressed = false; this.currentIndex = 0;
-        if (this.withRhythm) this.startTime = performance.now();
-        midiMaster.subscribe('flashcard', (c,n,v) => this.handleInput(c,n,v));
-        if (!this.withRhythm) { document.getElementById('flashcard-feedback').innerText = "PLAY!"; document.getElementById('flashcard-feedback').className = "feedback-msg"; }
-    }
-
-    generateChallenge() {
-        this.challengeSequence = []; this.currentIndex = 0;
-        let steps = 1;
-        if(this.level === 2) steps = 3; else if(this.level === 3) steps = 5; else if(this.level === 4) steps = 7; else if(this.level === 5) steps = 8;
-
-        let currentTimeMs = 0;
-        const beatMs = 60000 / this.bpm;
-
-        for(let i=0; i<steps; i++) {
-            let step = { treble: null, bass: null, pedal: false, duration: 1, timeMs: currentTimeMs };
-            
-            if (this.clef === 'grand') {
-                const mode = Math.random();
-                if (mode < 0.3) step.treble = this.getRandomNote(60, 79); 
-                else if (mode < 0.6) step.bass = this.getRandomNote(40, 60); 
-                else { step.treble = this.getRandomNote(60, 79); step.bass = this.getRandomNote(36, 55); }
-            } else if (this.clef === 'bass') step.bass = this.getRandomNote(36, 60);
-            else step.treble = this.getRandomNote(60, 79);
-
-            if (this.withRhythm || this.level === 5) {
-                const r = Math.random();
-                if (r < 0.4) step.duration = 0.5; else if (r < 0.6) step.duration = 1; else if (r < 0.8) step.duration = 2; else step.duration = 0.5;
-            }
-            if (this.level === 5) step.pedal = true;
-            this.challengeSequence.push(step);
-            currentTimeMs += step.duration * beatMs;
-        }
-        this.renderABC();
-    }
-
-    getRandomNote(min, max) {
-        let r; do { r = Math.floor(Math.random() * (max - min + 1)) + min; } while ([1,3,6,8,10].includes(r%12)); return r;
-    }
-
-    renderABC() {
-        if (typeof ABCJS === 'undefined') return;
-        let abc = `X:1\nM:4/4\nL:1/4\nQ:1/4=${this.bpm}\nK:C\n`;
-        
-        const formatNote = (midi, dur, isLast, pedalState) => {
-            if(!midi) return `z${dur!==1?dur:""}`;
-            let str = midiToAbc(midi, dur);
-            
-            // STRICT HINT ALIGNMENT: Concat immediately
-            if(this.showHint) {
-                const idx = midi % 12; const oct = Math.floor(midi / 12) - 1;
-                // No extra spaces inside the quotes block
-                str += `"${SOLFEGE[idx]}" "_(${NOTES[idx]}${oct})"`;
-            }
-            if (this.level === 5 && pedalState) str += `!ped!`;
-            return str;
-        };
-
-        if (this.clef === 'grand') {
-            abc += "%%staves {1 2}\nV:1 clef=treble\nV:2 clef=bass\n";
-            let v1 = "[V:1] ", v2 = "[V:2] ";
-            this.challengeSequence.forEach((s, i) => {
-                const isLast = i === this.challengeSequence.length-1;
-                // Smart spacing for beams
-                const spacer = (s.duration === 0.5 && i < this.challengeSequence.length-1 && this.challengeSequence[i+1].duration === 0.5 && (i%2 === 0)) ? "" : " ";
-                v1 += formatNote(s.treble, s.duration, isLast, false) + spacer; 
-                v2 += formatNote(s.bass, s.duration, isLast, s.pedal) + spacer;
-            });
-            abc += v1 + "|]\n" + v2 + "|]"; 
-        } else {
-            let cName = this.clef==='bass'?'bass':'treble';
-            abc += `V:1 clef=${cName}\n[V:1] `;
-            this.challengeSequence.forEach((s, i) => {
-                const isLast = i === this.challengeSequence.length-1;
-                let midi = s.treble || s.bass;
-                let str = formatNote(midi, s.duration, isLast, s.pedal);
-                const spacer = (s.duration === 0.5 && i < this.challengeSequence.length-1 && this.challengeSequence[i+1].duration === 0.5 && (i%2 === 0)) ? "" : " ";
-                abc += str + spacer;
-            });
-            abc += "|]";
-        }
-        
-        ABCJS.renderAbc("fc-notation", abc, { scale: 1.4, responsive: "resize", add_classes: true });
-    }
-
-    handleInput(c,n,v) {
-        if(!this.isPlaying) return;
-        if(c >= 176 && c <= 191 && n === 64) { this.pedalPressed = (v > 64); return; }
-        if (c >= 144 && v > 0) {
-            this.heldKeys.add(n);
-            this.withRhythm ? this.checkRhythm(n) : this.checkStaticProgress();
-        }
-        if (c >= 128 && (v===0 || c < 144)) { this.heldKeys.delete(n); }
-    }
-
-    checkRhythm(nIn) {
-        const step = this.challengeSequence[this.currentIndex];
-        const elapsed = performance.now() - this.startTime;
-        if (step.treble !== nIn && step.bass !== nIn) return this.fail("Sai nốt!");
-        const diff = Math.abs(elapsed - step.timeMs);
-        if (diff > 350) return this.fail(elapsed < step.timeMs ? "Sớm!" : "Trễ!");
-        let ok = true;
-        if (step.treble && !this.heldKeys.has(step.treble)) ok = false;
-        if (step.bass && !this.heldKeys.has(step.bass)) ok = false;
-        if (ok) {
-            if (this.level === 5 && step.pedal && !this.pedalPressed) return this.fail("Thiếu Pedal!");
-            this.feedback("Perfect!", "correct");
-            this.nextStep();
-        }
-    }
-
-    checkStaticProgress() {
-        const step = this.challengeSequence[this.currentIndex];
-        if (this.level === 5 && step.pedal && !this.pedalPressed) return this.feedback("Dậm Pedal!", "wrong");
-        let ok = true;
-        if (step.treble && !this.heldKeys.has(step.treble)) ok = false;
-        if (step.bass && !this.heldKeys.has(step.bass)) ok = false;
-        if (ok) { this.feedback("Good!", "correct"); this.nextStep(); }
-    }
-
-    nextStep() {
-        this.currentIndex++;
-        if(this.currentIndex >= this.challengeSequence.length) {
-            this.isPlaying = false; this.feedback("Level Complete!", "correct"); setTimeout(() => this.start(), 1500);
-        }
-    }
-    fail(r) { this.isPlaying = false; this.feedback(r, "wrong"); setTimeout(() => this.start(), 1500); }
-    feedback(m, t) { const el = document.getElementById('flashcard-feedback'); el.innerText = m; el.className = `feedback-msg ${t}`; }
-}
-const fcGame = new FlashcardGame();
-
-/* =========================================
-   GAME 2: CHALLENGE
-   ========================================= */
-class ChallengeGame {
-    constructor() { 
-        this.abcData=""; this.midiBuffer=null; this.synth=null;
-        this.practiceMode='normal'; this.isPracticing=false; this.targetEvents=[]; this.showHint=false; 
-        this.looping = false;
-    }
-    
-    toggleHint() { this.showHint = !this.showHint; document.getElementById('chal-hint-toggle').classList.toggle('active'); this.render(); }
-    toggleLoop() { this.looping = !this.looping; document.getElementById('loop-btn').classList.toggle('active'); }
-
-    render() {
-        if (typeof ABCJS === 'undefined') return;
-        let rawAbc = document.getElementById('abc-input').value;
-        this.abcData = rawAbc;
-        
-        if (this.showHint) {
-            rawAbc = rawAbc.replace(/([=^_]?[A-Ga-g][,']*)/g, (match) => {
-                let letter = match.replace(/[^A-Ga-g]/g, '').toUpperCase();
-                const map = {'C':'Do', 'D':'Re', 'E':'Mi', 'F':'Fa', 'G':'Sol', 'A':'La', 'B':'Si'};
-                return `${match}"_${map[letter]||letter}"`;
-            });
-        }
-
-        ABCJS.renderAbc("sheet-music", rawAbc, { responsive: "resize", scale: 1.2, add_classes: true });
-        
-        if (ABCJS.synth.supportsAudio()) {
-            this.synth = new ABCJS.synth.CreateSynth();
-            this.synth.init({ visualObj: ABCJS.renderAbc("*", rawAbc)[0] }).then(() => {
-                this.midiBuffer = this.synth;
-            });
-        }
-    }
-    
-    playDemo() { 
-        if(this.synth) {
-            this.synth.prime().then(() => {
-                this.synth.start().then(() => {
-                    if(this.looping) this.playDemo();
-                });
-            }).catch(e => console.warn(e));
-        }
-    }
-    pauseDemo() { if(this.synth && this.synth.pause) this.synth.pause(); else this.stopDemo(); } 
-    stopDemo() { if(this.synth) this.synth.stop(); }
-    
-    // Fixed: setMode now correctly targets only buttons in the Practice Zone
-    setMode(m) { 
-        this.practiceMode = m; 
-        // Scope to #challenge .practice-zone .btn-outline
-        const btns = document.querySelectorAll('#challenge .practice-zone .btn-outline'); 
-        btns.forEach(b => b.classList.remove('selected')); 
-        
-        // Find the button that was clicked and add selected class
-        // Since event might not be passed if called programmatically, we check m
-        // But here we rely on user click
-        if (event && event.target) {
-             event.target.classList.add('selected');
-        }
-    }
-    
-    startPractice() {
-        if(!this.abcData) return alert("Render sheet first!");
-        const bpm = parseInt(document.getElementById('bpm-input').value);
-        this.targetEvents = this.parseAbc(document.getElementById('abc-input').value, bpm); 
-        if(!this.targetEvents.length) return alert("No notes!");
-        let count = 5;
-        const el = document.getElementById('practice-status');
-        const t = setInterval(() => { el.innerText = `Get Ready: ${count}`; count--; if(count<0) { clearInterval(t); el.innerText = "GO!"; this.begin(); } }, 1000);
-    }
-    
-    parseAbc(abc, bpm) {
-        if (typeof ABCJS === 'undefined') return [];
-        const vis = ABCJS.renderAbc("*", abc)[0];
-        const beatLen = 60/bpm; 
-        let evs = [], cur = 0;
-        const v = vis.lines[0].staff[0].voices[0];
-        v.forEach(el => {
-            if(el.el_type==='note' && el.pitches) {
-                evs.push({ t: cur*1000, p: el.pitches.map(p=>p.midipitch), d: el.duration*beatLen*1000 });
-                cur += el.duration*beatLen;
-            }
-        });
-        return evs;
-    }
-    
-    begin() {
-        this.isPracticing = true; this.startTime = performance.now(); this.idx = 0;
-        this.stats = { perfect:0, good:0, bad:0, wrong:0, offSum:0, cnt:0 };
-        document.getElementById('mentor-feedback').style.display='none';
-        midiMaster.subscribe('challenge', (c,n,v) => this.handleInput(c,n,v));
-    }
-
-    handleInput(c,n,v) {
-        if(!this.isPracticing || !this.targetEvents[this.idx]) return;
-        if(c>=144 && v>0) {
-            const now = performance.now();
-            const el = now - this.startTime;
-            const target = this.targetEvents[this.idx];
-            if(!target.p.includes(n)) {
-                this.stats.wrong++;
-                if(this.practiceMode==='sudden') return this.fail("Wrong Note!");
-                return document.getElementById('practice-status').innerText = "Sai Nốt!";
-            }
-            const diff = el - target.t;
-            const abs = Math.abs(diff);
-            let res = "bad"; if(abs<=100) res="perfect"; else if(abs<=250) res="good";
-            this.stats.cnt++; this.stats.offSum+=diff; this.stats[res]++;
-            if(this.practiceMode==='sudden' && res==='bad') return this.fail("Trượt Nhịp!");
-            const statusEl = document.getElementById('practice-status');
-            statusEl.innerText = res.toUpperCase() + (diff<0?" (Sớm)":" (Muộn)");
-            statusEl.style.color = res==='perfect'?'var(--success)':'var(--warning)';
-            this.idx++;
-            if(this.idx >= this.targetEvents.length) this.finish();
-        }
-    }
-    
-    fail(r) { this.isPracticing = false; alert("GAME OVER! "+r); }
-    finish() {
-        this.isPracticing = false;
-        document.getElementById('practice-status').innerText = "FINISHED";
-        const s = this.stats;
-        let msg = "Tuyệt vời!";
-        if(s.wrong > 0) msg = `Bạn sai ${s.wrong} nốt. Cần tập kỹ hơn về cao độ.`;
-        else if(s.bad > 0) msg = "Nhịp chưa vững lắm. Hãy nghe kỹ Metronome.";
-        else if(s.perfect > s.good) msg = "Đẳng cấp Master! Bạn đã sẵn sàng diễn live.";
-        document.getElementById('mentor-feedback').style.display='block';
-        document.getElementById('mentor-text').innerText = `"${msg}"`;
-        document.getElementById('mentor-stats').innerHTML = `<span class="badge bg-perfect">Perfect: ${s.perfect}</span> <span class="badge bg-good">Good: ${s.good}</span> <span class="badge bg-bad">Miss: ${s.bad}</span>`;
-    }
-}
-const chalGame = new ChallengeGame();
-</script>
 </body>
 </html>
