@@ -171,17 +171,30 @@
             const note = message.data[1];
             const velocity = (message.data.length > 2) ? message.data[2] : 0;
 
-            // MIDI Command 144 (0x90) là Note On, 128 (0x80) là Note Off
-            // Lưu ý: Một số đàn gửi Note On với velocity = 0 thay vì Note Off
-            
-            if (command === 144 && velocity > 0) {
-                // NOTE ON
+            // Lọc bỏ tín hiệu Active Sensing (254) và Clock (248) thường gửi liên tục gây rác log
+            if (command === 254 || command === 248) return;
+
+            // Dùng Bitwise để lấy lại lệnh gốc (bỏ qua kênh channel)
+            // 0x90 (144) - 0x9F (159) là Note On cho 16 kênh
+            // 0x80 (128) - 0x8F (143) là Note Off cho 16 kênh
+            const cmdType = command & 0xF0; 
+
+            // Debug: In ra số liệu thô để xem đàn gửi gì
+            console.log(`Raw MIDI: Cmd=${command} Note=${note} Vel=${velocity}`);
+
+            // Kiểm tra Note On (0x90)
+            if (cmdType === 144 && velocity > 0) {
                 handleNoteOn(note, velocity);
-                log(`⬇️ Note ON:  ${getNoteName(note)} (Nốt: ${note}, Lực: ${velocity})`, "input");
-            } else if (command === 128 || (command === 144 && velocity === 0)) {
-                // NOTE OFF
+                log(`⬇️ Note ON:  ${getNoteName(note)} (Nốt: ${note}, Lực: ${velocity}, Cmd: ${command})`, "input");
+            } 
+            // Kiểm tra Note Off (0x80) HOẶC Note On với lực = 0 (cách một số đàn hoạt động)
+            else if (cmdType === 128 || (cmdType === 144 && velocity === 0)) {
                 handleNoteOff();
-                // log(`⬆️ Note OFF: ${getNoteName(note)}`, "gray"); // Bỏ comment nếu muốn thấy log nhả phím
+                // log(`⬆️ Note OFF: ${getNoteName(note)}`, "gray"); 
+            }
+            else {
+                // Log các tín hiệu lạ (như Pedal, Control Change) để biết đàn có kết nối không
+                log(`📡 Tín hiệu khác: Cmd=${command}, Data1=${note}, Data2=${velocity}`, "gray");
             }
         }
 
