@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Tay Guitar Ảo (Nhậu Mode) — Click hợp âm là đệm (Bolero thật hơn)</title>
+  <title>Tay Guitar Ảo (Nhậu Mode) — Click hợp âm là đệm (2 kiểu tay phải)</title>
 
   <!-- WebAudioFont core -->
   <script src="https://surikov.github.io/webaudiofont/npm/dist/WebAudioFontPlayer.js"></script>
@@ -14,7 +14,7 @@
     .wrap { max-width: 1200px; margin: 0 auto; padding: 18px; }
     h1 { margin: 0 0 8px; font-size: 20px; font-weight: 800; letter-spacing: .2px; }
     p { margin: 6px 0 0; color: var(--muted); line-height: 1.45; }
-    .grid { display:grid; grid-template-columns: 430px 1fr; gap: 14px; align-items:start; }
+    .grid { display:grid; grid-template-columns: 450px 1fr; gap: 14px; align-items:start; }
     @media (max-width: 980px) { .grid { grid-template-columns: 1fr; } }
 
     .card { background: var(--card); border: 1px solid rgba(255,255,255,.08); border-radius: 14px; padding: 14px; }
@@ -32,7 +32,7 @@
     .btn.secondary { background: var(--btn2); }
     .btn.danger { background: #4a1f2a; }
     .btn:disabled { opacity: .55; cursor:not-allowed; }
-    select, input[type="number"], textarea {
+    select, textarea {
       background: #0f1627; color: var(--text);
       border: 1px solid rgba(255,255,255,.12);
       border-radius: 12px;
@@ -72,10 +72,10 @@
 
 <body>
   <div class="wrap">
-    <h1>Tay Guitar Ảo (Nhậu Mode) — Click hợp âm là đệm (Bolero thật hơn)</h1>
+    <h1>Tay Guitar Ảo (Nhậu Mode) — Click hợp âm là đệm (2 kiểu tay phải)</h1>
     <p>
-      Dán input dạng <span class="mono">[Chord]</span>. Người hát tới đâu bạn bấm tới đó.
-      <b>Hold ON</b> = đệm nền bolero và đổi hợp âm “ăn” vào đầu ô nhịp kế tiếp.
+      Bạn chọn “Tay phải”: <b>Móc dây</b> hoặc <b>Bass + chát</b>. Người hát tới đâu bấm hợp âm tới đó.
+      <b>Hold ON</b> = đệm nền và đổi hợp âm ở đầu ô nhịp kế tiếp.
     </p>
 
     <div class="grid">
@@ -114,17 +114,26 @@
             <input id="bpm" type="range" min="55" max="200" value="84" />
             <span class="pill"><span id="bpmVal" class="mono">84</span> BPM</span>
           </div>
-
           <div>
             <label>Tap tempo</label>
             <button id="btnTap" class="btn secondary" disabled>Tap</button>
-            <span class="pill">Hold: <span id="holdState" class="mono">OFF</span></span>
           </div>
         </div>
 
         <div class="row">
           <div>
-            <label>Strum “lơi” (chậm hơn = giống bolero)</label>
+            <label>Tay phải (chọn 1)</label>
+            <select id="rightHand">
+              <option value="pick" selected>Bolero móc dây (arpeggio 1&2&3&4&)</option>
+              <option value="basschat">Bolero bass + chát (1-2-3-4)</option>
+            </select>
+          </div>
+          <span class="pill">Hold: <span id="holdState" class="mono">OFF</span></span>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Độ “lơi” (chậm/quạt mềm hơn)</label>
             <input id="loi" type="range" min="0" max="100" value="55" />
             <span class="pill">Lơi: <span id="loiVal" class="mono">55</span></span>
           </div>
@@ -163,7 +172,7 @@
         </div>
 
         <p class="hint">
-          Phím tắt: <span class="kbd">Space</span> = Stop. Gợi ý: bolero mềm nhất thường dùng <b>Nylon</b>.
+          Phím tắt: <span class="kbd">Space</span> = Stop. Gợi ý: bolero mềm nhất thường dùng <b>Nylon</b>. Nếu thấy “vội”, tăng <b>Lơi</b> lên 70–80.
         </p>
       </div>
 
@@ -214,6 +223,8 @@
     bpmVal: $("#bpmVal"),
     btnTap: $("#btnTap"),
 
+    rightHand: $("#rightHand"),
+
     loi: $("#loi"),
     loiVal: $("#loiVal"),
     human: $("#human"),
@@ -247,6 +258,10 @@
 
   function clamp(x,a,b){ return Math.max(a, Math.min(b, x)); }
   function randSigned(){ return (Math.random()*2 - 1); }
+  function human01() { return Number(el.human.value)/100; }
+  function loi01() { return Number(el.loi.value)/100; }
+  function secPerBeat() { return 60 / Number(el.bpm.value); }
+  function barDur() { return secPerBeat() * 4; } // 4/4
 
   function makeImpulseResponse(context, seconds = 1.2, decay = 3.6) {
     const rate = context.sampleRate;
@@ -272,7 +287,6 @@
       masterGain.gain.value = 0.95;
 
       compressor = ctx.createDynamicsCompressor();
-      // Giảm nén để hợp âm “đỡ phẳng”, phân biệt rõ hơn
       compressor.threshold.value = -28;
       compressor.knee.value = 18;
       compressor.ratio.value = 2.2;
@@ -313,7 +327,6 @@
       wetGain.connect(outGain);
       outGain.connect(ctx.destination);
     }
-
     if (ctx.state !== "running") await ctx.resume();
 
     el.audioState.textContent = "ON";
@@ -338,31 +351,8 @@
   }
 
   // ------------------------------
-  // Tempo + metronome
+  // Metronome
   // ------------------------------
-  function secPerBeat() { return 60 / Number(el.bpm.value); }
-  function barDur() { return secPerBeat() * 4; } // 4/4
-  function human01() { return Number(el.human.value)/100; }
-  function loi01() { return Number(el.loi.value)/100; }
-
-  // Tap tempo
-  let tapTimes = [];
-  el.btnTap.addEventListener("click", () => {
-    const t = performance.now();
-    tapTimes.push(t);
-    if (tapTimes.length > 7) tapTimes.shift();
-    if (tapTimes.length >= 3) {
-      let sum = 0;
-      for (let i = 1; i < tapTimes.length; i++) sum += (tapTimes[i] - tapTimes[i-1]);
-      const avgMs = sum / (tapTimes.length - 1);
-      const bpm = clamp(Math.round(60000 / avgMs), 55, 200);
-      el.bpm.value = String(bpm);
-      el.bpmVal.textContent = String(bpm);
-      if (ctx && el.metro.checked) startMetronome();
-      if (holding) reanchorHold();
-    }
-  });
-
   let metroTimer = null;
   function metroClick(when, accent=false) {
     if (!ctx) return;
@@ -400,188 +390,236 @@
   }
 
   // ------------------------------
-  // Guitar voicings (thế bấm guitar thật) cho các hợp âm hay gặp
-  // MIDI: E2=40 A2=45 D3=50 G3=55 B3=59 E4=64
+  // Guitar shapes (tay trái): 6 dây từ (6 -> 1) theo standard tuning
+  // Shape array length 6: number fret or 'x'
+  // MIDI open strings: E2=40, A2=45, D3=50, G3=55, B3=59, E4=64
   // ------------------------------
-  const GUITAR_VOICINGS = {
-    "Dm":  [50, 57, 62, 65],               // xx0231
-    "Dm7": [50, 57, 60, 62, 65],           // xx0211
-    "Am":  [45, 52, 57, 60, 64],           // x02210
-    "Am7": [45, 52, 55, 60, 64],           // x02010
-    "Bb":  [46, 53, 58, 62, 65],           // x13331
-    "C":   [48, 52, 55, 60, 64],           // x32010
-    "F":   [41, 48, 53, 57, 60, 65],       // 133211
-    "Gm":  [43, 50, 55, 58, 62, 67],       // 355333
-    "G":   [43, 47, 50, 55, 59, 67],       // 320003
-    "G7":  [43, 47, 50, 55, 59, 65],       // 320001
-    "A7":  [45, 52, 55, 61, 64],           // x02020
-    "D7":  [50, 57, 60, 66],               // xx0212
-    "Em":  [40, 47, 52, 55, 59, 64],       // 022000
-    "E7":  [40, 47, 50, 56, 59, 64],       // 020100
+  const OPEN_MIDI = [40, 45, 50, 55, 59, 64]; // strings 6..1
+
+  const SHAPES = {
+    // Core for your song
+    "Dm":  ['x','x',0,2,3,1],       // xx0231
+    "Dm7": ['x','x',0,2,1,1],       // xx0211
+    "Am":  ['x',0,2,2,1,0],         // x02210
+    "Am7": ['x',0,2,0,1,0],         // x02010
+    "Bb":  ['x',1,3,3,3,1],         // x13331
+    "C":   ['x',3,2,0,1,0],         // x32010
+    "F":   [1,3,3,2,1,1],           // 133211
+    "Gm":  [3,5,5,3,3,3],           // 355333
+    "G":   [3,2,0,0,0,3],           // 320003
+    "G7":  [3,2,0,0,0,1],           // 320001
+    "A7":  ['x',0,2,0,2,0],         // x02020
+    // Extras (nice to have)
+    "D7":  ['x','x',0,2,1,2],       // xx0212
+    "Em":  [0,2,2,0,0,0],           // 022000
+    "E7":  [0,2,0,1,0,0],           // 020100
   };
 
-  // Fallback chord parser (để không chết nếu gặp hợp âm lạ)
+  // Lightweight fallback: turn unknown chord into a "safe" pseudo-shape on top 4 strings
+  // (not perfect, but avoids crashing)
   const NOTE = { C:0, D:2, E:4, F:5, G:7, A:9, B:11 };
   function parseChordSymbol(symRaw) {
     const sym = symRaw.trim().replace("Δ","maj");
-    let main = sym, slash = null;
+    let main = sym;
     const slashIdx = sym.indexOf("/");
-    if (slashIdx >= 0) { main = sym.slice(0, slashIdx).trim(); slash = sym.slice(slashIdx + 1).trim(); }
+    if (slashIdx >= 0) main = sym.slice(0, slashIdx).trim();
 
     const m = main.match(/^([A-G])([#b]?)(.*)$/);
     if (!m) return { ok:false, sym };
 
-    const root = m[1];
-    const acc = m[2] || "";
+    const root = m[1], acc = m[2] || "";
     let qual = (m[3] || "").trim();
 
     let triad = "maj";
-    let add7 = null; // "min7" or "maj7"
-    let sus = null;
-    let dim = false, aug = false;
-
-    if (/sus2/i.test(qual)) sus = 2;
-    if (/sus4/i.test(qual)) sus = 4;
-    if (/dim|o/i.test(qual)) dim = true;
-    if (/aug|\+/i.test(qual)) aug = true;
-
     if (/^m(?!aj)/i.test(qual) || /^min/i.test(qual)) triad = "min";
-    if (/maj7/i.test(qual)) add7 = "maj7";
-    else if (/m7/i.test(qual)) add7 = "min7";
-    else if (/7/.test(qual)) add7 = "min7";
 
     const rootSemitone = (NOTE[root] + (acc === "#" ? 1 : acc === "b" ? -1 : 0) + 12) % 12;
+    return { ok:true, sym, rootSemitone, triad };
+  }
 
-    let slashSemitone = null;
-    if (slash) {
-      const sm = slash.match(/^([A-G])([#b]?)$/);
-      if (sm) slashSemitone = (NOTE[sm[1]] + (sm[2] === "#" ? 1 : sm[2] === "b" ? -1 : 0) + 12) % 12;
+  function shapeToPitches(shape) {
+    // returns array of {string: 6..1, midi, fret}
+    const out = [];
+    for (let i = 0; i < 6; i++) {
+      const fret = shape[i];
+      if (fret === 'x' || fret === 'X') continue;
+      const midi = OPEN_MIDI[i] + Number(fret);
+      out.push({ string: 6 - i, midi, fret: Number(fret) });
     }
-
-    return { ok:true, sym, rootSemitone, triad, sus, dim, aug, add7, slashSemitone };
+    return out;
   }
 
-  // “Guitar-friendly” fallback voicing (đỡ giống nhau hơn kiểu piano)
-  function buildFallbackVoicing(sym) {
-    const c = parseChordSymbol(sym);
-    if (!c.ok) return [48, 52, 55, 60, 64];
+  function getShape(chordSym) {
+    const s = chordSym.trim();
+    if (SHAPES[s]) return SHAPES[s];
 
-    // Root around A2..D3 area
-    let rootMidi = 45 + c.rootSemitone;      // 45..56
-    if (rootMidi > 52) rootMidi -= 12;       // clamp to 40..52-ish
+    // fallback pseudo shape: place triad on strings 4-3-2-1 around fret 5-ish
+    const p = parseChordSymbol(s);
+    if (!p.ok) return ['x','x',0,2,3,1]; // fallback Dm
 
-    let i3 = 4, i5 = 7;
-    if (c.dim) { i3 = 3; i5 = 6; }
-    else if (c.aug) { i3 = 4; i5 = 8; }
-    else if (c.sus === 2) { i3 = 2; i5 = 7; }
-    else if (c.sus === 4) { i3 = 5; i5 = 7; }
-    else if (c.triad === "min") { i3 = 3; i5 = 7; }
+    // root on string 4 around D3 (50) + semitone shift
+    // use simple power voicing: root (string4), 3rd (string3), 5th (string2), octave (string1)
+    const base = 50 + p.rootSemitone; // around D3..?
+    const i3 = (p.triad === "min") ? 3 : 4;
+    const i5 = 7;
+    const pitches = [base, base+i3, base+i5, base+12];
 
-    // Bass: slash hoặc root-12
-    let bass = (c.slashSemitone != null) ? (45 + c.slashSemitone) : (rootMidi - 12);
-    bass = clamp(bass, 40, 52);
-
-    const notes = [bass, rootMidi, rootMidi + i3, rootMidi + i5, rootMidi + 12];
-    if (c.add7) {
-      const i7 = (c.add7 === "maj7") ? 11 : 10;
-      notes.push(rootMidi + i7);
+    // convert to frets on strings 4..1
+    const strings = [4,3,2,1];
+    const shape = ['x','x','x','x','x','x'];
+    for (let k = 0; k < 4; k++) {
+      const str = strings[k];
+      const open = OPEN_MIDI[6 - str];
+      let fret = pitches[k] - open;
+      fret = clamp(Math.round(fret), 0, 12);
+      shape[6 - str] = fret;
     }
-    const uniq = Array.from(new Set(notes.map(n => Math.round(n)))).sort((a,b)=>a-b);
-    return uniq.length > 6 ? [uniq[0], uniq[2], uniq[3], uniq[4], uniq[5], uniq[uniq.length-1]] : uniq;
+    // prefer bass on string 5 open if possible
+    shape[1] = 0; // A string open as neutral bass (won't always be right but ok)
+    return shape;
   }
 
-  function buildVoicing(sym) {
-    const s = sym.trim();
-    if (GUITAR_VOICINGS[s]) return GUITAR_VOICINGS[s];
-    return buildFallbackVoicing(s);
+  function chooseBassString(shape) {
+    // Prefer lowest available: string6 then 5 then 4
+    if (shape[0] !== 'x' && shape[0] !== 'X') return 6;
+    if (shape[1] !== 'x' && shape[1] !== 'X') return 5;
+    if (shape[2] !== 'x' && shape[2] !== 'X') return 4;
+    return 5;
   }
 
-  function bassPitchForChord(sym) {
-    const v = buildVoicing(sym);
-    let b = v[0] ?? 45;
-    if (b >= 48) b -= 12;
-    return clamp(b, 40, 52);
+  function getMidiForString(shape, stringNum) {
+    // stringNum: 6..1
+    const idx = 6 - stringNum; // 0..5
+    const fret = shape[idx];
+    if (fret === 'x' || fret === 'X') return null;
+    return OPEN_MIDI[idx] + Number(fret);
   }
 
   // ------------------------------
-  // Custom strum (rải từng “dây”) — giống tay người hơn queueStrumDown
+  // Right-hand engine (tay phải)
   // ------------------------------
-  function strumCustom(chordSym, when, dir, dur, vol, muted=false) {
+
+  // Small “chát” noise layer (optional, low volume) to mimic palm-mute percussive feel
+  function noiseChop(when, vol=0.08) {
+    if (!ctx) return;
+    const dur = 0.05;
+    const buffer = ctx.createBuffer(1, Math.floor(ctx.sampleRate * dur), ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1);
+
+    const src = ctx.createBufferSource();
+    src.buffer = buffer;
+
+    const bp = ctx.createBiquadFilter();
+    bp.type = "bandpass";
+    bp.frequency.value = 1800;
+    bp.Q.value = 0.8;
+
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, when);
+    g.gain.linearRampToValueAtTime(vol, when + 0.002);
+    g.gain.exponentialRampToValueAtTime(0.0001, when + dur);
+
+    src.connect(bp);
+    bp.connect(g);
+    g.connect(outGain); // into output (post FX)
+
+    src.start(when);
+    src.stop(when + dur + 0.01);
+  }
+
+  function pickString(chordSym, when, stringNum, dur, vol) {
     if (!ctx || !player || !preset) return;
+    const shape = getShape(chordSym);
+    const midi = getMidiForString(shape, stringNum);
+    if (midi == null) return;
 
-    const pitches = buildVoicing(chordSym);
-    const order = (dir === "up") ? [...pitches].reverse() : pitches;
-
-    // Spread theo BPM + “lơi”
-    const spb = secPerBeat();
-    const loi = loi01();     // 0..1
-    const h = human01();     // 0..1
-
-    // Ở bolero nên spread lớn hơn (chậm hơn) để đỡ “vội”
-    const spread = clamp(spb * (0.018 + 0.030 * loi), 0.016, 0.055); // ~16–55ms
-    const jitter = clamp(spb * (0.001 + 0.010 * h), 0.001, 0.010);
-
-    // Muted “chát” -> duration ngắn hơn
-    const noteDur = muted ? clamp(dur * 0.35, 0.10, 0.45) : dur;
-
-    order.forEach((p, i) => {
-      const t = when + i * spread + randSigned() * jitter;
-      const v = clamp(vol * (1 - 0.07 * i) + randSigned() * (0.06 * h), 0.18, 0.95);
-      player.queueWaveTable(ctx, masterGain, preset, t, p, noteDur, v);
-    });
-  }
-
-  // ------------------------------
-  // Bolero pattern — 4 hit / 1 ô (đỡ vội, nghe “điềm” hơn)
-  // ------------------------------
-  const BOLERO_4HIT = [
-    {t:0.00, type:"bass", v:0.95}, // 1
-    {t:0.25, type:"chat", v:0.55}, // 2
-    {t:0.50, type:"bass", v:0.88}, // 3
-    {t:0.75, type:"chat", v:0.52}, // 4
-  ];
-
-  function scheduleOneBarBolero(chordSym, barStart) {
-    if (!ctx || !player || !preset) return;
-    const dur = barDur();
-    const spb = secPerBeat();
     const h = human01();
-
-    const jitter = clamp(spb * (0.001 + 0.008 * h), 0.001, 0.010);
-
-    for (const ev of BOLERO_4HIT) {
-      const t = barStart + ev.t * dur + randSigned() * jitter;
-      const v = clamp(ev.v + randSigned() * (0.10 * h), 0.20, 0.95);
-
-      if (ev.type === "bass") {
-        const bass = bassPitchForChord(chordSym);
-        player.queueWaveTable(ctx, masterGain, preset, t, bass, clamp(0.38, 0.18, 0.55), v);
-      } else {
-        // “chát” ngắn (muted=true), rải chậm vừa đủ
-        strumCustom(chordSym, t, "down", dur * 0.95, v, true);
-      }
-    }
+    const t = when + randSigned() * clamp(secPerBeat() * (0.001 + 0.008*h), 0.001, 0.010);
+    const v = clamp(vol + randSigned() * (0.06*h), 0.12, 0.98);
+    player.queueWaveTable(ctx, masterGain, preset, t, midi, dur, v);
   }
 
-  // One-shot: click chord -> phát 1 ô (không Hold)
-  // Để đỡ “dính bùn” khi click nhanh, ta cancelQueue nếu click quá sát nhau
+  function brushTreble(chordSym, when, dir, dur, vol, muted=true) {
+    // brush across strings 4-3-2-1 (or reverse) with spread
+    const spb = secPerBeat();
+    const loi = loi01();
+    const h = human01();
+    const spread = clamp(spb * (0.012 + 0.028*loi), 0.010, 0.050); // 10..50ms
+    const stringsDown = [4,3,2,1];
+    const strings = (dir === "up") ? [...stringsDown].reverse() : stringsDown;
+    const ndur = muted ? clamp(dur * 0.35, 0.10, 0.40) : dur;
+
+    strings.forEach((s, i) => {
+      const v = clamp(vol * (1 - 0.08*i) + randSigned()*(0.04*h), 0.10, 0.95);
+      pickString(chordSym, when + i*spread, s, ndur, v);
+    });
+
+    // add subtle percussive "chát"
+    if (muted) noiseChop(when + spread*0.6, 0.07 * (0.7 + 0.6*h));
+  }
+
+  // Option 1: Bolero móc dây (1 & 2 & 3 & 4 &)
+  function scheduleBoleroPickOneBar(chordSym, barStart) {
+    const durBar = barDur();
+    const durNote = clamp(secPerBeat() * 0.55, 0.18, 0.55); // pluck length
+    const shape = getShape(chordSym);
+    const bass1 = chooseBassString(shape);
+    const bass2 = (getMidiForString(shape, 4) != null) ? 4 : bass1;
+
+    // 8 events (1&2&3&4&)
+    const ev = [
+      {t:0.00,  fn:() => pickString(chordSym, barStart + 0.00*durBar, bass1, durNote, 0.92)},
+      {t:0.125, fn:() => pickString(chordSym, barStart + 0.125*durBar, 3,     durNote, 0.50)},
+      {t:0.25,  fn:() => pickString(chordSym, barStart + 0.25*durBar,  2,     durNote, 0.48)},
+      {t:0.375, fn:() => pickString(chordSym, barStart + 0.375*durBar, 1,     durNote, 0.46)},
+      {t:0.50,  fn:() => pickString(chordSym, barStart + 0.50*durBar,  bass2, durNote, 0.84)},
+      {t:0.625, fn:() => pickString(chordSym, barStart + 0.625*durBar, 3,     durNote, 0.50)},
+      {t:0.75,  fn:() => pickString(chordSym, barStart + 0.75*durBar,  2,     durNote, 0.48)},
+      {t:0.875, fn:() => pickString(chordSym, barStart + 0.875*durBar, 1,     durNote, 0.46)},
+    ];
+    ev.forEach(x => x.fn());
+  }
+
+  // Option 2: Bolero bass + chát (1-2-3-4)
+  function scheduleBoleroBassChatOneBar(chordSym, barStart) {
+    const durBar = barDur();
+    const durBass = clamp(secPerBeat() * 0.45, 0.16, 0.50);
+    const shape = getShape(chordSym);
+    const bass1 = chooseBassString(shape);
+    const bass2 = (getMidiForString(shape, 4) != null) ? 4 : bass1;
+
+    // 1: bass, 2: chat, 3: bass, 4: chat
+    pickString(chordSym, barStart + 0.00*durBar, bass1, durBass, 0.95);
+    brushTreble(chordSym, barStart + 0.25*durBar, "down", durBar*0.9, 0.56, true);
+
+    pickString(chordSym, barStart + 0.50*durBar, bass2, durBass, 0.86);
+    brushTreble(chordSym, barStart + 0.75*durBar, "down", durBar*0.9, 0.52, true);
+  }
+
+  function scheduleOneBar(chordSym, barStart) {
+    if (!ctx || !preset) return;
+    if (el.rightHand.value === "pick") scheduleBoleroPickOneBar(chordSym, barStart);
+    else scheduleBoleroBassChatOneBar(chordSym, barStart);
+  }
+
+  // ------------------------------
+  // One-shot + anti “dính bùn”
+  // ------------------------------
   let lastOneShotAt = 0;
   function playOneShotBar(chordSym) {
     if (!ctx || !preset) return;
 
     const now = ctx.currentTime;
-    const minGap = clamp(barDur() * 0.35, 0.25, 0.80); // click sát quá -> dọn queue
-    if (now - lastOneShotAt < minGap) {
-      player.cancelQueue(ctx);
-    }
+    const minGap = clamp(barDur() * 0.35, 0.25, 0.80);
+    if (now - lastOneShotAt < minGap) player.cancelQueue(ctx);
     lastOneShotAt = now;
 
-    const start = now + 0.03;
-    scheduleOneBarBolero(chordSym, start);
+    scheduleOneBar(chordSym, now + 0.03);
   }
 
   // ------------------------------
-  // Hold mode: loop bars + quantized chord change at bar boundary
+  // Hold mode
   // ------------------------------
   let holdOn = false;
   let holding = false;
@@ -591,19 +629,10 @@
   let schedTimer = null;
   let nextBarTime = 0;
 
-  function setNowChord(sym) {
-    currentChord = sym;
-    el.nowChord.textContent = sym || "—";
-  }
-  function setPendingChord(sym) {
-    pendingChord = sym;
-    el.pendingChord.textContent = sym || "—";
-  }
+  function setNowChord(sym) { currentChord = sym; el.nowChord.textContent = sym || "—"; }
+  function setPendingChord(sym) { pendingChord = sym; el.pendingChord.textContent = sym || "—"; }
 
-  function reanchorHold() {
-    // khi đổi BPM, re-anchor để đỡ lệch nhịp cảm giác
-    nextBarTime = ctx.currentTime + 0.10;
-  }
+  function reanchorHold() { nextBarTime = ctx.currentTime + 0.10; }
 
   function startHoldLoop(initialChord) {
     if (!ctx || !preset) return;
@@ -613,16 +642,13 @@
 
     nextBarTime = ctx.currentTime + 0.10;
 
-    const lookahead = 0.22;
+    const lookahead = 0.24;
     const tick = () => {
       if (!holding) return;
 
       while (nextBarTime < ctx.currentTime + lookahead) {
-        if (pendingChord) {
-          setNowChord(pendingChord);
-          setPendingChord(null);
-        }
-        scheduleOneBarBolero(currentChord, nextBarTime);
+        if (pendingChord) { setNowChord(pendingChord); setPendingChord(null); }
+        scheduleOneBar(currentChord, nextBarTime);
         nextBarTime += barDur();
       }
       schedTimer = setTimeout(tick, 25);
@@ -650,18 +676,16 @@
   }
 
   // ------------------------------
-  // Rendering chord sheet to clickable UI
+  // Rendering chord sheet
   // ------------------------------
   function parseMetadata(text) {
     const tone = (text.match(/^\s*Tone:\s*(.+)\s*$/mi) || [])[1]?.trim() || "—";
     const style = (text.match(/^\s*Điệu:\s*(.+)\s*$/mi) || [])[1]?.trim() || "—";
     return { tone, style };
   }
-
   function isSectionTitle(line) {
     return /^\s*(Intro:|ĐK:|DK:|Điệp khúc:|Chorus:|Verse\s*\d+|Bridge:|\d+\.)/i.test(line.trim());
   }
-
   function renderSong(text) {
     const { tone, style } = parseMetadata(text);
     el.metaTone.textContent = tone;
@@ -681,8 +705,6 @@
         container.appendChild(spacer);
         continue;
       }
-
-      // Skip metadata lines from rendering body
       if (/^\s*Tone\s*:/i.test(line) || /^\s*Điệu\s*:/i.test(line)) continue;
 
       const div = document.createElement("div");
@@ -697,11 +719,9 @@
         continue;
       }
 
-      // Tokenize [Chord]
       const parts = [];
       const re = /\[([^\]]+)\]/g;
-      let lastIdx = 0;
-      let m;
+      let lastIdx = 0, m;
       while ((m = re.exec(line)) !== null) {
         const before = line.slice(lastIdx, m.index);
         if (before) parts.push({ type:"text", value: before });
@@ -712,13 +732,11 @@
       if (tail) parts.push({ type:"text", value: tail });
 
       for (const p of parts) {
-        if (p.type === "text") {
-          div.appendChild(document.createTextNode(p.value));
-        } else {
+        if (p.type === "text") div.appendChild(document.createTextNode(p.value));
+        else {
           const sp = document.createElement("span");
           sp.className = "chord";
           sp.textContent = p.value;
-          sp.dataset.chord = p.value;
 
           sp.addEventListener("click", async () => {
             await ensureAudio();
@@ -740,7 +758,6 @@
           div.appendChild(sp);
         }
       }
-
       container.appendChild(div);
     }
 
@@ -757,22 +774,36 @@
     if (holding) reanchorHold();
   });
 
-  el.loi.addEventListener("input", () => { el.loiVal.textContent = el.loi.value; });
-  el.human.addEventListener("input", () => { el.humanVal.textContent = el.human.value; });
+  el.loi.addEventListener("input", () => el.loiVal.textContent = el.loi.value);
+  el.human.addEventListener("input", () => el.humanVal.textContent = el.human.value);
+
+  // Tap tempo
+  let tapTimes = [];
+  el.btnTap.addEventListener("click", () => {
+    const t = performance.now();
+    tapTimes.push(t);
+    if (tapTimes.length > 7) tapTimes.shift();
+    if (tapTimes.length >= 3) {
+      let sum = 0;
+      for (let i = 1; i < tapTimes.length; i++) sum += (tapTimes[i] - tapTimes[i-1]);
+      const avgMs = sum / (tapTimes.length - 1);
+      const bpm = clamp(Math.round(60000 / avgMs), 55, 200);
+      el.bpm.value = String(bpm);
+      el.bpmVal.textContent = String(bpm);
+      if (ctx && el.metro.checked) startMetronome();
+      if (holding) reanchorHold();
+    }
+  });
 
   el.btnEnable.addEventListener("click", async () => {
     await ensureAudio();
     loadPresetByKey(el.presetSel.value);
   });
-
   el.btnLoadPreset.addEventListener("click", async () => {
     await ensureAudio();
     loadPresetByKey(el.presetSel.value);
   });
-
-  el.presetSel.addEventListener("change", () => {
-    if (ctx) loadPresetByKey(el.presetSel.value);
-  });
+  el.presetSel.addEventListener("change", () => { if (ctx) loadPresetByKey(el.presetSel.value); });
 
   el.btnRender.addEventListener("click", async () => {
     await ensureAudio();
@@ -807,15 +838,10 @@
   });
 
   window.addEventListener("keydown", (e) => {
-    if (e.code === "Space") {
-      e.preventDefault();
-      stopAll();
-    }
+    if (e.code === "Space") { e.preventDefault(); stopAll(); }
   });
 
-  document.addEventListener("visibilitychange", () => {
-    if (document.hidden) stopAll();
-  });
+  document.addEventListener("visibilitychange", () => { if (document.hidden) stopAll(); });
 
   // ------------------------------
   // Example input (your sample)
