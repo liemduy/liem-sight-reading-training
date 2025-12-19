@@ -3,18 +3,18 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Tay Guitar Ảo (Nhậu Mode) — Click hợp âm là đệm</title>
+  <title>Tay Guitar Ảo (Nhậu Mode) — Click hợp âm là đệm (Bolero thật hơn)</title>
 
-  <!-- WebAudioFont core (realistic sample-based instruments) -->
+  <!-- WebAudioFont core -->
   <script src="https://surikov.github.io/webaudiofont/npm/dist/WebAudioFontPlayer.js"></script>
 
   <style>
-    :root { color-scheme: dark; --bg:#0b0f19; --card:#121a2b; --muted:#9fb0d0; --text:#e9eefc; --btn:#2a3b63; --btn2:#1e2a46; --line:#26324f; --accent:#7aa7ff; }
+    :root { color-scheme: dark; --bg:#0b0f19; --card:#121a2b; --muted:#9fb0d0; --text:#e9eefc; --btn:#2a3b63; --btn2:#1e2a46; --accent:#7aa7ff; }
     body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:var(--bg); color:var(--text); }
     .wrap { max-width: 1200px; margin: 0 auto; padding: 18px; }
     h1 { margin: 0 0 8px; font-size: 20px; font-weight: 800; letter-spacing: .2px; }
     p { margin: 6px 0 0; color: var(--muted); line-height: 1.45; }
-    .grid { display:grid; grid-template-columns: 420px 1fr; gap: 14px; align-items:start; }
+    .grid { display:grid; grid-template-columns: 430px 1fr; gap: 14px; align-items:start; }
     @media (max-width: 980px) { .grid { grid-template-columns: 1fr; } }
 
     .card { background: var(--card); border: 1px solid rgba(255,255,255,.08); border-radius: 14px; padding: 14px; }
@@ -44,12 +44,11 @@
     input[type="range"] { width: 240px; }
     hr { border: none; border-top: 1px solid rgba(255,255,255,.10); margin: 12px 0; }
 
-    /* Rendered song */
     .song { font-size: 16px; line-height: 1.55; }
     .line { padding: 6px 0; border-bottom: 1px dashed rgba(255,255,255,.06); }
     .line:last-child { border-bottom: none; }
     .sectionTitle { margin-top: 12px; font-weight: 800; color: #cfe0ff; }
-    .metaRow { display:flex; gap:10px; flex-wrap:wrap; }
+
     .chord {
       display:inline-flex; align-items:center; justify-content:center;
       margin: 0 4px;
@@ -65,6 +64,7 @@
     }
     .chord:hover { background: rgba(122,167,255,.18); }
     .chord.active { background: rgba(122,167,255,.28); border-color: rgba(122,167,255,.9); box-shadow: 0 0 0 2px rgba(122,167,255,.15) inset; }
+
     .hint { font-size: 12px; color: var(--muted); }
     .kbd { border: 1px solid rgba(255,255,255,.14); border-bottom-width: 2px; border-radius: 8px; padding: 2px 6px; background: rgba(255,255,255,.06); font-size: 12px; }
   </style>
@@ -72,14 +72,14 @@
 
 <body>
   <div class="wrap">
-    <h1>Tay Guitar Ảo (Nhậu Mode) — Click hợp âm là đệm “giống người”</h1>
+    <h1>Tay Guitar Ảo (Nhậu Mode) — Click hợp âm là đệm (Bolero thật hơn)</h1>
     <p>
-      Dán input dạng <span class="mono">[Chord]</span> như bạn đưa. Người hát tới đâu, bạn bấm ngay hợp âm trong lời: app sẽ đệm 1 ô bolero (bass + chát).
-      Nếu bật <b>Hold</b>, app sẽ lặp bolero nền và đổi hợp âm mượt ở đầu ô nhịp kế tiếp.
+      Dán input dạng <span class="mono">[Chord]</span>. Người hát tới đâu bạn bấm tới đó.
+      <b>Hold ON</b> = đệm nền bolero và đổi hợp âm “ăn” vào đầu ô nhịp kế tiếp.
     </p>
 
     <div class="grid">
-      <!-- LEFT: Input + controls -->
+      <!-- LEFT -->
       <div class="card">
         <div class="row">
           <button id="btnEnable" class="btn">Bật âm thanh</button>
@@ -93,9 +93,9 @@
           <div>
             <label>Guitar preset</label>
             <select id="presetSel">
-              <option value="steel_lk">Acoustic Steel — LK (đậm, thật)</option>
+              <option value="nylon_lk">Acoustic Nylon — LK (bolero mềm)</option>
+              <option value="steel_lk">Acoustic Steel — LK (đậm, rõ)</option>
               <option value="steel_std">Acoustic Steel — Standard</option>
-              <option value="nylon_lk">Acoustic Nylon — LK (mềm, bolero)</option>
               <option value="elec_clean">Electric Clean — Aspirin</option>
               <option value="elec_jazz">Electric Jazz — Aspirin</option>
               <option value="elec_muted">Electric Muted — Aspirin (cộc)</option>
@@ -111,14 +111,30 @@
         <div class="row">
           <div>
             <label>BPM</label>
-            <input id="bpm" type="range" min="55" max="200" value="92" />
-            <span class="pill"><span id="bpmVal" class="mono">92</span> BPM</span>
+            <input id="bpm" type="range" min="55" max="200" value="84" />
+            <span class="pill"><span id="bpmVal" class="mono">84</span> BPM</span>
           </div>
 
           <div>
             <label>Tap tempo</label>
             <button id="btnTap" class="btn secondary" disabled>Tap</button>
             <span class="pill">Hold: <span id="holdState" class="mono">OFF</span></span>
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Strum “lơi” (chậm hơn = giống bolero)</label>
+            <input id="loi" type="range" min="0" max="100" value="55" />
+            <span class="pill">Lơi: <span id="loiVal" class="mono">55</span></span>
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Humanize (độ “người”)</label>
+            <input id="human" type="range" min="0" max="100" value="45" />
+            <span class="pill">Human: <span id="humanVal" class="mono">45</span></span>
           </div>
         </div>
 
@@ -147,23 +163,22 @@
         </div>
 
         <p class="hint">
-          Mẹo nhậu: bật <b>Hold</b> để app quạt nền; khi đổi hợp âm chỉ cần chạm chord tiếp theo, app sẽ “ăn” vào đầu ô nhịp kế tiếp.
-          Phím tắt: <span class="kbd">Space</span> = Stop.
+          Phím tắt: <span class="kbd">Space</span> = Stop. Gợi ý: bolero mềm nhất thường dùng <b>Nylon</b>.
         </p>
       </div>
 
-      <!-- RIGHT: Rendered song -->
+      <!-- RIGHT -->
       <div class="card">
-        <div class="metaRow">
+        <div class="row">
           <span class="pill">Tone: <span id="metaTone" class="mono">—</span></span>
           <span class="pill">Điệu: <span id="metaStyle" class="mono">—</span></span>
           <span class="pill">Current: <span id="nowChord" class="mono">—</span></span>
-          <span class="pill">Next (pending): <span id="pendingChord" class="mono">—</span></span>
+          <span class="pill">Pending: <span id="pendingChord" class="mono">—</span></span>
         </div>
 
         <div class="spacer"></div>
         <div id="song" class="song">
-          <p class="muted">Bấm “Render + Bấm hợp âm để đệm” để hiện lời + hợp âm clickable.</p>
+          <p class="muted">Bấm “Render…” để hiện lời + hợp âm clickable.</p>
         </div>
       </div>
     </div>
@@ -176,12 +191,12 @@
   // ------------------------------
   const BASE = "https://surikov.github.io/webaudiofontdata/sound/";
   const INSTRUMENTS = {
-    steel_lk:   { label:"Acoustic Steel — LK",     file:"0250_LK_AcousticSteel_SF2_file.js", varName:"_tone_0250_LK_AcousticSteel_SF2_file" },
-    steel_std:  { label:"Acoustic Steel — Std",    file:"0250_Acoustic_Guitar_sf2_file.js",  varName:"_tone_0250_Acoustic_Guitar_sf2_file" },
-    nylon_lk:   { label:"Acoustic Nylon — LK",     file:"0240_LK_Godin_Nylon_SF2_file.js",   varName:"_tone_0240_LK_Godin_Nylon_SF2_file" },
-    elec_clean: { label:"Electric Clean — Aspirin",file:"0270_Aspirin_sf2_file.js",          varName:"_tone_0270_Aspirin_sf2_file" },
-    elec_jazz:  { label:"Electric Jazz — Aspirin", file:"0260_Aspirin_sf2_file.js",          varName:"_tone_0260_Aspirin_sf2_file" },
-    elec_muted: { label:"Electric Muted — Aspirin",file:"0280_Aspirin_sf2_file.js",          varName:"_tone_0280_Aspirin_sf2_file" },
+    nylon_lk:   { label:"Acoustic Nylon — LK",      file:"0240_LK_Godin_Nylon_SF2_file.js",   varName:"_tone_0240_LK_Godin_Nylon_SF2_file" },
+    steel_lk:   { label:"Acoustic Steel — LK",      file:"0250_LK_AcousticSteel_SF2_file.js", varName:"_tone_0250_LK_AcousticSteel_SF2_file" },
+    steel_std:  { label:"Acoustic Steel — Standard",file:"0250_Acoustic_Guitar_sf2_file.js",  varName:"_tone_0250_Acoustic_Guitar_sf2_file" },
+    elec_clean: { label:"Electric Clean — Aspirin", file:"0270_Aspirin_sf2_file.js",          varName:"_tone_0270_Aspirin_sf2_file" },
+    elec_jazz:  { label:"Electric Jazz — Aspirin",  file:"0260_Aspirin_sf2_file.js",          varName:"_tone_0260_Aspirin_sf2_file" },
+    elec_muted: { label:"Electric Muted — Aspirin", file:"0280_Aspirin_sf2_file.js",          varName:"_tone_0280_Aspirin_sf2_file" },
   };
 
   // ------------------------------
@@ -198,6 +213,12 @@
     bpm: $("#bpm"),
     bpmVal: $("#bpmVal"),
     btnTap: $("#btnTap"),
+
+    loi: $("#loi"),
+    loiVal: $("#loiVal"),
+    human: $("#human"),
+    humanVal: $("#humanVal"),
+
     btnHold: $("#btnHold"),
     holdState: $("#holdState"),
     btnStop: $("#btnStop"),
@@ -215,7 +236,7 @@
   };
 
   // ------------------------------
-  // Audio engine (WebAudioFont + small mix chain)
+  // Audio engine
   // ------------------------------
   const AudioContextFunc = window.AudioContext || window.webkitAudioContext;
   let ctx = null;
@@ -223,6 +244,9 @@
   let preset = null;
 
   let masterGain, compressor, hp, lp, convolver, wetGain, dryGain, outGain;
+
+  function clamp(x,a,b){ return Math.max(a, Math.min(b, x)); }
+  function randSigned(){ return (Math.random()*2 - 1); }
 
   function makeImpulseResponse(context, seconds = 1.2, decay = 3.6) {
     const rate = context.sampleRate;
@@ -248,11 +272,12 @@
       masterGain.gain.value = 0.95;
 
       compressor = ctx.createDynamicsCompressor();
-      compressor.threshold.value = -22;
+      // Giảm nén để hợp âm “đỡ phẳng”, phân biệt rõ hơn
+      compressor.threshold.value = -28;
       compressor.knee.value = 18;
-      compressor.ratio.value = 3.0;
-      compressor.attack.value = 0.008;
-      compressor.release.value = 0.18;
+      compressor.ratio.value = 2.2;
+      compressor.attack.value = 0.010;
+      compressor.release.value = 0.20;
 
       hp = ctx.createBiquadFilter();
       hp.type = "highpass";
@@ -268,7 +293,7 @@
       convolver.buffer = makeImpulseResponse(ctx);
 
       wetGain = ctx.createGain();
-      wetGain.gain.value = 0.18;
+      wetGain.gain.value = 0.16;
 
       dryGain = ctx.createGain();
       dryGain.gain.value = 1.0;
@@ -288,6 +313,7 @@
       wetGain.connect(outGain);
       outGain.connect(ctx.destination);
     }
+
     if (ctx.state !== "running") await ctx.resume();
 
     el.audioState.textContent = "ON";
@@ -300,7 +326,7 @@
 
   function loadPresetByKey(key) {
     if (!ctx || !player) return;
-    const instr = INSTRUMENTS[key] || INSTRUMENTS.steel_lk;
+    const instr = INSTRUMENTS[key] || INSTRUMENTS.nylon_lk;
     el.presetState.textContent = "loading...";
     const url = BASE + instr.file;
     player.loader.startLoad(ctx, url, instr.varName);
@@ -315,16 +341,16 @@
   // Tempo + metronome
   // ------------------------------
   function secPerBeat() { return 60 / Number(el.bpm.value); }
-  function barDur() { return secPerBeat() * 4; } // bolero/4-4
-  function clamp(x,a,b){ return Math.max(a, Math.min(b, x)); }
-  function randSigned(){ return (Math.random()*2 - 1); }
+  function barDur() { return secPerBeat() * 4; } // 4/4
+  function human01() { return Number(el.human.value)/100; }
+  function loi01() { return Number(el.loi.value)/100; }
 
   // Tap tempo
   let tapTimes = [];
   el.btnTap.addEventListener("click", () => {
     const t = performance.now();
     tapTimes.push(t);
-    if (tapTimes.length > 6) tapTimes.shift();
+    if (tapTimes.length > 7) tapTimes.shift();
     if (tapTimes.length >= 3) {
       let sum = 0;
       for (let i = 1; i < tapTimes.length; i++) sum += (tapTimes[i] - tapTimes[i-1]);
@@ -332,10 +358,11 @@
       const bpm = clamp(Math.round(60000 / avgMs), 55, 200);
       el.bpm.value = String(bpm);
       el.bpmVal.textContent = String(bpm);
+      if (ctx && el.metro.checked) startMetronome();
+      if (holding) reanchorHold();
     }
   });
 
-  // Metronome (simple click)
   let metroTimer = null;
   function metroClick(when, accent=false) {
     if (!ctx) return;
@@ -344,7 +371,7 @@
     o.type = "square";
     o.frequency.setValueAtTime(accent ? 1650 : 1300, when);
     g.gain.setValueAtTime(0.0001, when);
-    g.gain.linearRampToValueAtTime(accent ? 0.22 : 0.16, when + 0.002);
+    g.gain.linearRampToValueAtTime(accent ? 0.20 : 0.14, when + 0.002);
     g.gain.exponentialRampToValueAtTime(0.0001, when + 0.04);
     o.connect(g);
     g.connect(ctx.destination);
@@ -373,91 +400,76 @@
   }
 
   // ------------------------------
-  // Chord parsing + voicing (generic)
+  // Guitar voicings (thế bấm guitar thật) cho các hợp âm hay gặp
+  // MIDI: E2=40 A2=45 D3=50 G3=55 B3=59 E4=64
   // ------------------------------
+  const GUITAR_VOICINGS = {
+    "Dm":  [50, 57, 62, 65],               // xx0231
+    "Dm7": [50, 57, 60, 62, 65],           // xx0211
+    "Am":  [45, 52, 57, 60, 64],           // x02210
+    "Am7": [45, 52, 55, 60, 64],           // x02010
+    "Bb":  [46, 53, 58, 62, 65],           // x13331
+    "C":   [48, 52, 55, 60, 64],           // x32010
+    "F":   [41, 48, 53, 57, 60, 65],       // 133211
+    "Gm":  [43, 50, 55, 58, 62, 67],       // 355333
+    "G":   [43, 47, 50, 55, 59, 67],       // 320003
+    "G7":  [43, 47, 50, 55, 59, 65],       // 320001
+    "A7":  [45, 52, 55, 61, 64],           // x02020
+    "D7":  [50, 57, 60, 66],               // xx0212
+    "Em":  [40, 47, 52, 55, 59, 64],       // 022000
+    "E7":  [40, 47, 50, 56, 59, 64],       // 020100
+  };
+
+  // Fallback chord parser (để không chết nếu gặp hợp âm lạ)
   const NOTE = { C:0, D:2, E:4, F:5, G:7, A:9, B:11 };
   function parseChordSymbol(symRaw) {
-    const sym = symRaw.trim();
-
-    // Handle slash chords: Dm/A
+    const sym = symRaw.trim().replace("Δ","maj");
     let main = sym, slash = null;
     const slashIdx = sym.indexOf("/");
-    if (slashIdx >= 0) {
-      main = sym.slice(0, slashIdx).trim();
-      slash = sym.slice(slashIdx + 1).trim();
-    }
+    if (slashIdx >= 0) { main = sym.slice(0, slashIdx).trim(); slash = sym.slice(slashIdx + 1).trim(); }
 
-    // Root: letter + optional #/b
     const m = main.match(/^([A-G])([#b]?)(.*)$/);
     if (!m) return { ok:false, sym };
 
-    let root = m[1];
-    let acc = m[2] || "";
+    const root = m[1];
+    const acc = m[2] || "";
     let qual = (m[3] || "").trim();
 
-    // Normalize "maj" cases
-    // Examples: Dm, Dm7, D7, Dmaj7, DΔ7, Dsus4, Ddim, Daug, Dadd9, etc.
-    qual = qual.replace("Δ", "maj");
-
-    // Determine quality
     let triad = "maj";
     let add7 = null; // "min7" or "maj7"
-    let add9 = false;
-    let sus = null; // 2 or 4
+    let sus = null;
     let dim = false, aug = false;
 
-    // sus/add
     if (/sus2/i.test(qual)) sus = 2;
     if (/sus4/i.test(qual)) sus = 4;
-    if (/add9/i.test(qual)) add9 = true;
-
-    // dim/aug
     if (/dim|o/i.test(qual)) dim = true;
     if (/aug|\+/i.test(qual)) aug = true;
 
-    // minor vs major (but keep maj7 distinct)
-    // If starts with "m" and not "maj"
-    if (/^m(?!aj)/i.test(qual)) triad = "min";
-    if (/^min/i.test(qual)) triad = "min";
-
-    // 7ths
+    if (/^m(?!aj)/i.test(qual) || /^min/i.test(qual)) triad = "min";
     if (/maj7/i.test(qual)) add7 = "maj7";
-    else if (/m7/i.test(qual)) add7 = "min7"; // minor 7th above root
-    else if (/7/.test(qual)) add7 = "min7";   // dominant 7
+    else if (/m7/i.test(qual)) add7 = "min7";
+    else if (/7/.test(qual)) add7 = "min7";
 
-    // Slash bass note
+    const rootSemitone = (NOTE[root] + (acc === "#" ? 1 : acc === "b" ? -1 : 0) + 12) % 12;
+
     let slashSemitone = null;
     if (slash) {
       const sm = slash.match(/^([A-G])([#b]?)$/);
       if (sm) slashSemitone = (NOTE[sm[1]] + (sm[2] === "#" ? 1 : sm[2] === "b" ? -1 : 0) + 12) % 12;
     }
 
-    const rootSemitone = (NOTE[root] + (acc === "#" ? 1 : acc === "b" ? -1 : 0) + 12) % 12;
-
-    return {
-      ok:true,
-      sym,
-      rootSemitone,
-      triad,
-      sus,
-      dim,
-      aug,
-      add7,
-      add9,
-      slashSemitone
-    };
+    return { ok:true, sym, rootSemitone, triad, sus, dim, aug, add7, slashSemitone };
   }
 
-  function buildVoicing(sym) {
+  // “Guitar-friendly” fallback voicing (đỡ giống nhau hơn kiểu piano)
+  function buildFallbackVoicing(sym) {
     const c = parseChordSymbol(sym);
-    if (!c.ok) return [48, 52, 55, 60]; // fallback C-ish
+    if (!c.ok) return [48, 52, 55, 60, 64];
 
-    // Choose a comfortable "rootMidi" near guitar mid range
-    // Base around C3=48; shift down if too high
-    let rootMidi = 48 + c.rootSemitone;   // around 48..59
-    if (rootMidi > 55) rootMidi -= 12;    // keep near 43..55
+    // Root around A2..D3 area
+    let rootMidi = 45 + c.rootSemitone;      // 45..56
+    if (rootMidi > 52) rootMidi -= 12;       // clamp to 40..52-ish
 
-    // Triad intervals
     let i3 = 4, i5 = 7;
     if (c.dim) { i3 = 3; i5 = 6; }
     else if (c.aug) { i3 = 4; i5 = 8; }
@@ -465,89 +477,111 @@
     else if (c.sus === 4) { i3 = 5; i5 = 7; }
     else if (c.triad === "min") { i3 = 3; i5 = 7; }
 
-    const notes = [];
-    // Bass note: use slash if present, else root. Clamp to guitar-ish bass.
-    let bassMidi;
-    if (c.slashSemitone != null) {
-      bassMidi = 48 + c.slashSemitone;
-      if (bassMidi > 52) bassMidi -= 12;
-    } else {
-      bassMidi = rootMidi - 12;
-    }
-    // Guitar lowest is E2=40; clamp bass to 40..52
-    bassMidi = clamp(bassMidi, 40, 52);
+    // Bass: slash hoặc root-12
+    let bass = (c.slashSemitone != null) ? (45 + c.slashSemitone) : (rootMidi - 12);
+    bass = clamp(bass, 40, 52);
 
-    notes.push(bassMidi);
-    notes.push(rootMidi);
-    notes.push(rootMidi + i3);
-    notes.push(rootMidi + i5);
-    // Add octave for fullness
-    notes.push(rootMidi + 12);
-
+    const notes = [bass, rootMidi, rootMidi + i3, rootMidi + i5, rootMidi + 12];
     if (c.add7) {
       const i7 = (c.add7 === "maj7") ? 11 : 10;
       notes.push(rootMidi + i7);
-      notes.push(rootMidi + 12 + i3); // sweet top note
     }
-
-    if (c.add9) {
-      notes.push(rootMidi + 14);
-    }
-
-    // Cleanup: unique + sort
     const uniq = Array.from(new Set(notes.map(n => Math.round(n)))).sort((a,b)=>a-b);
+    return uniq.length > 6 ? [uniq[0], uniq[2], uniq[3], uniq[4], uniq[5], uniq[uniq.length-1]] : uniq;
+  }
 
-    // Keep within a reasonable range; if too many notes, take bass + 4 highs
-    if (uniq.length > 6) {
-      return [uniq[0], uniq[2], uniq[3], uniq[4], uniq[5], uniq[uniq.length-1]];
-    }
-    return uniq;
+  function buildVoicing(sym) {
+    const s = sym.trim();
+    if (GUITAR_VOICINGS[s]) return GUITAR_VOICINGS[s];
+    return buildFallbackVoicing(s);
   }
 
   function bassPitchForChord(sym) {
-    const pitches = buildVoicing(sym);
-    return pitches[0] ?? 45;
+    const v = buildVoicing(sym);
+    let b = v[0] ?? 45;
+    if (b >= 48) b -= 12;
+    return clamp(b, 40, 52);
   }
 
   // ------------------------------
-  // Bolero pattern scheduling
+  // Custom strum (rải từng “dây”) — giống tay người hơn queueStrumDown
   // ------------------------------
-  const BOLERO_EVENTS = [
-    {t:0.00, type:"bass", v:0.90},
-    {t:0.12, type:"down", v:0.55},
-    {t:0.25, type:"down", v:0.50},
-    {t:0.50, type:"bass", v:0.85},
-    {t:0.62, type:"down", v:0.55},
-    {t:0.75, type:"down", v:0.50},
+  function strumCustom(chordSym, when, dir, dur, vol, muted=false) {
+    if (!ctx || !player || !preset) return;
+
+    const pitches = buildVoicing(chordSym);
+    const order = (dir === "up") ? [...pitches].reverse() : pitches;
+
+    // Spread theo BPM + “lơi”
+    const spb = secPerBeat();
+    const loi = loi01();     // 0..1
+    const h = human01();     // 0..1
+
+    // Ở bolero nên spread lớn hơn (chậm hơn) để đỡ “vội”
+    const spread = clamp(spb * (0.018 + 0.030 * loi), 0.016, 0.055); // ~16–55ms
+    const jitter = clamp(spb * (0.001 + 0.010 * h), 0.001, 0.010);
+
+    // Muted “chát” -> duration ngắn hơn
+    const noteDur = muted ? clamp(dur * 0.35, 0.10, 0.45) : dur;
+
+    order.forEach((p, i) => {
+      const t = when + i * spread + randSigned() * jitter;
+      const v = clamp(vol * (1 - 0.07 * i) + randSigned() * (0.06 * h), 0.18, 0.95);
+      player.queueWaveTable(ctx, masterGain, preset, t, p, noteDur, v);
+    });
+  }
+
+  // ------------------------------
+  // Bolero pattern — 4 hit / 1 ô (đỡ vội, nghe “điềm” hơn)
+  // ------------------------------
+  const BOLERO_4HIT = [
+    {t:0.00, type:"bass", v:0.95}, // 1
+    {t:0.25, type:"chat", v:0.55}, // 2
+    {t:0.50, type:"bass", v:0.88}, // 3
+    {t:0.75, type:"chat", v:0.52}, // 4
   ];
 
   function scheduleOneBarBolero(chordSym, barStart) {
     if (!ctx || !player || !preset) return;
     const dur = barDur();
+    const spb = secPerBeat();
+    const h = human01();
 
-    // Humanize parameters
-    const jitter = clamp(secPerBeat() * 0.010, 0.003, 0.010); // seconds
-    const ring = clamp(dur * 0.92, 1.0, 3.2);
+    const jitter = clamp(spb * (0.001 + 0.008 * h), 0.001, 0.010);
 
-    // Use guitar-ish pitches
-    const pitches = buildVoicing(chordSym);
-    const bass = bassPitchForChord(chordSym);
-
-    for (const ev of BOLERO_EVENTS) {
+    for (const ev of BOLERO_4HIT) {
       const t = barStart + ev.t * dur + randSigned() * jitter;
-      const v = clamp(ev.v + randSigned() * 0.10, 0.25, 0.95);
+      const v = clamp(ev.v + randSigned() * (0.10 * h), 0.20, 0.95);
 
       if (ev.type === "bass") {
-        player.queueWaveTable(ctx, masterGain, preset, t, bass, Math.min(0.55, dur * 0.45), v);
-      } else if (ev.type === "down") {
-        // queueStrumDown already has internal spread; we still schedule in time slots
-        player.queueStrumDown(ctx, masterGain, preset, t, pitches, ring, v);
+        const bass = bassPitchForChord(chordSym);
+        player.queueWaveTable(ctx, masterGain, preset, t, bass, clamp(0.38, 0.18, 0.55), v);
+      } else {
+        // “chát” ngắn (muted=true), rải chậm vừa đủ
+        strumCustom(chordSym, t, "down", dur * 0.95, v, true);
       }
     }
   }
 
+  // One-shot: click chord -> phát 1 ô (không Hold)
+  // Để đỡ “dính bùn” khi click nhanh, ta cancelQueue nếu click quá sát nhau
+  let lastOneShotAt = 0;
+  function playOneShotBar(chordSym) {
+    if (!ctx || !preset) return;
+
+    const now = ctx.currentTime;
+    const minGap = clamp(barDur() * 0.35, 0.25, 0.80); // click sát quá -> dọn queue
+    if (now - lastOneShotAt < minGap) {
+      player.cancelQueue(ctx);
+    }
+    lastOneShotAt = now;
+
+    const start = now + 0.03;
+    scheduleOneBarBolero(chordSym, start);
+  }
+
   // ------------------------------
-  // Hold mode: loop bars + quantized chord changes
+  // Hold mode: loop bars + quantized chord change at bar boundary
   // ------------------------------
   let holdOn = false;
   let holding = false;
@@ -566,21 +600,24 @@
     el.pendingChord.textContent = sym || "—";
   }
 
+  function reanchorHold() {
+    // khi đổi BPM, re-anchor để đỡ lệch nhịp cảm giác
+    nextBarTime = ctx.currentTime + 0.10;
+  }
+
   function startHoldLoop(initialChord) {
     if (!ctx || !preset) return;
     holding = true;
     setNowChord(initialChord);
     setPendingChord(null);
 
-    // start a little ahead
-    nextBarTime = ctx.currentTime + 0.08;
+    nextBarTime = ctx.currentTime + 0.10;
 
     const lookahead = 0.22;
     const tick = () => {
       if (!holding) return;
 
       while (nextBarTime < ctx.currentTime + lookahead) {
-        // If user clicked a new chord while holding, switch at bar boundary
         if (pendingChord) {
           setNowChord(pendingChord);
           setPendingChord(null);
@@ -616,7 +653,6 @@
   // Rendering chord sheet to clickable UI
   // ------------------------------
   function parseMetadata(text) {
-    // Try to find Tone: and Điệu:
     const tone = (text.match(/^\s*Tone:\s*(.+)\s*$/mi) || [])[1]?.trim() || "—";
     const style = (text.match(/^\s*Điệu:\s*(.+)\s*$/mi) || [])[1]?.trim() || "—";
     return { tone, style };
@@ -683,31 +719,21 @@
           sp.className = "chord";
           sp.textContent = p.value;
           sp.dataset.chord = p.value;
-          sp.title = "Bấm để đệm: " + p.value;
 
-          sp.addEventListener("click", async (e) => {
+          sp.addEventListener("click", async () => {
             await ensureAudio();
             if (!preset) loadPresetByKey(el.presetSel.value);
 
-            // UI active state
             document.querySelectorAll(".chord.active").forEach(x => x.classList.remove("active"));
             sp.classList.add("active");
 
-            // If hold mode ON: change at next bar boundary
             if (holdOn) {
-              if (!holding) {
-                // start loop immediately with chosen chord
-                setNowChord(p.value);
-                startHoldLoop(p.value);
-              } else {
-                setPendingChord(p.value);
-              }
+              if (!holding) startHoldLoop(p.value);
+              else setPendingChord(p.value);
             } else {
-              // One-shot: schedule a single bar right now
               setNowChord(p.value);
               setPendingChord(null);
-              const start = ctx.currentTime + 0.02;
-              scheduleOneBarBolero(p.value, start);
+              playOneShotBar(p.value);
             }
           });
 
@@ -723,18 +749,19 @@
   }
 
   // ------------------------------
-  // Wiring UI
+  // UI wiring
   // ------------------------------
   el.bpm.addEventListener("input", () => {
     el.bpmVal.textContent = el.bpm.value;
-    // If holding, keep loop stable; nextBarTime already computed, no need to restart.
-    // Metronome needs restart to match BPM precisely.
     if (ctx && el.metro.checked) startMetronome();
+    if (holding) reanchorHold();
   });
+
+  el.loi.addEventListener("input", () => { el.loiVal.textContent = el.loi.value; });
+  el.human.addEventListener("input", () => { el.humanVal.textContent = el.human.value; });
 
   el.btnEnable.addEventListener("click", async () => {
     await ensureAudio();
-    // auto-load default preset
     loadPresetByKey(el.presetSel.value);
   });
 
@@ -754,7 +781,6 @@
 
   el.btnExample.addEventListener("click", () => {
     el.input.value = EXAMPLE;
-    // render immediately if audio already on
     if (ctx) renderSong(el.input.value);
   });
 
@@ -764,7 +790,6 @@
     el.holdState.textContent = holdOn ? "ON" : "OFF";
     el.btnHold.textContent = holdOn ? "Tắt Hold (đệm nền)" : "Bật Hold (đệm nền)";
 
-    // If turning off hold, stop loop but keep last chord ready
     if (!holdOn && holding) {
       holding = false;
       if (schedTimer) clearTimeout(schedTimer);
@@ -781,7 +806,6 @@
     else stopMetronome();
   });
 
-  // Space = stop
   window.addEventListener("keydown", (e) => {
     if (e.code === "Space") {
       e.preventDefault();
@@ -789,7 +813,6 @@
     }
   });
 
-  // Stop on tab hidden (avoid runaway audio)
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) stopAll();
   });
@@ -821,9 +844,10 @@ Tình duyên ta [F] tiếc [Am] uống thêm ly [Dm]này.
 Từng thu thay [Bb] lá, lá [C] rơi đắp mộ cuộc [F] tình
 Lá [Gm] bay chất nặng tuổi [Bb] đời nhớ [Am]người ta rót ly [Dm] này.`;
 
-  // Preload example in textarea
   el.input.value = EXAMPLE;
   el.bpmVal.textContent = el.bpm.value;
+  el.loiVal.textContent = el.loi.value;
+  el.humanVal.textContent = el.human.value;
 
 })();
 </script>
