@@ -1,46 +1,965 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
+<!DOCTYPE html>
+<html lang="vi">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta http-equiv="Content-Style-Type" content="text/css">
-  <title></title>
-  <meta name="Generator" content="Cocoa HTML Writer">
-  <meta name="CocoaVersion" content="2299">
-  <style type="text/css">
-    body {background-color: #0f0f0f}
-    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; color: #d9d9d9; -webkit-text-stroke: #d9d9d9}
-    p.p3 {margin: 0.0px 0.0px 0.0px 0.0px; font: 11.0px 'Helvetica Neue'; color: #000000; -webkit-text-stroke: #000000; background-color: #ffffff}
-    p.p4 {margin: 0.0px 0.0px 0.0px 0.0px; font: 11.0px 'Helvetica Neue'; color: #000000; -webkit-text-stroke: #000000; min-height: 13.0px}
-    p.p6 {margin: 0.0px 0.0px 0.0px 0.0px; font: 11.0px 'Helvetica Neue'; color: #000000; color: rgba(0, 0, 0, 0.85); -webkit-text-stroke: rgba(0, 0, 0, 0.85)}
-    p.p7 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; color: #d9d9d9; -webkit-text-stroke: #d9d9d9; min-height: 14.0px}
-    p.p8 {margin: 0.0px 0.0px 12.0px 0.0px; font: 12.0px Helvetica; color: #d9d9d9; -webkit-text-stroke: #d9d9d9}
-    span.s1 {font-kerning: none}
-    span.s2 {font: 11.0px Times; font-kerning: none}
-    span.s3 {font-kerning: none; background-color: #ffffff}
-    span.s4 {font: 12.0px Helvetica; font-kerning: none; color: #d9d9d9; -webkit-text-stroke: 0px #d9d9d9}
-    span.s5 {font-kerning: none; background-color: #b3b3b3}
-    span.s6 {font-kerning: none; background-color: rgba(23, 23, 23, 0.8)}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Guitar Nhậu Pro - Bolero Auto-Accompaniment</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700&display=swap');
+
+        body {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+            overscroll-behavior: none;
+            touch-action: manipulation;
+        }
+
+        /* Ẩn thanh cuộn nhưng vẫn cuộn được */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .tap-feedback { animation: tapPulse 0.2s ease-out; }
+        @keyframes tapPulse {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .highlight-current {
+            color: #fbbf24; /* Amber-400 */
+            font-weight: 700;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+        }
+        .highlight-pending { border-bottom: 2px dashed #fbbf24; }
+
+        .glass-panel {
+            background: rgba(30, 30, 30, 0.8);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Range slider styling */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #fbbf24;
+            margin-top: -6px;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            background: #4b5563;
+            border-radius: 2px;
+        }
+    </style>
 </head>
-<body>
-<h1 style="margin: 0.0px 0.0px 16.1px 0.0px; font: 24.0px Helvetica; color: #d9d9d9; -webkit-text-stroke: #d9d9d9"><span class="s1"><b>Guitar Nhậu Pro</b></span></h1>
-<p class="p2"><span class="s1">BPM: 78<span class="Apple-converted-space"> </span></span></p>
-<p class="p2"><span class="s1">Tone: Dm<span class="Apple-converted-space"> </span></span></p>
-<p class="p2"><span class="s1">Quantize:</span></p>
-<p class="p3"><span class="s1"><span class="Apple-converted-space">                    </span></span><span class="s2">1 Bar (Đầu ô)</span></p>
-<p class="p3"><span class="s1"><span class="Apple-converted-space">                    </span></span><span class="s2">1/2 Bar (Giữa ô)</span></p>
-<p class="p3"><span class="s1"><span class="Apple-converted-space">                    </span></span><span class="s2">1 Beat (Ngay)</span></p>
-<p class="p4"><span class="s3"><span class="Apple-converted-space">                </span></span><span class="s4"><span class="Apple-converted-space"> </span></span></p>
-<h2 style="margin: 0.0px 0.0px 14.9px 0.0px; font: 18.0px Helvetica; color: #d9d9d9; -webkit-text-stroke: #d9d9d9"><span class="s1"><b>Dữ liệu bài hát</b></span></h2>
-<p class="p6"><span class="s5">Hủy</span><span class="s4"> </span><span class="s5">Nạp bài hát</span><span class="s4"><span class="Apple-converted-space"> </span></span></p>
-<p class="p2"><span class="s1">Nhấn nút Play để bắt đầu...</span></p>
-<p class="p2"><span class="s6">Đang chơi: --<span class="Apple-converted-space"> </span></span></p>
-<p class="p2"><span class="s6">Chờ nhịp...<span class="Apple-converted-space"> </span></span></p>
-<p class="p2"><span class="s6">Tiếp: --<span class="Apple-converted-space"> </span></span></p>
-<p class="p6"><span class="s5">Lùi BẮT ĐẦU Dừng<span class="Apple-converted-space"> </span></span></p>
-<p class="p7"><span class="s1"></span><br></p>
-<h1 style="margin: 0.0px 0.0px 16.1px 0.0px; font: 24.0px Helvetica; color: #d9d9d9; -webkit-text-stroke: #d9d9d9"><span class="s1"><b>Guitar Nhậu Pro</b></span></h1>
-<p class="p8"><span class="s1">Chế độ đệm Bolero tự động. Máy giữ nhịp, bạn chỉ cần bấm chuyển hợp âm.</span></p>
-<p class="p6"><span class="s5">CHẠM ĐỂ VÀO BÀN NHẬU<span class="Apple-converted-space"> </span></span></p>
+
+<body class="h-screen flex flex-col overflow-hidden">
+
+    <!-- 1. Header & Controls (GIỮ NGUYÊN DESIGN) -->
+    <header class="flex-none p-3 bg-gray-900 border-b border-gray-800 z-20">
+        <div class="flex justify-between items-center mb-2">
+            <h1 class="text-lg font-bold text-amber-500"><i class="fas fa-guitar mr-2"></i>Guitar Nhậu Pro</h1>
+            <button id="settingsBtn" class="text-gray-400 hover:text-white"><i class="fas fa-cog text-xl"></i></button>
+        </div>
+
+        <div class="flex items-center justify-between gap-4 text-xs font-mono text-gray-400">
+            <div class="flex items-center gap-2 bg-gray-800 px-2 py-1 rounded">
+                <span>BPM:</span>
+                <button onclick="updateBpm(-5)" class="p-1 hover:text-white"><i class="fas fa-minus"></i></button>
+                <span id="bpmDisplay" class="text-white w-6 text-center">78</span>
+                <button onclick="updateBpm(5)" class="p-1 hover:text-white"><i class="fas fa-plus"></i></button>
+            </div>
+            <div class="flex items-center gap-2 bg-gray-800 px-2 py-1 rounded">
+                <span>Tone:</span>
+                <span id="keyDisplay" class="text-white font-bold">Dm</span>
+            </div>
+            <div class="flex items-center gap-2 bg-gray-800 px-2 py-1 rounded">
+                <span>Quantize:</span>
+                <select id="quantizeSelect" class="bg-transparent text-white outline-none" onchange="updateQuantize()">
+                    <option value="1m">1 Bar (Đầu ô)</option>
+                    <option value="2n">1/2 Bar (Giữa ô)</option>
+                    <option value="4n">1 Beat (Ngay)</option>
+                </select>
+            </div>
+        </div>
+    </header>
+
+    <!-- 2. Settings Modal (GIỮ NGUYÊN DESIGN) -->
+    <div id="settingsModal" class="hidden fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4">
+        <div class="bg-gray-800 w-full max-w-md p-6 rounded-lg shadow-xl">
+            <h2 class="text-xl font-bold mb-4 text-white">Dữ liệu bài hát</h2>
+            <textarea id="songInput" class="w-full h-48 bg-gray-900 text-gray-300 p-3 rounded text-sm font-mono focus:outline-none focus:ring-1 focus:ring-amber-500" placeholder="Paste lyric có hợp âm vào đây..."></textarea>
+            <div class="flex justify-end gap-3 mt-4">
+                <button onclick="toggleSettings()" class="px-4 py-2 text-gray-400 hover:text-white">Hủy</button>
+                <button onclick="loadSongFromInput()" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded font-semibold">Nạp bài hát</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Lyrics Display (Prompter) -->
+    <main id="lyricsContainer" class="flex-1 overflow-y-auto no-scrollbar p-6 text-center text-lg leading-relaxed relative">
+        <div id="lyricsContent" class="pb-40 transition-transform duration-500">
+            <div class="text-gray-500 mt-20">Nhấn nút Play để bắt đầu...</div>
+        </div>
+    </main>
+
+    <!-- 4. Controller (Bottom) -->
+    <div class="flex-none glass-panel pb-6 pt-2 px-4 shadow-lg z-30">
+        <div class="flex justify-between items-center mb-3 h-8">
+            <div class="text-sm">
+                <span class="text-gray-400">Đang chơi:</span>
+                <span id="currentChordDisplay" class="text-2xl font-bold text-amber-500 ml-1">--</span>
+            </div>
+
+            <div id="pendingIndicator" class="hidden bg-amber-900/50 border border-amber-500/50 text-amber-200 text-xs px-2 py-1 rounded animate-pulse">
+                <i class="fas fa-clock mr-1"></i> Chờ nhịp...
+            </div>
+
+            <div class="text-sm text-right">
+                <span class="text-gray-400">Tiếp:</span>
+                <span id="nextChordDisplay" class="font-semibold text-white ml-1">--</span>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-4 gap-3 h-20">
+            <button id="undoBtn" class="col-span-1 bg-gray-700 hover:bg-gray-600 active:bg-gray-800 rounded-lg flex flex-col items-center justify-center text-gray-300 transition-colors">
+                <i class="fas fa-undo mb-1"></i>
+                <span class="text-xs">Lùi</span>
+            </button>
+
+            <button id="mainActionBtn" class="col-span-2 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 rounded-xl flex flex-col items-center justify-center shadow-lg shadow-amber-900/50 transition-all transform active:scale-95">
+                <i id="playIcon" class="fas fa-play text-3xl text-white mb-1"></i>
+                <span id="playText" class="text-xs font-bold text-amber-100 uppercase tracking-wider">BẮT ĐẦU</span>
+            </button>
+
+            <button id="stopBtn" class="col-span-1 bg-red-900/80 hover:bg-red-800 active:bg-red-900 rounded-lg flex flex-col items-center justify-center text-red-200 transition-colors">
+                <i class="fas fa-stop mb-1"></i>
+                <span class="text-xs">Dừng</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Start Overlay (Browser Policy) -->
+    <div id="startOverlay" class="fixed inset-0 bg-black/95 z-50 flex flex-col items-center justify-center text-center p-6">
+        <div class="text-5xl text-amber-500 mb-4"><i class="fas fa-guitar"></i></div>
+        <h1 class="text-3xl font-bold text-white mb-2">Guitar Nhậu Pro</h1>
+        <p class="text-gray-400 mb-8 max-w-xs">Chế độ đệm Bolero tự động. Máy giữ nhịp, bạn chỉ cần bấm chuyển hợp âm.</p>
+        <button id="initAudioBtn" class="px-8 py-4 bg-amber-600 text-white rounded-full font-bold text-lg shadow-xl shadow-amber-900/50 animate-bounce">
+            CHẠM ĐỂ VÀO BÀN NHẬU
+        </button>
+    </div>
+
+<script>
+/**
+ * GUITAR NHẬU PRO — Rewrite
+ * -------------------------
+ * - GIỮ NGUYÊN UI/DESIGN (DOM/CSS)
+ * - ĐẠI TU LOGIC: normalize + meta + chordSteps riêng + quantize đúng lưới + near-grid window
+ * - ÂM THANH: bass + strum với stagger/humanize + voicing đơn giản có voice-leading
+ */
+
+// =========================
+// 1) CONFIG
+// =========================
+const CONFIG = {
+    defaultBpm: 78,
+    defaultTone: 'Dm',
+    defaultRhythm: 'Bolero',
+    defaultQuantize: '1m',
+
+    // Quantize feel: bấm sát đầu nhịp thì ăn ngay (tỉ lệ theo grid)
+    nearGridWindowRatio: 0.12, // 12% độ dài grid
+
+    // Guitar-ish playback
+    humanizeSeconds: 0.010, // jitter nhẹ (10ms)
+    strumDelaySeconds: 0.028, // delay giữa "dây" (28ms)
+    maxStrumNotes: 5,
+
+    // UI text
+    emptyBlockLabel: '(Intro/Dạo)'
+};
+
+const DEFAULT_INPUT = `Tone: Dm\nĐiệu: Bolero\n\nIntro: [Dm] [F] [C] [Dm] - [Bb] [C] [F] [Gm]\n\n1. Say giấc mộng ban [Dm] đầu yêu [Bb] người thủa mới đôi [F] mươi em [C] đang độ trăng [Dm] tròn\n   Từng ngày qua [Bb] phố áo [C] em trắng cả đường [F] về\n   Lá [Gm] thư ướp mộng học [Bb] trò mối [Am]tình xanh như khúc [F] hát. [Dm7] [Am7]\n\nĐK: Hai mươi [C] năm [Am] cuộc mộng dở [Dm] dang khắc sâu bóng [F] nàng\nCố quên đi [Bb] người say [Am] hoài sầu không [Dm] vơi`;
+
+// =========================
+// 2) STATE
+// =========================
+const APP = {
+    isPlaying: false,
+    isAudioReady: false,
+
+    bpm: CONFIG.defaultBpm,
+    quantizeGrid: CONFIG.defaultQuantize,
+    tone: CONFIG.defaultTone,
+    rhythm: CONFIG.defaultRhythm,
+
+    // Parsed model
+    song: {
+        meta: { tone: CONFIG.defaultTone, bpm: CONFIG.defaultBpm, rhythm: CONFIG.defaultRhythm, quantize: CONFIG.defaultQuantize },
+        leadingText: '',
+        chordSteps: [],           // ['Dm','Bb',...]
+        blocks: []                // UI blocks, 1:1 with chordSteps
+    },
+
+    activeStep: -1,              // index on chordSteps
+    pendingStep: null,           // index on chordSteps
+    stopRequested: false,        // end-of-song stop at next bar boundary
+
+    // Audio / scheduler
+    transportEventId: null,
+    ticksPerBar: 0,
+    ticksPer16n: 0,
+
+    // Voice leading cache
+    lastVoicing: null,
+};
+
+// =========================
+// 3) RHYTHM DATA (Bolero)
+// =========================
+// Pattern index is in 16th-steps (0..15)
+const BOLERO_PATTERN_16 = [
+    { step16: 0,  type: 'bass',  which: 'root',  vel: 0.95, len: '8n' },
+    { step16: 3,  type: 'strum', dir:  'down',  vel: 0.75, len: '16n' },
+    { step16: 4,  type: 'strum', dir:  'up',    vel: 0.60, len: '16n' },
+    { step16: 8,  type: 'bass',  which: 'fifth', vel: 0.90, len: '8n' },
+    { step16: 11, type: 'strum', dir:  'down',  vel: 0.75, len: '16n' },
+    { step16: 12, type: 'strum', dir:  'up',    vel: 0.60, len: '16n' },
+];
+
+const PATTERN_BY_STEP16 = (() => {
+    const m = new Map();
+    for (const e of BOLERO_PATTERN_16) {
+        if (!m.has(e.step16)) m.set(e.step16, []);
+        m.get(e.step16).push(e);
+    }
+    return m;
+})();
+
+// =========================
+// 4) TEXT PIPELINE (normalize + meta + parse)
+// =========================
+function normalizeInput(raw) {
+    const s = (raw || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    const lines = s.split('\n').map(l => l.replace(/\s+$/g, ''));
+    const collapsed = [];
+    let prevBlank = false;
+    for (const l of lines) {
+        const blank = l.trim() === '';
+        if (blank) {
+            if (!prevBlank) collapsed.push('');
+            prevBlank = true;
+        } else {
+            collapsed.push(l);
+            prevBlank = false;
+        }
+    }
+    return collapsed.join('\n').trim();
+}
+
+function extractMetaAndBody(normalizedText) {
+    const meta = {
+        tone: CONFIG.defaultTone,
+        bpm: CONFIG.defaultBpm,
+        rhythm: CONFIG.defaultRhythm,
+        quantize: CONFIG.defaultQuantize
+    };
+
+    const metaKeys = new Set(['tone', 'điệu', 'dieu', 'bpm', 'quantize']);
+    const bodyLines = [];
+
+    for (const line of normalizedText.split('\n')) {
+        const m = line.match(/^\s*([^:]+)\s*:\s*(.+)\s*$/);
+        if (m) {
+            const keyRaw = m[1].trim().toLowerCase();
+            const val = m[2].trim();
+            if (metaKeys.has(keyRaw)) {
+                if (keyRaw === 'tone') meta.tone = sanitizeChordName(val) || meta.tone;
+                if (keyRaw === 'bpm') {
+                    const n = Number(val);
+                    if (Number.isFinite(n)) meta.bpm = clamp(Math.round(n), 40, 160);
+                }
+                if (keyRaw === 'điệu' || keyRaw === 'dieu') meta.rhythm = val || meta.rhythm;
+                if (keyRaw === 'quantize') {
+                    const q = val.trim();
+                    if (['1m','2n','4n'].includes(q)) meta.quantize = q;
+                }
+                continue;
+            }
+        }
+        bodyLines.push(line);
+    }
+
+    return { meta, body: bodyLines.join('\n').trim() };
+}
+
+function buildSongModel(rawText) {
+    const normalized = normalizeInput(rawText);
+    const { meta, body } = extractMetaAndBody(normalized);
+
+    // Parse chord tags into chordSteps + blocks
+    const re = /\[([^\]]+)\]/g;
+    let match;
+    let lastIndex = 0;
+
+    const chordSteps = [];
+    const blocks = [];
+    let leadingText = '';
+
+    function appendTextToLastBlock(txt) {
+        if (!txt) return;
+        if (blocks.length === 0) {
+            leadingText += txt;
+            return;
+        }
+        blocks[blocks.length - 1].text += txt;
+    }
+
+    while ((match = re.exec(body)) !== null) {
+        const textBefore = body.slice(lastIndex, match.index);
+        appendTextToLastBlock(textBefore);
+
+        const chordRaw = match[1];
+        const chord = sanitizeChordName(chordRaw);
+        if (chord) {
+            const stepIndex = chordSteps.length;
+            chordSteps.push(chord);
+            blocks.push({ stepIndex, chord, text: '' });
+        }
+        lastIndex = re.lastIndex;
+    }
+    appendTextToLastBlock(body.slice(lastIndex));
+
+    // Nếu không có chord tags: fallback theo Tone
+    if (chordSteps.length === 0) {
+        const fallbackChord = sanitizeChordName(meta.tone) || CONFIG.defaultTone;
+        chordSteps.push(fallbackChord);
+        blocks.push({ stepIndex: 0, chord: fallbackChord, text: body || '' });
+    }
+
+    // Trim leadingText đẹp hơn
+    leadingText = (leadingText || '').trim();
+    for (const b of blocks) {
+        // giữ xuống dòng (UI sẽ whitespace-pre-wrap), chỉ trim nhẹ 2 đầu
+        b.text = b.text.replace(/^\s+/, '').replace(/\s+$/, '');
+    }
+
+    return { meta, leadingText, chordSteps, blocks };
+}
+
+// =========================
+// 5) CHORD ENGINE (parse + voicing)
+// =========================
+function sanitizeChordName(s) {
+    if (!s) return '';
+    let x = String(s).trim();
+    x = x.replace(/^\[|\]$/g, '').trim();
+    x = x.replace(/\s+/g, '');
+    // Canonicalize common unicode accidentals
+    x = x.replace(/♭/g, 'b').replace(/♯/g, '#');
+    return x;
+}
+
+function parseChordName(name) {
+    // Supports: Dm, Bb, F#, Am7, Dmaj7, G7, C/E, Dm/F
+    const s = sanitizeChordName(name);
+    if (!s) return null;
+
+    const parts = s.split('/');
+    const chordPart = parts[0];
+    const slashBass = parts[1] ? parts[1] : null;
+
+    const m = chordPart.match(/^([A-Ga-g])([#b]?)(.*)$/);
+    if (!m) return null;
+
+    const rootLetter = m[1].toUpperCase();
+    const accidental = m[2] || '';
+    const rest = (m[3] || '').toLowerCase();
+
+    let quality = 'maj';
+    let ext = null;
+    let sus = null;
+
+    if (rest.startsWith('maj7') || rest.startsWith('ma7') || rest.startsWith('m7+') || rest.includes('maj7')) {
+        quality = 'maj';
+        ext = 'maj7';
+    } else if (rest.startsWith('m') || rest.startsWith('min')) {
+        quality = 'min';
+        if (rest.includes('7')) ext = '7';
+    } else if (rest.includes('dim') || rest.includes('o')) {
+        quality = 'dim';
+        if (rest.includes('7')) ext = 'dim7';
+    } else if (rest.includes('aug') || rest.includes('+')) {
+        quality = 'aug';
+    }
+
+    if (rest.includes('sus2')) sus = 'sus2';
+    else if (rest.includes('sus4') || rest.includes('sus')) sus = 'sus4';
+
+    // Dominant 7 (maj quality + 7)
+    if (ext === null && rest.includes('7')) {
+        ext = '7';
+    }
+
+    const rootPc = noteToPitchClass(rootLetter + accidental);
+    const bassPc = slashBass ? noteToPitchClass(slashBass) : null;
+    if (rootPc === null) return null;
+
+    return { name: s, rootPc, bassPc, quality, ext, sus };
+}
+
+function noteToPitchClass(note) {
+    const m = String(note || '').trim().match(/^([A-Ga-g])([#b]?)$/);
+    if (!m) return null;
+    const L = m[1].toUpperCase();
+    const acc = m[2] || '';
+    const base = ({ C:0, D:2, E:4, F:5, G:7, A:9, B:11 })[L];
+    if (base === undefined) return null;
+    let pc = base;
+    if (acc === '#') pc += 1;
+    if (acc === 'b') pc -= 1;
+    pc = ((pc % 12) + 12) % 12;
+    return pc;
+}
+
+function chordPitchClasses(info) {
+    // Returns pitch classes (relative to rootPc)
+    // root always 0
+    if (!info) return [0,4,7];
+    const q = info.quality;
+    const sus = info.sus;
+
+    let triad;
+    if (sus === 'sus2') triad = [0, 2, 7];
+    else if (sus === 'sus4') triad = [0, 5, 7];
+    else if (q === 'min') triad = [0, 3, 7];
+    else if (q === 'dim') triad = [0, 3, 6];
+    else if (q === 'aug') triad = [0, 4, 8];
+    else triad = [0, 4, 7];
+
+    const pcs = [...triad];
+    if (info.ext === '7') pcs.push(10);
+    if (info.ext === 'maj7') pcs.push(11);
+    if (info.ext === 'dim7') pcs.push(9);
+    return pcs;
+}
+
+function midiToNote(midi) {
+    return Tone.Frequency(midi, 'midi').toNote();
+}
+
+function nearestMidiForPc(pc, targetMidi, minMidi, maxMidi) {
+    // Find midi within [minMidi,maxMidi] that matches pitch class pc and is nearest to targetMidi
+    let best = null;
+    let bestDist = Infinity;
+    for (let m = minMidi; m <= maxMidi; m++) {
+        if ((m % 12 + 12) % 12 !== pc) continue;
+        const d = Math.abs(m - targetMidi);
+        if (d < bestDist) {
+            bestDist = d;
+            best = m;
+        }
+    }
+    return best;
+}
+
+function buildVoicing(chordInfo, prevVoicing) {
+    // Strum voicing: 4-5 notes in mid range, with minimal motion from prev.
+    const pcsRel = chordPitchClasses(chordInfo);
+    const rootPc = chordInfo.rootPc;
+    const absPcs = pcsRel.map(r => (rootPc + r) % 12);
+
+    // Choose tones: root, (third/sus), fifth, (7th if exists) + duplicate root if needed
+    const has7 = pcsRel.includes(10) || pcsRel.includes(11) || pcsRel.includes(9);
+    const thirdRel = pcsRel.find(x => x === 3 || x === 4 || x === 2 || x === 5) ?? (pcsRel.includes(4) ? 4 : pcsRel.includes(3) ? 3 : 4);
+    const fifthRel = pcsRel.includes(7) ? 7 : (pcsRel.includes(6) ? 6 : 7);
+    const seventhRel = pcsRel.find(x => x === 10 || x === 11 || x === 9) ?? null;
+    const tonesRel = [0, thirdRel, fifthRel];
+    if (has7 && seventhRel !== null) tonesRel.push(seventhRel);
+    while (tonesRel.length < 5) tonesRel.push(0);
+    const tonesAbs = tonesRel.slice(0, CONFIG.maxStrumNotes).map(r => (rootPc + r) % 12);
+
+    // Targets (mid range)
+    const defaultTargets = [52, 57, 60, 64, 67];
+    const targets = tonesAbs.map((_, i) => (prevVoicing && prevVoicing[i] ? prevVoicing[i] : defaultTargets[i]));
+
+    const voices = [];
+    const MIN = 50;
+    const MAX = 78;
+
+    for (let i = 0; i < tonesAbs.length; i++) {
+        const pc = tonesAbs[i];
+        const target = targets[i];
+        let midi = nearestMidiForPc(pc, target, MIN, MAX);
+        if (midi === null) midi = clamp(target, MIN, MAX);
+
+        // enforce ascending
+        if (voices.length > 0) {
+            while (midi <= voices[voices.length - 1]) midi += 12;
+        }
+        voices.push(midi);
+    }
+
+    // Pull down if too high
+    while (voices.length && voices[voices.length - 1] > MAX) {
+        for (let i = 0; i < voices.length; i++) voices[i] -= 12;
+    }
+    // Push up if too low
+    while (voices.length && voices[0] < MIN) {
+        for (let i = 0; i < voices.length; i++) voices[i] += 12;
+    }
+
+    return voices;
+}
+
+function bassMidi(chordInfo, which) {
+    // Bass range
+    const MIN = 40;
+    const MAX = 55;
+    const rootPc = chordInfo.rootPc;
+    const rel = chordPitchClasses(chordInfo);
+    const fifthRel = rel.includes(7) ? 7 : (rel.includes(6) ? 6 : 7);
+    const fifthPc = (rootPc + fifthRel) % 12;
+
+    // Slash bass has priority if present
+    const pc = chordInfo.bassPc !== null ? chordInfo.bassPc : (which === 'fifth' ? fifthPc : rootPc);
+    const target = (which === 'fifth') ? 47 : 45;
+    return nearestMidiForPc(pc, target, MIN, MAX) ?? 45;
+}
+
+// =========================
+// 6) AUDIO ENGINE
+// =========================
+let bassSynth = null;
+let strumSynth = null;
+let reverb = null;
+let masterComp = null;
+
+async function initAudio() {
+    await Tone.start();
+
+    // Bass: mono, ấm, đánh chắc phách
+    bassSynth = new Tone.MonoSynth({
+        oscillator: { type: 'triangle' },
+        envelope: { attack: 0.001, decay: 0.20, sustain: 0.0, release: 0.08 },
+        filter: { Q: 1, type: 'lowpass', rolloff: -24 },
+        filterEnvelope: { attack: 0.001, decay: 0.06, sustain: 0.0, release: 0.05, baseFrequency: 140, octaves: 1.2 }
+    });
+
+    // Strum: pluck-ish, poly
+    strumSynth = new Tone.PolySynth(Tone.PluckSynth, {
+        maxPolyphony: 10,
+        volume: -10,
+        options: {
+            attackNoise: 1.0,
+            dampening: 3500,
+            resonance: 0.82
+        }
+    });
+
+    masterComp = new Tone.Compressor({ threshold: -18, ratio: 3, attack: 0.01, release: 0.15 });
+    reverb = new Tone.Reverb({ decay: 1.4, preDelay: 0.01, wet: 0.25 });
+
+    bassSynth.volume.value = -6;
+    bassSynth.chain(masterComp, reverb, Tone.Destination);
+    strumSynth.chain(masterComp, reverb, Tone.Destination);
+
+    // Timing constants
+    APP.ticksPerBar = Tone.Time('1m').toTicks();
+    APP.ticksPer16n = Tone.Time('16n').toTicks();
+
+    APP.isAudioReady = true;
+}
+
+function getActiveChordName() {
+    if (APP.activeStep >= 0 && APP.activeStep < APP.song.chordSteps.length) {
+        return APP.song.chordSteps[APP.activeStep];
+    }
+    // When not started: show upcoming if possible
+    if (APP.song.chordSteps.length > 0) return APP.song.chordSteps[0];
+    return APP.tone;
+}
+
+function playEvent(time, evt, chordName) {
+    const info = parseChordName(chordName) || parseChordName(APP.tone) || parseChordName(CONFIG.defaultTone);
+    if (!info) return;
+
+    if (evt.type === 'bass') {
+        const midi = bassMidi(info, evt.which);
+        bassSynth.triggerAttackRelease(midiToNote(midi), evt.len, time, evt.vel);
+        return;
+    }
+
+    // strum: build voicing with minimal movement
+    const voicingMidi = buildVoicing(info, APP.lastVoicing);
+    APP.lastVoicing = voicingMidi;
+
+    const noteMidis = (evt.dir === 'down') ? voicingMidi : [...voicingMidi].reverse();
+    const jitter = (Math.random() - 0.5) * CONFIG.humanizeSeconds;
+    noteMidis.forEach((midi, i) => {
+        const t = time + (i * CONFIG.strumDelaySeconds) + jitter;
+        const safeT = Math.max(t, time);
+        strumSynth.triggerAttackRelease(midiToNote(midi), evt.len, safeT, evt.vel * (evt.dir === 'up' ? 0.90 : 1.0));
+    });
+}
+
+// =========================
+// 7) QUANTIZE + SCHEDULER
+// =========================
+function ticksPerGrid() {
+    return Tone.Time(APP.quantizeGrid).toTicks();
+}
+
+function requestStep(targetStep, { forceImmediate = false } = {}) {
+    const maxIndex = APP.song.chordSteps.length - 1;
+    if (targetStep > maxIndex) {
+        // End-of-song: request stop at next bar boundary
+        APP.stopRequested = true;
+        APP.pendingStep = null;
+        updateUI();
+        return;
+    }
+    targetStep = clamp(targetStep, 0, maxIndex);
+
+    if (!APP.isPlaying) {
+        APP.activeStep = targetStep;
+        APP.pendingStep = null;
+        updateUI();
+        return;
+    }
+
+    if (forceImmediate) {
+        APP.activeStep = targetStep;
+        APP.pendingStep = null;
+        updateUI();
+        return;
+    }
+
+    // Near-grid window: nếu vừa vào đầu nhịp thì apply ngay để cảm giác "dính"
+    const gridTicks = ticksPerGrid();
+    const nowTicks = Tone.Transport.ticks;
+    const tickInGrid = ((nowTicks % gridTicks) + gridTicks) % gridTicks;
+    const win = Math.max(1, Math.floor(gridTicks * CONFIG.nearGridWindowRatio));
+
+    if (tickInGrid <= win) {
+        APP.activeStep = targetStep;
+        APP.pendingStep = null;
+        updateUI();
+        return;
+    }
+
+    // Otherwise: pending until next grid boundary (last intent wins)
+    APP.pendingStep = targetStep;
+    updateUI();
+}
+
+function nextChord() {
+    const base = (APP.pendingStep !== null) ? APP.pendingStep : APP.activeStep;
+    const next = (base < 0) ? 0 : base + 1;
+    requestStep(next);
+}
+
+function prevChord() {
+    if (APP.pendingStep !== null) {
+        APP.pendingStep = null;
+        updateUI();
+        return;
+    }
+    if (APP.activeStep <= 0) {
+        APP.activeStep = 0;
+        updateUI();
+        return;
+    }
+    requestStep(APP.activeStep - 1, { forceImmediate: true });
+}
+
+function setupScheduler() {
+    if (APP.transportEventId !== null) {
+        Tone.Transport.clear(APP.transportEventId);
+        APP.transportEventId = null;
+    }
+
+    Tone.Transport.bpm.value = APP.bpm;
+    Tone.Transport.timeSignature = 4;
+
+    APP.transportEventId = Tone.Transport.scheduleRepeat((time) => {
+        // Ticks at this scheduled time (stable, avoids parsing Transport.position)
+        const ticks = Tone.Transport.getTicksAtTime(time);
+        const tickInBar = ((ticks % APP.ticksPerBar) + APP.ticksPerBar) % APP.ticksPerBar;
+        const step16 = Math.floor(tickInBar / APP.ticksPer16n) % 16;
+
+        // Apply pending at grid boundary
+        if (APP.pendingStep !== null) {
+            const gridTicks = ticksPerGrid();
+            const tickInGrid = ((ticks % gridTicks) + gridTicks) % gridTicks;
+            if (tickInGrid === 0) {
+                APP.activeStep = APP.pendingStep;
+                APP.pendingStep = null;
+                Tone.Draw.schedule(() => updateUI(), time);
+            }
+        }
+
+        // End-of-song stop: stop cleanly at bar boundary
+        if (APP.stopRequested && tickInBar === 0) {
+            // Stop cleanly on UI thread
+            APP.stopRequested = false;
+            Tone.Draw.schedule(() => stop(), time);
+            return;
+        }
+
+        // Play rhythm
+        if (APP.activeStep >= 0) {
+            const chordName = getActiveChordName();
+            const events = PATTERN_BY_STEP16.get(step16);
+            if (events) {
+                for (const evt of events) playEvent(time, evt, chordName);
+            }
+        }
+    }, '16n');
+}
+
+// =========================
+// 8) UI RENDER
+// =========================
+function renderLyrics() {
+    const container = document.getElementById('lyricsContent');
+    container.innerHTML = '';
+
+    // Leading text (không gắn step)
+    if (APP.song.leadingText) {
+        const lead = document.createElement('div');
+        lead.className = 'py-3 px-2 opacity-60 text-gray-300 whitespace-pre-wrap';
+        lead.innerText = APP.song.leadingText;
+        container.appendChild(lead);
+    }
+
+    // Blocks 1:1 with chordSteps
+    for (const block of APP.song.blocks) {
+        const div = document.createElement('div');
+        div.id = `cue-${block.stepIndex}`;
+        div.className = 'py-3 px-2 transition-opacity duration-300 opacity-50';
+
+        const chordSpan = document.createElement('div');
+        chordSpan.className = 'text-amber-500 font-bold text-sm mb-1';
+        chordSpan.innerText = `[${block.chord}]`;
+        div.appendChild(chordSpan);
+
+        const textSpan = document.createElement('div');
+        textSpan.className = 'text-xl whitespace-pre-wrap';
+        textSpan.innerText = block.text ? block.text : CONFIG.emptyBlockLabel;
+        div.appendChild(textSpan);
+
+        // Advanced/dev: click to jump
+        div.onclick = () => requestStep(block.stepIndex, { forceImmediate: true });
+
+        container.appendChild(div);
+    }
+
+    // If nothing
+    if (!APP.song.blocks.length && !APP.song.leadingText) {
+        container.innerHTML = '<div class="text-gray-500 mt-20">Chưa có dữ liệu bài hát.</div>';
+    }
+}
+
+function clearHighlights() {
+    document.querySelectorAll('.highlight-current, .opacity-100').forEach(el => {
+        el.classList.remove('highlight-current', 'opacity-100');
+        el.classList.add('opacity-50');
+    });
+    document.querySelectorAll('.highlight-pending').forEach(el => el.classList.remove('highlight-pending'));
+}
+
+function updateUI() {
+    const steps = APP.song.chordSteps;
+    const active = APP.activeStep;
+    const pending = APP.pendingStep;
+
+    clearHighlights();
+
+    // Current / Next chord
+    if (active >= 0 && active < steps.length) {
+        document.getElementById('currentChordDisplay').innerText = steps[active] || '--';
+        document.getElementById('nextChordDisplay').innerText = (steps[active + 1] ? steps[active + 1] : 'End');
+
+        const el = document.getElementById(`cue-${active}`);
+        if (el) {
+            el.classList.add('highlight-current', 'opacity-100');
+            el.classList.remove('opacity-50');
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    } else {
+        document.getElementById('currentChordDisplay').innerText = '--';
+        document.getElementById('nextChordDisplay').innerText = (steps[0] ? steps[0] : '--');
+    }
+
+    // Pending
+    if (pending !== null && pending >= 0 && pending < steps.length) {
+        const el = document.getElementById(`cue-${pending}`);
+        if (el) el.classList.add('highlight-pending');
+        document.getElementById('pendingIndicator').classList.remove('hidden');
+    } else {
+        document.getElementById('pendingIndicator').classList.add('hidden');
+    }
+}
+
+// =========================
+// 9) TRANSPORT CONTROLS
+// =========================
+async function start() {
+    if (!APP.isAudioReady) return;
+    if (Tone.context.state !== 'running') await Tone.start();
+
+    // If not positioned yet, start at first chord
+    if (APP.activeStep < 0) {
+        APP.activeStep = 0;
+        APP.pendingStep = null;
+    }
+
+    APP.stopRequested = false;
+    APP.lastVoicing = null;
+
+    Tone.Transport.start();
+    APP.isPlaying = true;
+
+    // UI: switch to "tap-to-next"
+    const btn = document.getElementById('mainActionBtn');
+    btn.classList.remove('bg-amber-600');
+    btn.classList.add('bg-green-600');
+    document.getElementById('playIcon').className = 'fas fa-forward text-3xl text-white mb-1';
+    document.getElementById('playText').innerText = 'CHUYỂN (TAP)';
+
+    updateUI();
+}
+
+function stop(fromScheduler = false) {
+    APP.stopRequested = false;
+    APP.pendingStep = null;
+
+    // Stop transport immediately (scheduler already runs on transport)
+    if (Tone.Transport.state !== 'stopped') Tone.Transport.stop();
+    APP.isPlaying = false;
+    APP.lastVoicing = null;
+
+    // UI: back to start
+    const btn = document.getElementById('mainActionBtn');
+    btn.classList.add('bg-amber-600');
+    btn.classList.remove('bg-green-600');
+    document.getElementById('playIcon').className = 'fas fa-play text-3xl text-white mb-1';
+    document.getElementById('playText').innerText = 'BẮT ĐẦU';
+
+    if (!fromScheduler) updateUI();
+}
+
+// =========================
+// 10) PUBLIC UI FUNCTIONS (onclick)
+// =========================
+function updateBpm(delta) {
+    APP.bpm = clamp(APP.bpm + delta, 40, 160);
+    document.getElementById('bpmDisplay').innerText = APP.bpm;
+    if (APP.isAudioReady) Tone.Transport.bpm.rampTo(APP.bpm, 0.08);
+}
+window.updateBpm = updateBpm;
+
+function updateQuantize() {
+    APP.quantizeGrid = document.getElementById('quantizeSelect').value;
+}
+window.updateQuantize = updateQuantize;
+
+function toggleSettings() {
+    document.getElementById('settingsModal').classList.toggle('hidden');
+}
+window.toggleSettings = toggleSettings;
+
+function loadSongFromInput() {
+    const text = document.getElementById('songInput').value;
+    const model = buildSongModel(text);
+
+    APP.song = model;
+    APP.tone = model.meta.tone || CONFIG.defaultTone;
+    APP.rhythm = model.meta.rhythm || CONFIG.defaultRhythm;
+    APP.bpm = model.meta.bpm || CONFIG.defaultBpm;
+    APP.quantizeGrid = model.meta.quantize || CONFIG.defaultQuantize;
+
+    // Reflect UI
+    document.getElementById('keyDisplay').innerText = APP.tone;
+    document.getElementById('bpmDisplay').innerText = APP.bpm;
+    document.getElementById('quantizeSelect').value = APP.quantizeGrid;
+
+    // Reset playhead
+    APP.activeStep = -1;
+    APP.pendingStep = null;
+    APP.stopRequested = false;
+
+    // Rebuild scheduler to reflect bpm/timeSignature (transportId stays stable but safe)
+    if (APP.isAudioReady) {
+        Tone.Transport.stop();
+        Tone.Transport.bpm.value = APP.bpm;
+    }
+
+    renderLyrics();
+    updateUI();
+    toggleSettings();
+    stop();
+}
+window.loadSongFromInput = loadSongFromInput;
+
+// =========================
+// 11) UTIL
+// =========================
+function clamp(n, min, max) {
+    return Math.max(min, Math.min(max, n));
+}
+
+// =========================
+// 12) INIT + EVENTS
+// =========================
+(function init() {
+    // default textarea content
+    document.getElementById('songInput').value = DEFAULT_INPUT;
+
+    document.getElementById('initAudioBtn').addEventListener('click', async () => {
+        await initAudio();
+        setupScheduler();
+        loadSongFromInput();
+        document.getElementById('startOverlay').classList.add('hidden');
+    });
+
+    document.getElementById('mainActionBtn').addEventListener('click', (e) => {
+        const btn = e.currentTarget;
+        btn.classList.add('tap-feedback');
+        setTimeout(() => btn.classList.remove('tap-feedback'), 200);
+
+        if (!APP.isPlaying) start();
+        else nextChord();
+    });
+
+    document.getElementById('undoBtn').addEventListener('click', prevChord);
+    document.getElementById('stopBtn').addEventListener('click', () => stop());
+    document.getElementById('settingsBtn').addEventListener('click', toggleSettings);
+
+    document.addEventListener('keydown', (e) => {
+        if (e.code === 'Space') {
+            e.preventDefault();
+            if (!APP.isPlaying) start();
+            else nextChord();
+        }
+        if (e.code === 'ArrowLeft') prevChord();
+        if (e.code === 'Escape') stop();
+    });
+})();
+
+</script>
 </body>
 </html>
