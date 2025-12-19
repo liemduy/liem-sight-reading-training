@@ -3,142 +3,167 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Đệm hát khi nhậu — Bolero / SlowRock</title>
+  <title>Tay Guitar Ảo (Nhậu Mode) — Click hợp âm là đệm</title>
 
-  <!-- WebAudioFont core -->
+  <!-- WebAudioFont core (realistic sample-based instruments) -->
   <script src="https://surikov.github.io/webaudiofont/npm/dist/WebAudioFontPlayer.js"></script>
 
   <style>
-    :root { color-scheme: dark; }
-    body { margin: 18px; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.35; }
-    h1 { margin: 0 0 8px; font-size: 20px; }
-    .muted { opacity: .85; }
-    .card { border: 1px solid #2a2a2a; border-radius: 14px; padding: 14px; background: #121212; max-width: 1100px; }
-    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 10px 0; }
-    button, select, input[type="number"] {
-      padding: 10px 12px; border-radius: 10px; border: 1px solid #3a3a3a;
-      background: #1b1b1b; color: #fff;
-    }
-    button { cursor: pointer; }
-    button:active { transform: translateY(1px); }
-    button.secondary { background: #101010; }
-    button.danger { border-color: #6b2b2b; }
-    button:disabled { opacity: .55; cursor: not-allowed; }
-    input[type="range"] { width: 240px; }
-    .pill {
-      display:inline-flex; align-items:center; gap:8px;
-      padding: 6px 10px; border-radius: 999px; border: 1px solid #2e2e2e; background:#0f0f0f;
-    }
-    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
-    .grid {
-      display:grid; gap:10px;
-      grid-template-columns: repeat(8, minmax(110px, 1fr));
-    }
-    @media (max-width: 980px) { .grid { grid-template-columns: repeat(4, minmax(110px, 1fr)); } }
-    @media (max-width: 560px) { .grid { grid-template-columns: repeat(2, minmax(110px, 1fr)); } }
+    :root { color-scheme: dark; --bg:#0b0f19; --card:#121a2b; --muted:#9fb0d0; --text:#e9eefc; --btn:#2a3b63; --btn2:#1e2a46; --line:#26324f; --accent:#7aa7ff; }
+    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:var(--bg); color:var(--text); }
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 18px; }
+    h1 { margin: 0 0 8px; font-size: 20px; font-weight: 800; letter-spacing: .2px; }
+    p { margin: 6px 0 0; color: var(--muted); line-height: 1.45; }
+    .grid { display:grid; grid-template-columns: 420px 1fr; gap: 14px; align-items:start; }
+    @media (max-width: 980px) { .grid { grid-template-columns: 1fr; } }
 
-    .chip {
-      display:inline-flex; align-items:center; gap:8px;
-      padding: 8px 10px; border-radius: 999px; border: 1px solid #2e2e2e; background:#0f0f0f;
-      margin: 4px 6px 0 0;
+    .card { background: var(--card); border: 1px solid rgba(255,255,255,.08); border-radius: 14px; padding: 14px; }
+    .row { display:flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .spacer { height: 10px; }
+    .pill { display:inline-flex; gap:8px; align-items:center; padding: 6px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,.12); color: var(--muted); font-size: 12px; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+    .btn {
+      appearance:none; border: 1px solid rgba(255,255,255,.12);
+      background: var(--btn); color: var(--text);
+      padding: 10px 12px; border-radius: 12px; cursor: pointer;
+      font-weight: 700; letter-spacing: .2px;
     }
-    .chip button {
-      padding: 4px 8px; border-radius: 999px; border: 1px solid #333; background:#141414;
+    .btn:hover { background: #324879; }
+    .btn.secondary { background: var(--btn2); }
+    .btn.danger { background: #4a1f2a; }
+    .btn:disabled { opacity: .55; cursor:not-allowed; }
+    select, input[type="number"], textarea {
+      background: #0f1627; color: var(--text);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 12px;
+      padding: 10px 12px;
+      outline: none;
     }
-    small { opacity: .85; }
-    label { display: inline-flex; align-items: center; gap: 10px; }
-    hr { border: 0; border-top: 1px solid #252525; margin: 12px 0; }
+    textarea { width: 100%; height: 520px; resize: vertical; line-height: 1.35; }
+    label { display:block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+    input[type="range"] { width: 240px; }
+    hr { border: none; border-top: 1px solid rgba(255,255,255,.10); margin: 12px 0; }
+
+    /* Rendered song */
+    .song { font-size: 16px; line-height: 1.55; }
+    .line { padding: 6px 0; border-bottom: 1px dashed rgba(255,255,255,.06); }
+    .line:last-child { border-bottom: none; }
+    .sectionTitle { margin-top: 12px; font-weight: 800; color: #cfe0ff; }
+    .metaRow { display:flex; gap:10px; flex-wrap:wrap; }
+    .chord {
+      display:inline-flex; align-items:center; justify-content:center;
+      margin: 0 4px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(122,167,255,.55);
+      background: rgba(122,167,255,.12);
+      color: #dbe8ff;
+      font-weight: 800;
+      cursor: pointer;
+      user-select: none;
+      transform: translateY(-1px);
+    }
+    .chord:hover { background: rgba(122,167,255,.18); }
+    .chord.active { background: rgba(122,167,255,.28); border-color: rgba(122,167,255,.9); box-shadow: 0 0 0 2px rgba(122,167,255,.15) inset; }
+    .hint { font-size: 12px; color: var(--muted); }
+    .kbd { border: 1px solid rgba(255,255,255,.14); border-bottom-width: 2px; border-radius: 8px; padding: 2px 6px; background: rgba(255,255,255,.06); font-size: 12px; }
   </style>
 </head>
 
 <body>
-  <h1>Đệm hát khi nhậu — Bolero / SlowRock</h1>
-  <p class="muted" style="margin:0 0 12px">
-    Gợi ý bolero: <span class="mono">C–Am–Dm–G7</span> hoặc <span class="mono">C–A7–Dm–G7</span>.
-    Preset guitar và vòng mẫu có sẵn bên dưới.
-  </p>
+  <div class="wrap">
+    <h1>Tay Guitar Ảo (Nhậu Mode) — Click hợp âm là đệm “giống người”</h1>
+    <p>
+      Dán input dạng <span class="mono">[Chord]</span> như bạn đưa. Người hát tới đâu, bạn bấm ngay hợp âm trong lời: app sẽ đệm 1 ô bolero (bass + chát).
+      Nếu bật <b>Hold</b>, app sẽ lặp bolero nền và đổi hợp âm mượt ở đầu ô nhịp kế tiếp.
+    </p>
 
-  <div class="card">
-    <div class="row">
-      <button id="btnEnable">Bật âm thanh</button>
-      <span class="pill"><span class="muted">Trạng thái:</span> <span id="status" class="mono">chưa khởi tạo</span></span>
+    <div class="grid">
+      <!-- LEFT: Input + controls -->
+      <div class="card">
+        <div class="row">
+          <button id="btnEnable" class="btn">Bật âm thanh</button>
+          <span class="pill">Audio: <span id="audioState" class="mono">OFF</span></span>
+          <span class="pill">Preset: <span id="presetState" class="mono">chưa nạp</span></span>
+        </div>
 
-      <label class="pill">
-        Metronome
-        <input id="metro" type="checkbox" />
-      </label>
-    </div>
+        <div class="spacer"></div>
 
-    <div class="row">
-      <label>
-        BPM
-        <input id="bpm" type="range" min="55" max="200" step="1" value="92" />
-        <input id="bpmNum" type="number" min="55" max="200" step="1" value="92" />
-      </label>
+        <div class="row">
+          <div>
+            <label>Guitar preset</label>
+            <select id="presetSel">
+              <option value="steel_lk">Acoustic Steel — LK (đậm, thật)</option>
+              <option value="steel_std">Acoustic Steel — Standard</option>
+              <option value="nylon_lk">Acoustic Nylon — LK (mềm, bolero)</option>
+              <option value="elec_clean">Electric Clean — Aspirin</option>
+              <option value="elec_jazz">Electric Jazz — Aspirin</option>
+              <option value="elec_muted">Electric Muted — Aspirin (cộc)</option>
+            </select>
+          </div>
+          <div style="margin-top:18px">
+            <button id="btnLoadPreset" class="btn secondary" disabled>Nạp preset</button>
+          </div>
+        </div>
 
-      <label>
-        Style
-        <select id="style">
-          <option value="bolero">Bolero 4/4 (bass + chát)</option>
-          <option value="slowrock">Slow rock 4/4 (down-up)</option>
-          <option value="ballad">Ballad 4/4 (strum nhẹ)</option>
-        </select>
-      </label>
+        <div class="spacer"></div>
 
-      <label>
-        Ô nhịp / hợp âm
-        <select id="barsPerChord">
-          <option value="1" selected>1 ô</option>
-          <option value="2">2 ô</option>
-        </select>
-      </label>
-    </div>
+        <div class="row">
+          <div>
+            <label>BPM</label>
+            <input id="bpm" type="range" min="55" max="200" value="92" />
+            <span class="pill"><span id="bpmVal" class="mono">92</span> BPM</span>
+          </div>
 
-    <div class="row">
-      <label>
-        Guitar preset
-        <select id="presetSel"></select>
-      </label>
+          <div>
+            <label>Tap tempo</label>
+            <button id="btnTap" class="btn secondary" disabled>Tap</button>
+            <span class="pill">Hold: <span id="holdState" class="mono">OFF</span></span>
+          </div>
+        </div>
 
-      <button id="btnLoadPreset" class="secondary" disabled>Nạp preset</button>
-      <span class="muted"><small>(Preset được load động từ catalog; đã load sẽ cache.)</small></span>
-    </div>
+        <div class="row">
+          <button id="btnHold" class="btn secondary" disabled>Bật Hold (đệm nền)</button>
+          <button id="btnStop" class="btn danger" disabled>Stop (tắt tiếng)</button>
 
-    <hr />
+          <label class="pill" style="cursor:pointer">
+            <input id="metro" type="checkbox" style="transform:scale(1.05)" />
+            Metronome
+          </label>
+        </div>
 
-    <div class="row">
-      <label class="pill">
-        Khi bấm hợp âm: tự thêm vào vòng
-        <input id="addOnClick" type="checkbox" checked />
-      </label>
+        <hr />
 
-      <button id="btnPlayProg" disabled>Play vòng (loop)</button>
-      <button id="btnStopProg" class="secondary" disabled>Stop</button>
-      <button id="btnClear" class="danger" disabled>Xoá vòng</button>
-      <button id="btnUndo" class="secondary" disabled>Undo</button>
-    </div>
+        <div class="row">
+          <div style="flex:1; min-width: 260px">
+            <label>Input (dán bài vào đây)</label>
+            <textarea id="input"></textarea>
+          </div>
+        </div>
 
-    <div class="row">
-      <label>
-        Preset vòng hoà thanh
-        <select id="progPreset">
-          <option value="">-- Chọn vòng mẫu --</option>
-        </select>
-      </label>
-      <button id="btnLoadProg" class="secondary" disabled>Nạp vòng mẫu</button>
-    </div>
+        <div class="row">
+          <button id="btnRender" class="btn secondary" disabled>Render + Bấm hợp âm để đệm</button>
+          <button id="btnExample" class="btn secondary">Nạp ví dụ (tone Dm, bolero)</button>
+        </div>
 
-    <div class="row" style="align-items:flex-start">
-      <div style="flex:1; min-width: 280px">
-        <div class="muted"><small>Danh sách hợp âm (bấm để nghe; nếu bật “tự thêm” thì sẽ append vào vòng):</small></div>
-        <div id="chordGrid" class="grid" style="margin-top:10px"></div>
+        <p class="hint">
+          Mẹo nhậu: bật <b>Hold</b> để app quạt nền; khi đổi hợp âm chỉ cần chạm chord tiếp theo, app sẽ “ăn” vào đầu ô nhịp kế tiếp.
+          Phím tắt: <span class="kbd">Space</span> = Stop.
+        </p>
       </div>
 
-      <div style="flex:1; min-width: 280px">
-        <div class="muted"><small>Vòng hoà thanh đang chọn:</small></div>
-        <div id="progView" style="margin-top:6px"></div>
-        <div class="muted" style="margin-top:10px">
-          <small>Mẹo: bolero “ngọt” thường có <span class="mono">A7, Dm, G7, C7, Fm</span>.</small>
+      <!-- RIGHT: Rendered song -->
+      <div class="card">
+        <div class="metaRow">
+          <span class="pill">Tone: <span id="metaTone" class="mono">—</span></span>
+          <span class="pill">Điệu: <span id="metaStyle" class="mono">—</span></span>
+          <span class="pill">Current: <span id="nowChord" class="mono">—</span></span>
+          <span class="pill">Next (pending): <span id="pendingChord" class="mono">—</span></span>
+        </div>
+
+        <div class="spacer"></div>
+        <div id="song" class="song">
+          <p class="muted">Bấm “Render + Bấm hợp âm để đệm” để hiện lời + hợp âm clickable.</p>
         </div>
       </div>
     </div>
@@ -146,155 +171,68 @@
 
 <script>
 (() => {
-  // ----------------------------
-  // Instrument catalog (subset of WebAudioFont catalog pages)
-  // - Files/variables verified from catalog pages:
-  //   Steel LK: 0250_LK_AcousticSteel_SF2_file.js / _tone_0250_LK_AcousticSteel_SF2_file  (Acoustic steel)  [oai_citation:1‡surikov.github.io](https://surikov.github.io/webaudiofontdata/sound/0250_LK_AcousticSteel_SF2_file.html)
-  //   Nylon LK: 0240_LK_Godin_Nylon_SF2_file.js / _tone_0240_LK_Godin_Nylon_SF2_file      (Acoustic nylon)  [oai_citation:2‡surikov.github.io](https://surikov.github.io/webaudiofontdata/sound/0240_LK_Godin_Nylon_SF2_file.html)
-  //   Clean electric: 0270_Aspirin_sf2_file.js / _tone_0270_Aspirin_sf2_file               [oai_citation:3‡surikov.github.io](https://surikov.github.io/webaudiofontdata/sound/0270_Aspirin_sf2_file.html)
-  //   Jazz electric: 0260_Aspirin_sf2_file.js / _tone_0260_Aspirin_sf2_file                [oai_citation:4‡surikov.github.io](https://surikov.github.io/webaudiofontdata/sound/0260_Aspirin_sf2_file.html)
-  //   Muted electric: 0280_Aspirin_sf2_file.js / _tone_0280_Aspirin_sf2_file               [oai_citation:5‡surikov.github.io](https://surikov.github.io/webaudiofontdata/sound/0280_Aspirin_sf2_file.html)
-  // Dynamic loading uses startLoad/waitLoad as documented by WebAudioFont.  [oai_citation:6‡surikov.github.io](https://surikov.github.io/webaudiofont/)
-  // ----------------------------
+  // ------------------------------
+  // Instrument catalog (dynamic load)
+  // ------------------------------
   const BASE = "https://surikov.github.io/webaudiofontdata/sound/";
-  const INSTRUMENTS = [
-    { id:"steel_lk",  label:"Acoustic Steel — LK (đậm, thật)", file:"0250_LK_AcousticSteel_SF2_file.js", varName:"_tone_0250_LK_AcousticSteel_SF2_file" },
-    { id:"steel_std", label:"Acoustic Steel — Standard",        file:"0250_Acoustic_Guitar_sf2_file.js",   varName:"_tone_0250_Acoustic_Guitar_sf2_file" },
-    { id:"nylon_lk",  label:"Acoustic Nylon — LK Godin (mềm)",   file:"0240_LK_Godin_Nylon_SF2_file.js",   varName:"_tone_0240_LK_Godin_Nylon_SF2_file" },
-    { id:"elec_clean",label:"Electric Clean — Aspirin",          file:"0270_Aspirin_sf2_file.js",          varName:"_tone_0270_Aspirin_sf2_file" },
-    { id:"elec_jazz", label:"Electric Jazz — Aspirin",           file:"0260_Aspirin_sf2_file.js",          varName:"_tone_0260_Aspirin_sf2_file" },
-    { id:"elec_muted",label:"Electric Muted — Aspirin",          file:"0280_Aspirin_sf2_file.js",          varName:"_tone_0280_Aspirin_sf2_file" },
-  ];
-
-  // ----------------------------
-  // Guitar-ish chord voicings (MIDI pitches low->high)
-  // ----------------------------
-  const CHORDS = {
-    "C":  [48,52,55,60,64],          // x32010
-    "C7": [48,52,58,60,64],          // x32310
-    "Cm": [48,55,60,63,67],          // x35543 (approx)
-    "G":  [43,47,50,55,59,67],       // 320003
-    "G7": [43,47,50,55,59,65],       // 320001
-    "Am": [45,52,57,60,64],          // x02210
-    "A7": [45,52,55,61,64],          // x02020
-    "Dm": [50,57,62,65],             // xx0231
-    "D7": [50,57,60,66],             // xx0212
-    "Em": [40,47,50,55,59,64],       // 022000 (with open D=50)
-    "E7": [40,47,50,56,59,64],       // 020100
-    "F":  [41,48,53,57,60,65],       // 133211
-    "Fm": [41,48,53,56,60,65],       // 133111
-    "D":  [50,57,62,66],             // xx0232
-    "E":  [40,47,52,56,59,64],       // 022100 (approx)
-    "A":  [45,52,57,61,64],          // x02220
-    "Bb": [46,53,58,62,65],          // x13331
+  const INSTRUMENTS = {
+    steel_lk:   { label:"Acoustic Steel — LK",     file:"0250_LK_AcousticSteel_SF2_file.js", varName:"_tone_0250_LK_AcousticSteel_SF2_file" },
+    steel_std:  { label:"Acoustic Steel — Std",    file:"0250_Acoustic_Guitar_sf2_file.js",  varName:"_tone_0250_Acoustic_Guitar_sf2_file" },
+    nylon_lk:   { label:"Acoustic Nylon — LK",     file:"0240_LK_Godin_Nylon_SF2_file.js",   varName:"_tone_0240_LK_Godin_Nylon_SF2_file" },
+    elec_clean: { label:"Electric Clean — Aspirin",file:"0270_Aspirin_sf2_file.js",          varName:"_tone_0270_Aspirin_sf2_file" },
+    elec_jazz:  { label:"Electric Jazz — Aspirin", file:"0260_Aspirin_sf2_file.js",          varName:"_tone_0260_Aspirin_sf2_file" },
+    elec_muted: { label:"Electric Muted — Aspirin",file:"0280_Aspirin_sf2_file.js",          varName:"_tone_0280_Aspirin_sf2_file" },
   };
 
-  const CHORD_ORDER = ["C","C7","Fm","F","G","G7","Am","A7","Dm","D7","Em","E7","D","E","A","Bb"];
+  // ------------------------------
+  // DOM
+  // ------------------------------
+  const $ = (s) => document.querySelector(s);
+  const el = {
+    btnEnable: $("#btnEnable"),
+    btnLoadPreset: $("#btnLoadPreset"),
+    presetSel: $("#presetSel"),
+    presetState: $("#presetState"),
+    audioState: $("#audioState"),
 
-  // ----------------------------
-  // Progression presets
-  // ----------------------------
-  const PROG_PRESETS = [
-    { name:"Bolero (I–vi–ii–V7): C–Am–Dm–G7",      chords:["C","Am","Dm","G7"] },
-    { name:"Bolero (I–VI7–ii–V7): C–A7–Dm–G7",     chords:["C","A7","Dm","G7"] },
-    { name:"Bolero 8 ô: C–C7–F–Fm–C–A7–Dm–G7",     chords:["C","C7","F","Fm","C","A7","Dm","G7"] },
-    { name:"Slow rock (I–V–vi–IV): C–G–Am–F",      chords:["C","G","Am","F"] },
-    { name:"Slow rock (I–V–vi–IV): G–D–Em–C",      chords:["G","D","Em","C"] },
-    { name:"Ballad (vi–IV–I–V): Am–F–C–G",         chords:["Am","F","C","G"] },
-  ];
+    bpm: $("#bpm"),
+    bpmVal: $("#bpmVal"),
+    btnTap: $("#btnTap"),
+    btnHold: $("#btnHold"),
+    holdState: $("#holdState"),
+    btnStop: $("#btnStop"),
+    metro: $("#metro"),
 
-  // ----------------------------
-  // Rhythm styles (4/4 patterns)
-  // event: {t: fractionOfBar(0..1), type:'bass'|'down'|'up', v: volume}
-  // ----------------------------
-  const STYLES = {
-    bolero: {
-      beatsPerBar: 4,
-      events: [
-        {t:0.00, type:"bass", v:0.90},
-        {t:0.12, type:"down", v:0.55}, // 1&
-        {t:0.25, type:"down", v:0.50}, // 2
-        {t:0.50, type:"bass", v:0.85}, // 3
-        {t:0.62, type:"down", v:0.55}, // 3&
-        {t:0.75, type:"down", v:0.50}, // 4
-      ]
-    },
-    slowrock: {
-      beatsPerBar: 4,
-      events: [
-        {t:0.00, type:"down", v:0.65}, // 1
-        {t:0.25, type:"up",   v:0.30}, // 2
-        {t:0.50, type:"down", v:0.55}, // 3
-        {t:0.75, type:"up",   v:0.35}, // 4
-      ]
-    },
-    ballad: {
-      beatsPerBar: 4,
-      events: [
-        {t:0.00, type:"down", v:0.52},
-        {t:0.50, type:"down", v:0.45},
-        {t:0.75, type:"up",   v:0.25},
-      ]
-    }
+    input: $("#input"),
+    btnRender: $("#btnRender"),
+    btnExample: $("#btnExample"),
+
+    metaTone: $("#metaTone"),
+    metaStyle: $("#metaStyle"),
+    nowChord: $("#nowChord"),
+    pendingChord: $("#pendingChord"),
+    song: $("#song"),
   };
 
-  // ----------------------------
-  // Audio core
-  // ----------------------------
+  // ------------------------------
+  // Audio engine (WebAudioFont + small mix chain)
+  // ------------------------------
   const AudioContextFunc = window.AudioContext || window.webkitAudioContext;
   let ctx = null;
   let player = null;
   let preset = null;
-  let masterGain = null;
-  let compressor = null, hp = null, lp = null, convolver = null, wetGain = null, dryGain = null, outGain = null;
 
-  let playing = false;
-  let nextBarTime = 0;
-  let barIndex = 0;
-  let schedTimer = null;
-  let metroTimer = null;
+  let masterGain, compressor, hp, lp, convolver, wetGain, dryGain, outGain;
 
-  const state = {
-    selectedInstrId: INSTRUMENTS[0].id,
-    progression: [],
-  };
-
-  const el = {
-    status: document.getElementById("status"),
-    btnEnable: document.getElementById("btnEnable"),
-    bpm: document.getElementById("bpm"),
-    bpmNum: document.getElementById("bpmNum"),
-    style: document.getElementById("style"),
-    barsPerChord: document.getElementById("barsPerChord"),
-    metro: document.getElementById("metro"),
-
-    presetSel: document.getElementById("presetSel"),
-    btnLoadPreset: document.getElementById("btnLoadPreset"),
-
-    addOnClick: document.getElementById("addOnClick"),
-    chordGrid: document.getElementById("chordGrid"),
-    progView: document.getElementById("progView"),
-
-    progPreset: document.getElementById("progPreset"),
-    btnLoadProg: document.getElementById("btnLoadProg"),
-
-    btnPlayProg: document.getElementById("btnPlayProg"),
-    btnStopProg: document.getElementById("btnStopProg"),
-    btnClear: document.getElementById("btnClear"),
-    btnUndo: document.getElementById("btnUndo"),
-  };
-
-  function setStatus(t){ el.status.textContent = t; }
-
-  function makeImpulseResponse(context, seconds = 1.15, decay = 3.4) {
+  function makeImpulseResponse(context, seconds = 1.2, decay = 3.6) {
     const rate = context.sampleRate;
     const length = Math.max(1, Math.floor(rate * seconds));
     const ir = context.createBuffer(2, length, rate);
     for (let ch = 0; ch < 2; ch++) {
       const data = ir.getChannelData(ch);
       for (let i = 0; i < length; i++) {
-        const x = i / length;
-        const env = Math.pow(1 - x, decay);
+        const t = i / length;
+        const env = Math.pow(1 - t, decay);
         data[i] = (Math.random() * 2 - 1) * env;
       }
     }
@@ -349,322 +287,543 @@
       dryGain.connect(outGain);
       wetGain.connect(outGain);
       outGain.connect(ctx.destination);
-
-      setStatus("ready (audio)");
     }
     if (ctx.state !== "running") await ctx.resume();
+
+    el.audioState.textContent = "ON";
+    el.btnLoadPreset.disabled = false;
+    el.btnRender.disabled = false;
+    el.btnTap.disabled = false;
+    el.btnHold.disabled = false;
+    el.btnStop.disabled = false;
   }
 
-  function getSecPerBeat() {
-    return 60 / Number(el.bpm.value);
-  }
-
-  function getBarDuration() {
-    const style = STYLES[el.style.value];
-    return getSecPerBeat() * style.beatsPerBar;
-  }
-
-  // Dynamic instrument load (startLoad/waitLoad) per docs  [oai_citation:7‡surikov.github.io](https://surikov.github.io/webaudiofont/)
-  function changeInstrument(instr) {
+  function loadPresetByKey(key) {
     if (!ctx || !player) return;
-    setStatus("loading preset...");
-    const path = BASE + instr.file;
-    player.loader.startLoad(ctx, path, instr.varName);
+    const instr = INSTRUMENTS[key] || INSTRUMENTS.steel_lk;
+    el.presetState.textContent = "loading...";
+    const url = BASE + instr.file;
+    player.loader.startLoad(ctx, url, instr.varName);
     player.loader.waitLoad(() => {
       preset = window[instr.varName];
-      // decodeAfterLoading signature uses varName string
       player.loader.decodeAfterLoading(ctx, instr.varName);
-      setStatus("preset: " + instr.label);
-      updateButtonsEnabled();
+      el.presetState.textContent = instr.label;
     });
   }
 
-  function getBassPitchForChord(chordName) {
-    const pitches = CHORDS[chordName];
-    if (!pitches || pitches.length === 0) return 40;
-    // Choose a bass note that feels like a guitar low string:
-    // if lowest is too high, drop 12 semitones.
-    const low = pitches[0];
-    return (low >= 52) ? (low - 12) : low;
-  }
+  // ------------------------------
+  // Tempo + metronome
+  // ------------------------------
+  function secPerBeat() { return 60 / Number(el.bpm.value); }
+  function barDur() { return secPerBeat() * 4; } // bolero/4-4
+  function clamp(x,a,b){ return Math.max(a, Math.min(b, x)); }
+  function randSigned(){ return (Math.random()*2 - 1); }
 
-  function playStrum(chordName, when, dir, dur, vol) {
-    if (!preset) return;
-    const pitches = CHORDS[chordName];
-    if (!pitches) return;
-    if (dir === "down") {
-      player.queueStrumDown(ctx, masterGain, preset, when, pitches, dur, vol);
-    } else if (dir === "up") {
-      player.queueStrumUp(ctx, masterGain, preset, when, pitches, dur, vol);
-    } else {
-      player.queueChord(ctx, masterGain, preset, when, pitches, dur, vol);
+  // Tap tempo
+  let tapTimes = [];
+  el.btnTap.addEventListener("click", () => {
+    const t = performance.now();
+    tapTimes.push(t);
+    if (tapTimes.length > 6) tapTimes.shift();
+    if (tapTimes.length >= 3) {
+      let sum = 0;
+      for (let i = 1; i < tapTimes.length; i++) sum += (tapTimes[i] - tapTimes[i-1]);
+      const avgMs = sum / (tapTimes.length - 1);
+      const bpm = clamp(Math.round(60000 / avgMs), 55, 200);
+      el.bpm.value = String(bpm);
+      el.bpmVal.textContent = String(bpm);
     }
-  }
+  });
 
-  function playBass(chordName, when, dur, vol) {
-    if (!preset) return;
-    const bass = getBassPitchForChord(chordName);
-    player.queueWaveTable(ctx, masterGain, preset, when, bass, dur, vol);
-  }
-
-  function scheduleBar(chordName, barStart) {
-    const style = STYLES[el.style.value];
-    const barDur = getBarDuration();
-    for (const ev of style.events) {
-      const t = barStart + ev.t * barDur;
-      if (ev.type === "bass") {
-        playBass(chordName, t, Math.min(0.45 * barDur, 0.55), ev.v);
-      } else if (ev.type === "down") {
-        playStrum(chordName, t, "down", Math.max(0.92 * barDur, 0.4), ev.v);
-      } else if (ev.type === "up") {
-        playStrum(chordName, t, "up",   Math.max(0.85 * barDur, 0.35), ev.v);
-      }
-    }
-  }
-
-  // ----------------------------
   // Metronome (simple click)
-  // ----------------------------
-  function metroClick(when, freq=1400, vol=0.20) {
-    const osc = ctx.createOscillator();
+  let metroTimer = null;
+  function metroClick(when, accent=false) {
+    if (!ctx) return;
+    const o = ctx.createOscillator();
     const g = ctx.createGain();
-    osc.type = "square";
-    osc.frequency.setValueAtTime(freq, when);
+    o.type = "square";
+    o.frequency.setValueAtTime(accent ? 1650 : 1300, when);
     g.gain.setValueAtTime(0.0001, when);
-    g.gain.linearRampToValueAtTime(vol, when + 0.002);
+    g.gain.linearRampToValueAtTime(accent ? 0.22 : 0.16, when + 0.002);
     g.gain.exponentialRampToValueAtTime(0.0001, when + 0.04);
-    osc.connect(g);
+    o.connect(g);
     g.connect(ctx.destination);
-    osc.start(when);
-    osc.stop(when + 0.06);
+    o.start(when);
+    o.stop(when + 0.06);
   }
-
   function startMetronome() {
     stopMetronome();
-    if (!ctx) return;
-    const lookahead = 0.12;
     let next = ctx.currentTime + 0.02;
-    let beatCount = 0;
+    let beat = 0;
+    const lookahead = 0.12;
     const tick = () => {
-      const spb = getSecPerBeat();
+      const spb = secPerBeat();
       while (next < ctx.currentTime + lookahead) {
-        const accent = (beatCount % STYLES[el.style.value].beatsPerBar === 0);
-        metroClick(next, accent ? 1650 : 1300, accent ? 0.22 : 0.16);
+        metroClick(next, (beat % 4 === 0));
         next += spb;
-        beatCount++;
+        beat++;
       }
       metroTimer = setTimeout(tick, 25);
     };
     tick();
   }
-
   function stopMetronome() {
     if (metroTimer) clearTimeout(metroTimer);
     metroTimer = null;
   }
 
-  // ----------------------------
-  // Progression controls
-  // ----------------------------
-  function renderProgression() {
-    el.progView.innerHTML = "";
-    if (state.progression.length === 0) {
-      el.progView.innerHTML = `<span class="muted"><small>(chưa có hợp âm)</small></span>`;
-      updateButtonsEnabled();
-      return;
+  // ------------------------------
+  // Chord parsing + voicing (generic)
+  // ------------------------------
+  const NOTE = { C:0, D:2, E:4, F:5, G:7, A:9, B:11 };
+  function parseChordSymbol(symRaw) {
+    const sym = symRaw.trim();
+
+    // Handle slash chords: Dm/A
+    let main = sym, slash = null;
+    const slashIdx = sym.indexOf("/");
+    if (slashIdx >= 0) {
+      main = sym.slice(0, slashIdx).trim();
+      slash = sym.slice(slashIdx + 1).trim();
     }
-    state.progression.forEach((c, idx) => {
-      const chip = document.createElement("span");
-      chip.className = "chip";
-      chip.innerHTML = `<span class="mono">${idx+1}. ${c}</span>`;
-      const rm = document.createElement("button");
-      rm.textContent = "x";
-      rm.title = "Xoá hợp âm này";
-      rm.onclick = () => {
-        state.progression.splice(idx, 1);
-        renderProgression();
-      };
-      chip.appendChild(rm);
-      el.progView.appendChild(chip);
-    });
-    updateButtonsEnabled();
+
+    // Root: letter + optional #/b
+    const m = main.match(/^([A-G])([#b]?)(.*)$/);
+    if (!m) return { ok:false, sym };
+
+    let root = m[1];
+    let acc = m[2] || "";
+    let qual = (m[3] || "").trim();
+
+    // Normalize "maj" cases
+    // Examples: Dm, Dm7, D7, Dmaj7, DΔ7, Dsus4, Ddim, Daug, Dadd9, etc.
+    qual = qual.replace("Δ", "maj");
+
+    // Determine quality
+    let triad = "maj";
+    let add7 = null; // "min7" or "maj7"
+    let add9 = false;
+    let sus = null; // 2 or 4
+    let dim = false, aug = false;
+
+    // sus/add
+    if (/sus2/i.test(qual)) sus = 2;
+    if (/sus4/i.test(qual)) sus = 4;
+    if (/add9/i.test(qual)) add9 = true;
+
+    // dim/aug
+    if (/dim|o/i.test(qual)) dim = true;
+    if (/aug|\+/i.test(qual)) aug = true;
+
+    // minor vs major (but keep maj7 distinct)
+    // If starts with "m" and not "maj"
+    if (/^m(?!aj)/i.test(qual)) triad = "min";
+    if (/^min/i.test(qual)) triad = "min";
+
+    // 7ths
+    if (/maj7/i.test(qual)) add7 = "maj7";
+    else if (/m7/i.test(qual)) add7 = "min7"; // minor 7th above root
+    else if (/7/.test(qual)) add7 = "min7";   // dominant 7
+
+    // Slash bass note
+    let slashSemitone = null;
+    if (slash) {
+      const sm = slash.match(/^([A-G])([#b]?)$/);
+      if (sm) slashSemitone = (NOTE[sm[1]] + (sm[2] === "#" ? 1 : sm[2] === "b" ? -1 : 0) + 12) % 12;
+    }
+
+    const rootSemitone = (NOTE[root] + (acc === "#" ? 1 : acc === "b" ? -1 : 0) + 12) % 12;
+
+    return {
+      ok:true,
+      sym,
+      rootSemitone,
+      triad,
+      sus,
+      dim,
+      aug,
+      add7,
+      add9,
+      slashSemitone
+    };
   }
 
-  function updateButtonsEnabled() {
-    const hasAudio = !!ctx;
-    const hasPreset = !!preset;
-    const hasProg = state.progression.length > 0;
+  function buildVoicing(sym) {
+    const c = parseChordSymbol(sym);
+    if (!c.ok) return [48, 52, 55, 60]; // fallback C-ish
 
-    el.btnLoadPreset.disabled = !(hasAudio);
-    el.btnLoadProg.disabled = !(hasAudio);
-    el.btnPlayProg.disabled = !(hasAudio && hasPreset && hasProg);
-    el.btnStopProg.disabled = !(hasAudio && playing);
-    el.btnClear.disabled = !(hasProg);
-    el.btnUndo.disabled = !(hasProg);
+    // Choose a comfortable "rootMidi" near guitar mid range
+    // Base around C3=48; shift down if too high
+    let rootMidi = 48 + c.rootSemitone;   // around 48..59
+    if (rootMidi > 55) rootMidi -= 12;    // keep near 43..55
+
+    // Triad intervals
+    let i3 = 4, i5 = 7;
+    if (c.dim) { i3 = 3; i5 = 6; }
+    else if (c.aug) { i3 = 4; i5 = 8; }
+    else if (c.sus === 2) { i3 = 2; i5 = 7; }
+    else if (c.sus === 4) { i3 = 5; i5 = 7; }
+    else if (c.triad === "min") { i3 = 3; i5 = 7; }
+
+    const notes = [];
+    // Bass note: use slash if present, else root. Clamp to guitar-ish bass.
+    let bassMidi;
+    if (c.slashSemitone != null) {
+      bassMidi = 48 + c.slashSemitone;
+      if (bassMidi > 52) bassMidi -= 12;
+    } else {
+      bassMidi = rootMidi - 12;
+    }
+    // Guitar lowest is E2=40; clamp bass to 40..52
+    bassMidi = clamp(bassMidi, 40, 52);
+
+    notes.push(bassMidi);
+    notes.push(rootMidi);
+    notes.push(rootMidi + i3);
+    notes.push(rootMidi + i5);
+    // Add octave for fullness
+    notes.push(rootMidi + 12);
+
+    if (c.add7) {
+      const i7 = (c.add7 === "maj7") ? 11 : 10;
+      notes.push(rootMidi + i7);
+      notes.push(rootMidi + 12 + i3); // sweet top note
+    }
+
+    if (c.add9) {
+      notes.push(rootMidi + 14);
+    }
+
+    // Cleanup: unique + sort
+    const uniq = Array.from(new Set(notes.map(n => Math.round(n)))).sort((a,b)=>a-b);
+
+    // Keep within a reasonable range; if too many notes, take bass + 4 highs
+    if (uniq.length > 6) {
+      return [uniq[0], uniq[2], uniq[3], uniq[4], uniq[5], uniq[uniq.length-1]];
+    }
+    return uniq;
   }
 
-  function startProgression() {
+  function bassPitchForChord(sym) {
+    const pitches = buildVoicing(sym);
+    return pitches[0] ?? 45;
+  }
+
+  // ------------------------------
+  // Bolero pattern scheduling
+  // ------------------------------
+  const BOLERO_EVENTS = [
+    {t:0.00, type:"bass", v:0.90},
+    {t:0.12, type:"down", v:0.55},
+    {t:0.25, type:"down", v:0.50},
+    {t:0.50, type:"bass", v:0.85},
+    {t:0.62, type:"down", v:0.55},
+    {t:0.75, type:"down", v:0.50},
+  ];
+
+  function scheduleOneBarBolero(chordSym, barStart) {
+    if (!ctx || !player || !preset) return;
+    const dur = barDur();
+
+    // Humanize parameters
+    const jitter = clamp(secPerBeat() * 0.010, 0.003, 0.010); // seconds
+    const ring = clamp(dur * 0.92, 1.0, 3.2);
+
+    // Use guitar-ish pitches
+    const pitches = buildVoicing(chordSym);
+    const bass = bassPitchForChord(chordSym);
+
+    for (const ev of BOLERO_EVENTS) {
+      const t = barStart + ev.t * dur + randSigned() * jitter;
+      const v = clamp(ev.v + randSigned() * 0.10, 0.25, 0.95);
+
+      if (ev.type === "bass") {
+        player.queueWaveTable(ctx, masterGain, preset, t, bass, Math.min(0.55, dur * 0.45), v);
+      } else if (ev.type === "down") {
+        // queueStrumDown already has internal spread; we still schedule in time slots
+        player.queueStrumDown(ctx, masterGain, preset, t, pitches, ring, v);
+      }
+    }
+  }
+
+  // ------------------------------
+  // Hold mode: loop bars + quantized chord changes
+  // ------------------------------
+  let holdOn = false;
+  let holding = false;
+  let currentChord = null;
+  let pendingChord = null;
+
+  let schedTimer = null;
+  let nextBarTime = 0;
+
+  function setNowChord(sym) {
+    currentChord = sym;
+    el.nowChord.textContent = sym || "—";
+  }
+  function setPendingChord(sym) {
+    pendingChord = sym;
+    el.pendingChord.textContent = sym || "—";
+  }
+
+  function startHoldLoop(initialChord) {
     if (!ctx || !preset) return;
-    if (state.progression.length === 0) return;
+    holding = true;
+    setNowChord(initialChord);
+    setPendingChord(null);
 
-    playing = true;
-    barIndex = 0;
-    nextBarTime = ctx.currentTime + 0.06;
+    // start a little ahead
+    nextBarTime = ctx.currentTime + 0.08;
 
-    const barsPerChord = Number(el.barsPerChord.value);
-    const lookahead = 0.18;
-
+    const lookahead = 0.22;
     const tick = () => {
-      if (!playing) return;
-      const barDur = getBarDuration();
+      if (!holding) return;
+
       while (nextBarTime < ctx.currentTime + lookahead) {
-        const chordName = state.progression[barIndex % state.progression.length];
-
-        // schedule N bars for this chord
-        for (let i = 0; i < barsPerChord; i++) {
-          scheduleBar(chordName, nextBarTime + i * barDur);
+        // If user clicked a new chord while holding, switch at bar boundary
+        if (pendingChord) {
+          setNowChord(pendingChord);
+          setPendingChord(null);
         }
-
-        nextBarTime += barsPerChord * barDur;
-        barIndex++;
+        scheduleOneBarBolero(currentChord, nextBarTime);
+        nextBarTime += barDur();
       }
       schedTimer = setTimeout(tick, 25);
     };
     tick();
-    updateButtonsEnabled();
   }
 
-  function stopProgression() {
-    playing = false;
+  function stopAll() {
+    holding = false;
+    holdOn = false;
+    el.holdState.textContent = "OFF";
+    el.btnHold.textContent = "Bật Hold (đệm nền)";
+
     if (schedTimer) clearTimeout(schedTimer);
     schedTimer = null;
+
     if (player && ctx) player.cancelQueue(ctx);
-    updateButtonsEnabled();
-  }
+    setNowChord(null);
+    setPendingChord(null);
 
-  // ----------------------------
-  // UI init
-  // ----------------------------
-  // Fill instrument dropdown
-  for (const i of INSTRUMENTS) {
-    const opt = document.createElement("option");
-    opt.value = i.id;
-    opt.textContent = i.label;
-    el.presetSel.appendChild(opt);
-  }
-  el.presetSel.value = state.selectedInstrId;
-
-  // Fill progression preset dropdown
-  for (let k = 0; k < PROG_PRESETS.length; k++) {
-    const opt = document.createElement("option");
-    opt.value = String(k);
-    opt.textContent = PROG_PRESETS[k].name;
-    el.progPreset.appendChild(opt);
-  }
-
-  // Render chord grid
-  function renderChordGrid() {
-    el.chordGrid.innerHTML = "";
-    for (const name of CHORD_ORDER) {
-      const b = document.createElement("button");
-      b.className = "secondary";
-      b.innerHTML = `<span class="mono">${name}</span>`;
-      b.onclick = async () => {
-        await ensureAudio();
-        // Auto-load preset if not loaded yet
-        if (!preset) {
-          const instr = INSTRUMENTS.find(x => x.id === el.presetSel.value) || INSTRUMENTS[0];
-          changeInstrument(instr);
-          // allow a short moment; user can click again if needed
-        }
-        // preview: quick strum down
-        const when = ctx.currentTime + 0.01;
-        playStrum(name, when, "down", Math.max(1.4, getBarDuration() * 0.95), 0.62);
-
-        if (el.addOnClick.checked) {
-          state.progression.push(name);
-          renderProgression();
-        }
-      };
-      el.chordGrid.appendChild(b);
+    if (el.metro.checked) {
+      el.metro.checked = false;
+      stopMetronome();
     }
   }
-  renderChordGrid();
-  renderProgression();
-  updateButtonsEnabled();
 
-  // BPM sync
-  el.bpm.addEventListener("input", () => el.bpmNum.value = el.bpm.value);
-  el.bpmNum.addEventListener("input", () => el.bpm.value = el.bpmNum.value);
+  // ------------------------------
+  // Rendering chord sheet to clickable UI
+  // ------------------------------
+  function parseMetadata(text) {
+    // Try to find Tone: and Điệu:
+    const tone = (text.match(/^\s*Tone:\s*(.+)\s*$/mi) || [])[1]?.trim() || "—";
+    const style = (text.match(/^\s*Điệu:\s*(.+)\s*$/mi) || [])[1]?.trim() || "—";
+    return { tone, style };
+  }
 
-  // Enable audio
+  function isSectionTitle(line) {
+    return /^\s*(Intro:|ĐK:|DK:|Điệp khúc:|Chorus:|Verse\s*\d+|Bridge:|\d+\.)/i.test(line.trim());
+  }
+
+  function renderSong(text) {
+    const { tone, style } = parseMetadata(text);
+    el.metaTone.textContent = tone;
+    el.metaStyle.textContent = style;
+
+    const lines = text.replace(/\r/g, "").split("\n");
+    const container = document.createElement("div");
+
+    for (const rawLine of lines) {
+      const line = rawLine.trimEnd();
+
+      if (!line.trim()) {
+        const spacer = document.createElement("div");
+        spacer.className = "line";
+        spacer.style.borderBottom = "none";
+        spacer.innerHTML = "&nbsp;";
+        container.appendChild(spacer);
+        continue;
+      }
+
+      // Skip metadata lines from rendering body
+      if (/^\s*Tone\s*:/i.test(line) || /^\s*Điệu\s*:/i.test(line)) continue;
+
+      const div = document.createElement("div");
+      div.className = "line";
+
+      if (isSectionTitle(line)) {
+        const t = document.createElement("div");
+        t.className = "sectionTitle";
+        t.textContent = line;
+        div.appendChild(t);
+        container.appendChild(div);
+        continue;
+      }
+
+      // Tokenize [Chord]
+      const parts = [];
+      const re = /\[([^\]]+)\]/g;
+      let lastIdx = 0;
+      let m;
+      while ((m = re.exec(line)) !== null) {
+        const before = line.slice(lastIdx, m.index);
+        if (before) parts.push({ type:"text", value: before });
+        parts.push({ type:"chord", value: m[1].trim() });
+        lastIdx = m.index + m[0].length;
+      }
+      const tail = line.slice(lastIdx);
+      if (tail) parts.push({ type:"text", value: tail });
+
+      for (const p of parts) {
+        if (p.type === "text") {
+          div.appendChild(document.createTextNode(p.value));
+        } else {
+          const sp = document.createElement("span");
+          sp.className = "chord";
+          sp.textContent = p.value;
+          sp.dataset.chord = p.value;
+          sp.title = "Bấm để đệm: " + p.value;
+
+          sp.addEventListener("click", async (e) => {
+            await ensureAudio();
+            if (!preset) loadPresetByKey(el.presetSel.value);
+
+            // UI active state
+            document.querySelectorAll(".chord.active").forEach(x => x.classList.remove("active"));
+            sp.classList.add("active");
+
+            // If hold mode ON: change at next bar boundary
+            if (holdOn) {
+              if (!holding) {
+                // start loop immediately with chosen chord
+                setNowChord(p.value);
+                startHoldLoop(p.value);
+              } else {
+                setPendingChord(p.value);
+              }
+            } else {
+              // One-shot: schedule a single bar right now
+              setNowChord(p.value);
+              setPendingChord(null);
+              const start = ctx.currentTime + 0.02;
+              scheduleOneBarBolero(p.value, start);
+            }
+          });
+
+          div.appendChild(sp);
+        }
+      }
+
+      container.appendChild(div);
+    }
+
+    el.song.innerHTML = "";
+    el.song.appendChild(container);
+  }
+
+  // ------------------------------
+  // Wiring UI
+  // ------------------------------
+  el.bpm.addEventListener("input", () => {
+    el.bpmVal.textContent = el.bpm.value;
+    // If holding, keep loop stable; nextBarTime already computed, no need to restart.
+    // Metronome needs restart to match BPM precisely.
+    if (ctx && el.metro.checked) startMetronome();
+  });
+
   el.btnEnable.addEventListener("click", async () => {
     await ensureAudio();
-    setStatus("ready (chọn preset để load)");
-    el.btnLoadPreset.disabled = false;
-    el.btnLoadProg.disabled = false;
-    // auto-load default instrument
-    const instr = INSTRUMENTS.find(x => x.id === el.presetSel.value) || INSTRUMENTS[0];
-    changeInstrument(instr);
+    // auto-load default preset
+    loadPresetByKey(el.presetSel.value);
   });
 
-  // Load preset
   el.btnLoadPreset.addEventListener("click", async () => {
     await ensureAudio();
-    const instr = INSTRUMENTS.find(x => x.id === el.presetSel.value) || INSTRUMENTS[0];
-    changeInstrument(instr);
+    loadPresetByKey(el.presetSel.value);
   });
 
-  // Load progression preset
-  el.btnLoadProg.addEventListener("click", async () => {
-    await ensureAudio();
-    if (!el.progPreset.value) return;
-    const p = PROG_PRESETS[Number(el.progPreset.value)];
-    state.progression = [...p.chords];
-    renderProgression();
+  el.presetSel.addEventListener("change", () => {
+    if (ctx) loadPresetByKey(el.presetSel.value);
   });
 
-  // Play/Stop/Clear/Undo
-  el.btnPlayProg.addEventListener("click", async () => {
+  el.btnRender.addEventListener("click", async () => {
     await ensureAudio();
-    if (!preset) {
-      const instr = INSTRUMENTS.find(x => x.id === el.presetSel.value) || INSTRUMENTS[0];
-      changeInstrument(instr);
+    renderSong(el.input.value);
+  });
+
+  el.btnExample.addEventListener("click", () => {
+    el.input.value = EXAMPLE;
+    // render immediately if audio already on
+    if (ctx) renderSong(el.input.value);
+  });
+
+  el.btnHold.addEventListener("click", async () => {
+    await ensureAudio();
+    holdOn = !holdOn;
+    el.holdState.textContent = holdOn ? "ON" : "OFF";
+    el.btnHold.textContent = holdOn ? "Tắt Hold (đệm nền)" : "Bật Hold (đệm nền)";
+
+    // If turning off hold, stop loop but keep last chord ready
+    if (!holdOn && holding) {
+      holding = false;
+      if (schedTimer) clearTimeout(schedTimer);
+      schedTimer = null;
+      setPendingChord(null);
     }
-    startProgression();
   });
 
-  el.btnStopProg.addEventListener("click", () => stopProgression());
+  el.btnStop.addEventListener("click", () => stopAll());
 
-  el.btnClear.addEventListener("click", () => {
-    state.progression = [];
-    renderProgression();
-  });
-
-  el.btnUndo.addEventListener("click", () => {
-    state.progression.pop();
-    renderProgression();
-  });
-
-  // Metronome
   el.metro.addEventListener("change", async () => {
     await ensureAudio();
     if (el.metro.checked) startMetronome();
     else stopMetronome();
   });
 
-  // If style changes, restart metronome scheduling to match beats-per-bar accent
-  el.style.addEventListener("change", () => {
-    if (el.metro.checked && ctx) startMetronome();
-  });
-
-  // Stop on tab hidden
-  document.addEventListener("visibilitychange", () => {
-    if (document.hidden) {
-      stopProgression();
-      if (el.metro.checked) stopMetronome();
+  // Space = stop
+  window.addEventListener("keydown", (e) => {
+    if (e.code === "Space") {
+      e.preventDefault();
+      stopAll();
     }
   });
+
+  // Stop on tab hidden (avoid runaway audio)
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) stopAll();
+  });
+
+  // ------------------------------
+  // Example input (your sample)
+  // ------------------------------
+  const EXAMPLE =
+`Tone: Dm
+Điệu: Bolero
+
+Intro: [Dm] [F] [C] [Dm] - [Bb] [C] [F] [Gm] - [Bb] [Am] [Dm] [Am7]
+
+1. Say giấc mộng ban [Dm] đầu yêu [Bb] người thủa mới đôi [F] mươi em [C] đang độ trăng [Dm] tròn
+Từng ngày qua [Bb] phố áo [C] em trắng cả đường [F] về
+Lá [Gm] thư ướp mộng học [Bb] trò mối [Am]tình xanh như khúc [F] hát. [Dm7] [Am7]
+
+2. Ai đã hẹn với [Dm] thề để [Bb] rồi lỡ mối duyên [F] thơ ra [C] đi chẳng giã [Dm] từ
+Ngày em thay [Bb] áo áo [C] hoa pháo đỏ rượu [F] nồng
+Có [Gm] ai nát cả cõi [Bb] lòng đứng [Am]nhìn em bước bên [Dm] chồng.
+
+ĐK: Hai mươi [C] năm [Am] cuộc mộng dở [Dm] dang khắc sâu bóng [F] nàng
+Lắng trong cung [Dm] đàn [C] em giờ ở [Dm]đâu hẳn vui duyên [F] mới
+Hai mươi [C] năm [Am] cuộc rượu còn [Dm]đây uống qua tháng [F] ngày
+Cố quên đi [Bb] người say [Am] hoài sầu không [Dm] vơi
+Tình duyên ta [F] tiếc [Am] uống thêm ly [Dm]này.
+
+3. [Am7] Ôm giấc mộng lỡ [Dm] làng những [Bb] chiều lắng tiếng mưa [F] rơi đêm [C] say chờ trăng [Dm] tàn
+Từng thu thay [Bb] lá, lá [C] rơi đắp mộ cuộc [F] tình
+Lá [Gm] bay chất nặng tuổi [Bb] đời nhớ [Am]người ta rót ly [Dm] này.`;
+
+  // Preload example in textarea
+  el.input.value = EXAMPLE;
+  el.bpmVal.textContent = el.bpm.value;
 
 })();
 </script>
