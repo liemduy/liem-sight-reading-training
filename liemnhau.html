@@ -3,110 +3,63 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Đệm hát – bấm tới đâu, đàn tới đó</title>
+  <title>Đệm hát – Tap to Enable Audio</title>
   <style>
-    :root{
-      --bg:#0b0f14; --panel:#121a24; --panel2:#0f1620;
-      --text:#e8eef7; --muted:#9fb0c7; --accent:#6aa9ff; --danger:#ff6a6a;
-      --good:#52d18f;
-    }
+    :root{--bg:#0b0f14;--panel:#121a24;--panel2:#0f1620;--text:#e8eef7;--muted:#9fb0c7;--accent:#6aa9ff;--danger:#ff6a6a;--good:#52d18f;}
     *{box-sizing:border-box}
-    body{
-      margin:0; background:linear-gradient(180deg,#070a0f 0%, #0b0f14 35%, #080b10 100%);
-      color:var(--text); font:16px/1.35 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
-      padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom) 0;
-    }
-    header{
-      position:sticky; top:0; z-index:10;
-      backdrop-filter: blur(10px);
-      background:rgba(11,15,20,.75);
-      border-bottom:1px solid rgba(255,255,255,.08);
-      padding:12px 14px;
-      display:flex; gap:10px; align-items:center; justify-content:space-between;
-    }
-    .title{font-weight:700; letter-spacing:.2px}
-    .status{font-size:12px; color:var(--muted); display:flex; gap:8px; align-items:center;}
-    .dot{width:10px; height:10px; border-radius:999px; background:var(--danger); box-shadow:0 0 0 3px rgba(255,106,106,.15);}
-    .dot.on{background:var(--good); box-shadow:0 0 0 3px rgba(82,209,143,.18);}
+    body{margin:0;background:linear-gradient(180deg,#070a0f 0%,#0b0f14 35%,#080b10 100%);color:var(--text);font:16px/1.35 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom) 0;}
+    header{position:sticky;top:0;z-index:10;backdrop-filter:blur(10px);background:rgba(11,15,20,.75);border-bottom:1px solid rgba(255,255,255,.08);padding:12px 14px;display:flex;gap:10px;align-items:center;justify-content:space-between;}
+    .title{font-weight:700}
+    .status{font-size:12px;color:var(--muted);display:flex;gap:8px;align-items:center;}
+    .dot{width:10px;height:10px;border-radius:999px;background:var(--danger);box-shadow:0 0 0 3px rgba(255,106,106,.15);}
+    .dot.on{background:var(--good);box-shadow:0 0 0 3px rgba(82,209,143,.18);}
     main{padding:14px}
-    .grid{display:grid; grid-template-columns:1fr; gap:12px; max-width:980px; margin:0 auto;}
-    .card{
-      background:rgba(18,26,36,.88);
-      border:1px solid rgba(255,255,255,.08);
-      border-radius:14px; overflow:hidden;
-      box-shadow:0 10px 30px rgba(0,0,0,.25);
-    }
-    .card .hd{
-      padding:10px 12px;
-      background:rgba(15,22,32,.9);
-      border-bottom:1px solid rgba(255,255,255,.08);
-      display:flex; justify-content:space-between; align-items:center; gap:10px;
-    }
+    .grid{display:grid;grid-template-columns:1fr;gap:12px;max-width:980px;margin:0 auto;}
+    .card{background:rgba(18,26,36,.88);border:1px solid rgba(255,255,255,.08);border-radius:14px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.25);}
+    .card .hd{padding:10px 12px;background:rgba(15,22,32,.9);border-bottom:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-between;align-items:center;gap:10px;}
     .card .hd small{color:var(--muted)}
     .card .bd{padding:12px}
-    .bigchord{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;}
-    .bigchord .cur{font-size:42px; font-weight:800; letter-spacing:.5px; color:var(--accent);}
-    .bigchord .next{font-size:14px; color:var(--muted);}
-    .controls{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-top:10px;}
-    button{
-      appearance:none; border:1px solid rgba(255,255,255,.10);
-      background:rgba(255,255,255,.06);
-      color:var(--text); padding:12px 10px; border-radius:12px;
-      font-weight:700; cursor:pointer;
-      transition:transform .05s ease, background .15s ease, border-color .15s ease;
-      user-select:none; -webkit-tap-highlight-color: transparent;
-    }
+    .bigchord{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;}
+    .bigchord .cur{font-size:42px;font-weight:800;letter-spacing:.5px;color:var(--accent);}
+    .bigchord .next{font-size:14px;color:var(--muted);}
+    .controls{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:10px;}
+    button{appearance:none;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.06);color:var(--text);padding:12px 10px;border-radius:12px;font-weight:800;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent;}
     button:active{transform:scale(.98)}
-    button.primary{background:rgba(106,169,255,.18); border-color:rgba(106,169,255,.35);}
-    button.danger{background:rgba(255,106,106,.14); border-color:rgba(255,106,106,.30);}
-    .hint{color:var(--muted); font-size:13px;}
-    .lyrics{font-size:18px; line-height:1.75; white-space:pre-wrap;}
-    .ch{
-      display:inline-block;
-      padding:.08em .38em; margin:0 .10em;
-      border-radius:10px;
-      border:1px solid rgba(255,255,255,.12);
-      background:rgba(255,255,255,.05);
-      color:#cfe2ff; font-weight:800; cursor:pointer;
-    }
-    .ch.active{
-      background:rgba(106,169,255,.25);
-      border-color:rgba(106,169,255,.55);
-      box-shadow:0 0 0 3px rgba(106,169,255,.18);
-    }
-    .footerbar{
-      position:sticky; bottom:0; z-index:20;
-      background:rgba(11,15,20,.85);
-      backdrop-filter: blur(10px);
-      border-top:1px solid rgba(255,255,255,.08);
-      padding:10px 14px;
-    }
-    .footerbar .row{
-      max-width:980px; margin:0 auto;
-      display:grid; grid-template-columns:1fr 1.3fr 1fr;
-      gap:10px; align-items:center;
-    }
-    .pad{padding-bottom:24px}
-    .pill{
-      font-size:12px; color:var(--muted);
-      padding:6px 10px; border-radius:999px;
-      border:1px solid rgba(255,255,255,.10);
-      background:rgba(255,255,255,.04);
-      display:inline-flex; gap:8px; align-items:center; justify-content:center;
-      white-space:nowrap;
-    }
+    button.primary{background:rgba(106,169,255,.18);border-color:rgba(106,169,255,.35);}
+    button.danger{background:rgba(255,106,106,.14);border-color:rgba(255,106,106,.30);}
+    .hint{color:var(--muted);font-size:13px;}
+    .lyrics{font-size:18px;line-height:1.75;white-space:pre-wrap;}
+    .ch{display:inline-block;padding:.08em .38em;margin:0 .10em;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#cfe2ff;font-weight:900;cursor:pointer;}
+    .ch.active{background:rgba(106,169,255,.25);border-color:rgba(106,169,255,.55);box-shadow:0 0 0 3px rgba(106,169,255,.18);}
+    .footerbar{position:sticky;bottom:0;z-index:20;background:rgba(11,15,20,.85);backdrop-filter:blur(10px);border-top:1px solid rgba(255,255,255,.08);padding:10px 14px;}
+    .footerbar .row{max-width:980px;margin:0 auto;display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:10px;align-items:center;}
+    .pill{font-size:12px;color:var(--muted);padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);display:inline-flex;gap:8px;align-items:center;justify-content:center;white-space:nowrap;}
     .pill b{color:var(--text)}
-    .split{display:flex; gap:10px; justify-content:center; align-items:center; flex-wrap:wrap;}
+    .split{display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap;}
     input[type="range"]{width:140px}
-    .kbd{
-      font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
-      font-size:12px; padding:2px 6px; border-radius:6px;
-      border:1px solid rgba(255,255,255,.14);
-      background:rgba(255,255,255,.05); color:var(--text);
-    }
+    .kbd{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:12px;padding:2px 6px;border-radius:6px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:var(--text);}
+
+    /* Full-screen Tap-to-enable overlay */
+    #gate{position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,.72); display:flex; align-items:center; justify-content:center; padding:24px;}
+    #gate .box{width:min(520px,100%); border-radius:16px; border:1px solid rgba(255,255,255,.14); background:rgba(18,26,36,.92);
+      box-shadow:0 18px 60px rgba(0,0,0,.45); padding:18px; text-align:left;}
+    #gate h2{margin:0 0 8px 0; font-size:18px}
+    #gate p{margin:0 0 12px 0; color:var(--muted); line-height:1.5}
+    #gate button{width:100%; padding:14px 12px; font-size:18px}
   </style>
 </head>
 <body>
+  <div id="gate">
+    <div class="box">
+      <h2>Bật âm thanh (Safari yêu cầu)</h2>
+      <p>Chạm nút bên dưới một lần để mở AudioContext. Sau đó bạn dùng <span class="kbd">NEXT</span> để bấm theo ca sĩ.</p>
+      <button class="primary" id="gateBtn">Tap to Enable Audio</button>
+      <p style="margin-top:10px">
+        Nếu bạn mở trong trình xem Zalo/Facebook/Files (không phải Safari thật), hãy chọn “Open in Safari”.
+      </p>
+    </div>
+  </div>
+
   <header>
     <div class="title">Đệm hát (bấm hợp âm theo ca sĩ)</div>
     <div class="status">
@@ -117,7 +70,6 @@
 
   <main>
     <div class="grid">
-
       <section class="card">
         <div class="hd">
           <div>
@@ -125,9 +77,7 @@
               <div class="cur" id="curChord">—</div>
               <div class="next" id="nextChord">Next: —</div>
             </div>
-            <div class="hint">
-              Chạm vào hợp âm trong lời để nghe thử. Khi hát/đệm: bấm <span class="kbd">NEXT</span> đúng lúc đổi hợp âm.
-            </div>
+            <div class="hint">Ca sĩ tới chỗ đổi hợp âm → bấm <span class="kbd">NEXT</span>. Chạm hợp âm trong lời để nhảy đúng chỗ.</div>
           </div>
           <small id="idxInfo">0 / 0</small>
         </div>
@@ -151,51 +101,29 @@
             <input id="vol" type="range" min="10" max="100" value="70" />
           </div>
 
-          <div class="hint pad" style="margin-top:8px">
-            Safari: lần đầu phải bấm <b>Bật âm thanh</b>. Sau đó chỉ việc <b>Next</b> theo ca sĩ.
+          <div class="hint" style="margin-top:8px">
+            Nếu “không có tiếng”: kiểm tra silent switch và tăng volume.
           </div>
         </div>
       </section>
 
       <section class="card">
-        <div class="hd">
-          <div><b>Lời + hợp âm</b></div>
-          <small>Hợp âm trong ngoặc vuông biến thành “nút”</small>
-        </div>
-        <div class="bd">
-          <div class="lyrics" id="lyrics"></div>
-        </div>
+        <div class="hd"><div><b>Lời + hợp âm</b></div><small>Hợp âm trong ngoặc vuông là nút</small></div>
+        <div class="bd"><div class="lyrics" id="lyrics"></div></div>
       </section>
-
-      <section class="card">
-        <div class="hd">
-          <div><b>Kịch bản sử dụng</b></div>
-          <small>Manual tap, không auto-tempo</small>
-        </div>
-        <div class="bd">
-          <ol style="margin:0; padding-left:18px; line-height:1.65">
-            <li>Mở file bằng Safari.</li>
-            <li>Bấm <b>Bật âm thanh</b> (đèn xanh).</li>
-            <li><b>Reset</b> về đầu bài.</li>
-            <li>Ca sĩ tới chỗ đổi hợp âm → bấm <b>NEXT</b>.</li>
-            <li>Lỡ bấm sai → <b>Prev</b>. Muốn nghe lại → <b>Replay</b>. Cần im ngay → <b>Mute</b>.</li>
-          </ol>
-        </div>
-      </section>
-
     </div>
   </main>
 
   <div class="footerbar">
     <div class="row">
       <button id="tapLeft">◀︎ Prev</button>
-      <button class="primary" id="tapNext" style="padding:14px 10px; font-size:18px">NEXT (tap theo ca sĩ)</button>
+      <button class="primary" id="tapNext" style="padding:14px 10px; font-size:18px">NEXT</button>
       <button id="tapReplay">⟲ Replay</button>
     </div>
   </div>
 
 <script>
-/* ========= 1) INPUT ========= */
+/* ===== 1) INPUT ===== */
 const RAW = `1. Tuổi đời chân đơn [Am] côi gót mòn đại lộ [F] buồn
 Đèn [G] đêm bóng mờ nhạt [C] nhòa
 [A7] Hồn lắng tâm [Dm] tư, đi vào dĩ [Am] vãng
@@ -219,8 +147,8 @@ Người về trong thương [E7] nhớ người đi nhớ thương [Am] ngườ
 
 function normalizeChordName(ch){ return ch.trim(); }
 
-/* ========= 2) PARSE + RENDER ========= */
-const chordEvents = []; // {chord, span}
+/* ===== 2) PARSE + RENDER ===== */
+const chordEvents = [];
 const lyricsEl = document.getElementById('lyrics');
 
 function renderLyrics(raw){
@@ -228,16 +156,14 @@ function renderLyrics(raw){
   let idx = 0;
   const html = raw.replace(re, (_, chordText) => {
     const chord = normalizeChordName(chordText);
-    return `<span class="ch" data-idx="${idx}" data-ch="${encodeURIComponent(chord)}">${chord}</span>`;
-  , idx++);
-  lyricsEl.innerHTML = html;
-  [...lyricsEl.querySelectorAll('.ch')].forEach((sp, i) => {
-    chordEvents.push({ chord: decodeURIComponent(sp.dataset.ch), span: sp });
+    return `<span class="ch" data-idx="${idx++}" data-ch="${encodeURIComponent(chord)}">${chord}</span>`;
   });
+  lyricsEl.innerHTML = html;
+  [...lyricsEl.querySelectorAll('.ch')].forEach(sp => chordEvents.push({ chord: decodeURIComponent(sp.dataset.ch), span: sp }));
 }
 renderLyrics(RAW);
 
-/* ========= 3) AUDIO (Karplus-Strong) ========= */
+/* ===== 3) AUDIO (Karplus-Strong) ===== */
 let audioCtx = null;
 let masterGain = null;
 let isMuted = false;
@@ -322,7 +248,6 @@ function pluck(ctx, freq, when, dur, bright=0.55, level=0.25, pan=0.0){
   }, Math.max(50, (dur+0.2)*1000));
 }
 
-// Voicings (MIDI) – đủ dùng cho bài này
 const VOICINGS = {
   "Am":[45,52,57,60,64],
   "A7":[45,52,55,61,64],
@@ -355,19 +280,39 @@ function buildFallbackVoicing(ch){
   return notes.sort((a,b)=>a-b);
 }
 
+function setAudioUI(on){
+  audDot.classList.toggle('on', !!on);
+  audText.textContent = on ? "Audio: đã bật" : "Audio: chưa bật";
+}
+
 function ensureAudio(){
-  if(audioCtx) return true;
-  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  masterGain = audioCtx.createGain();
-  masterGain.gain.value = 0.7;
-  masterGain.connect(audioCtx.destination);
-  audDot.classList.add('on');
-  audText.textContent = "Audio: đã bật";
-  return true;
+  try{
+    if(audioCtx) return true;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = 0.7;
+    masterGain.connect(audioCtx.destination);
+    setAudioUI(true);
+    return true;
+  }catch(err){
+    alert("Không tạo được AudioContext: " + err);
+    return false;
+  }
+}
+
+async function enableAudioFromGesture(){
+  if(!ensureAudio()) return;
+  try{
+    if(audioCtx.state === 'suspended') await audioCtx.resume();
+    document.getElementById('gate').style.display = 'none';
+    replay(); // sound check
+  }catch(err){
+    alert("Bật audio thất bại (Safari): " + err);
+  }
 }
 
 function playChord(chordName){
-  ensureAudio();
+  if(!ensureAudio()) return;
   if(audioCtx.state === 'suspended') audioCtx.resume();
   if(isMuted) return;
 
@@ -389,7 +334,7 @@ function playChord(chordName){
   });
 }
 
-/* ========= 4) TIMELINE (Prev/Next/Replay/Reset) ========= */
+/* ===== 4) TIMELINE ===== */
 let curIdx = 0;
 const curChordEl = document.getElementById('curChord');
 const nextChordEl = document.getElementById('nextChord');
@@ -400,7 +345,6 @@ function clampIdx(i){ return Math.max(0, Math.min(chordEvents.length-1, i)); }
 function setActive(i, play=false){
   if(!chordEvents.length) return;
   curIdx = clampIdx(i);
-
   chordEvents.forEach(ev => ev.span.classList.remove('active'));
   const ev = chordEvents[curIdx];
   ev.span.classList.add('active');
@@ -420,7 +364,10 @@ function prev(){ setActive(curIdx - 1, true); }
 function replay(){ if(chordEvents.length) playChord(chordEvents[curIdx].chord); }
 function reset(){ if(chordEvents.length) setActive(0,false); }
 
-document.getElementById('btnEnable').addEventListener('click', () => { ensureAudio(); replay(); });
+/* ===== UI EVENTS ===== */
+document.getElementById('gateBtn').addEventListener('click', enableAudioFromGesture);
+document.getElementById('btnEnable').addEventListener('click', enableAudioFromGesture);
+
 document.getElementById('btnNext').addEventListener('click', next);
 document.getElementById('btnPrev').addEventListener('click', prev);
 document.getElementById('btnReplay').addEventListener('click', replay);
@@ -442,6 +389,7 @@ lyricsEl.addEventListener('click', (e) => {
   setActive(+t.dataset.idx, true);
 });
 
+/* Sliders text */
 function hookSlider(id, outId, fmt){
   const s = document.getElementById(id);
   const out = document.getElementById(outId);
@@ -452,6 +400,7 @@ hookSlider('strum','strumVal', v => `${v}ms`);
 hookSlider('bright','brightVal', v => `${v}%`);
 hookSlider('vol','volVal', v => `${v}%`);
 
+/* Keyboard (Mac) */
 window.addEventListener('keydown', (e) => {
   if(e.code === 'ArrowRight' || e.code === 'Space'){ e.preventDefault(); next(); }
   if(e.code === 'ArrowLeft'){ prev(); }
