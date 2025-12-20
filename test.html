@@ -2,135 +2,134 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Bolero Karaoke Guitar Player</title>
+    <title>Thực hành Tay Phải: Gõ Cửa Trái Tim</title>
     <style>
-        :root { --gold: #f1c40f; --bg: #1a1a1a; }
+        :root { --gold: #f1c40f; --bg: #121212; }
         body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        .player { background: #333; padding: 30px; border-radius: 20px; width: 90%; max-width: 800px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); border: 2px solid #444; }
-        .lyrics-box { height: 180px; overflow: hidden; position: relative; border-bottom: 2px solid #444; margin-bottom: 20px; text-align: center; }
-        .lyrics-container { position: absolute; width: 100%; transition: top 0.5s ease; top: 60px; }
-        .line { font-size: 1.5rem; margin: 15px 0; opacity: 0.3; transition: 0.3s; }
-        .line.active { opacity: 1; color: var(--gold); transform: scale(1.1); font-weight: bold; }
-        .chord-indicator { font-size: 0.9rem; color: #e67e22; vertical-align: super; margin: 0 5px; }
-        .visualizer { display: flex; justify-content: center; gap: 5px; height: 50px; align-items: flex-end; }
-        .bar { width: 8px; background: var(--gold); height: 10%; transition: 0.1s; border-radius: 2px; }
-        button { background: #27ae60; color: white; border: none; padding: 15px 40px; font-size: 1.2rem; border-radius: 50px; cursor: pointer; display: block; margin: 20px auto; transition: 0.3s; }
-        button:hover { background: #2ecc71; transform: scale(1.05); }
+        .player { background: #222; padding: 30px; border-radius: 20px; width: 95%; max-width: 900px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); border: 1px solid #333; }
+        
+        .lyrics-area { height: 150px; text-align: center; margin-bottom: 20px; overflow: hidden; }
+        .line { font-size: 1.6rem; transition: 0.3s; opacity: 0.2; margin: 10px 0; }
+        .line.active { opacity: 1; color: var(--gold); transform: scale(1.1); }
+
+        .control-panel { display: flex; justify-content: space-around; background: #333; padding: 20px; border-radius: 15px; margin-top: 20px; }
+        .option-card { text-align: center; flex: 1; padding: 10px; border: 2px solid transparent; cursor: pointer; border-radius: 10px; transition: 0.3s; }
+        .option-card:hover { background: #444; }
+        .option-card.selected { border-color: var(--gold); background: #444; }
+        
+        .guitar-strings { height: 100px; display: flex; flex-direction: column; justify-content: space-between; margin: 20px 0; position: relative; }
+        .string { height: 2px; background: #666; width: 100%; position: relative; }
+        .active-string { background: var(--gold) !important; box-shadow: 0 0 10px var(--gold); }
+
+        .main-btn { background: #e67e22; color: white; border: none; padding: 15px 50px; font-size: 1.2rem; border-radius: 50px; cursor: pointer; margin: 20px auto; display: block; }
+        .status-badge { text-align: center; color: var(--gold); font-weight: bold; margin-top: 10px; }
     </style>
 </head>
 <body>
 
 <div class="player">
-    <div class="lyrics-box">
-        <div id="lyricLines" class="lyrics-container">
-            <div class="line" id="l0">Gõ cửa trái <span class="chord-indicator">[Dm]</span> tim...</div>
-            <div class="line" id="l1">Gõ cửa trái <span class="chord-indicator">[Dm]</span> tim <span class="chord-indicator">[Gm]</span> van em được <span class="chord-indicator">[Dm]</span> vào</div>
-            <div class="line" id="l2"><span class="chord-indicator">[F7]</span> Dù tình xót <span class="chord-indicator">[Bb]</span> xa <span class="chord-indicator">[C7]</span> chung thân huyệt <span class="chord-indicator">[F]</span> đào</div>
-            <div class="line" id="l3">Ngủ <span class="chord-indicator">[A7]</span> vùi với chiêm <span class="chord-indicator">[Dm]</span> bao, nỗi <span class="chord-indicator">[D7]</span> niềm mắt xanh <span class="chord-indicator">[Gm]</span> xao</div>
-            <div class="line" id="l4">Nhưng anh vẫn <span class="chord-indicator">[F]</span> ngóng tim em mở <span class="chord-indicator">[A7]</span> cửa</div>
-            <div class="line" id="l5">Kết thúc đoạn 1</div>
+    <h2 style="text-align:center">🎸 Ứng dụng Tay Phải: Gõ Cửa Trái Tim</h2>
+    
+    <div class="lyrics-area">
+        <div id="l1" class="line">Gõ cửa trái [Dm] tim van em được [Dm] vào...</div>
+        <div id="l2" class="line">Ôi cửa tim em [Bb] bằng vàng...</div>
+    </div>
+
+    <div class="guitar-strings" id="neck">
+        <div class="string" id="s6"></div><div class="string" id="s5"></div>
+        <div class="string" id="s4"></div><div class="string" id="s3"></div>
+        <div class="string" id="s2"></div><div class="string" id="s1"></div>
+    </div>
+
+    <div class="control-panel">
+        <div class="option-card selected" id="optRai" onclick="setMode('rai')">
+            <h3>OPTION 1: RẢI</h3>
+            <p>(Bass - 3 - 2 - 1)</p>
+            <small>Dùng cho Lời 1 & 2</small>
+        </div>
+        <div class="option-card" id="optQuat" onclick="setMode('quat')">
+            <h3>OPTION 2: QUẠT</h3>
+            <p>(Xuống - Chát - Lên - Lên)</p>
+            <small>Dùng cho ĐIỆP KHÚC</small>
         </div>
     </div>
 
-    <div class="visualizer" id="viz">
-        <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
-        <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
-    </div>
-
-    <button id="startBtn">▶ BẮT ĐẦU CHƠI NHẠC</button>
+    <button class="main-btn" id="startBtn">BẮT ĐẦU ĐỆM NHẠC</button>
+    <div id="status" class="status-badge">Chế độ hiện tại: RẢI (Tình cảm)</div>
 </div>
 
 <script>
-    const AudioCtx = window.AudioContext || window.webkitAudioContext;
-    let audioCtx;
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let mode = 'rai';
     let isPlaying = false;
 
-    // Tần số nốt nhạc
-    const notes = { D2: 73.42, D3: 146.83, F3: 174.61, A3: 220.00, Bb3: 233.08, C4: 261.63, D4: 293.66, G2: 98.00, G3: 196.00, E2: 82.41, A2: 110.00 };
+    function setMode(m) {
+        mode = m;
+        document.getElementById('optRai').classList.toggle('selected', m === 'rai');
+        document.getElementById('optQuat').classList.toggle('selected', m === 'quat');
+        document.getElementById('status').innerText = "Chế độ hiện tại: " + (m === 'rai' ? "RẢI (Tình cảm)" : "QUẠT (Mạnh mẽ)");
+    }
 
-    function createGuitarTone(freq, time, duration, vol) {
+    function playNote(freq, time, dur) {
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.type = 'triangle';
         osc.frequency.setValueAtTime(freq, time);
-        gain.gain.setValueAtTime(0, time);
-        gain.gain.linearRampToValueAtTime(vol, time + 0.01);
-        gain.gain.exponentialRampToValueAtTime(0.001, time + duration);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start(time);
-        osc.stop(time + duration);
+        gain.gain.setValueAtTime(0.3, time);
+        gain.gain.exponentialRampToValueAtTime(0.01, time + dur);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(time); osc.stop(time + dur);
     }
 
-    function playPercussion(time) {
-        // Mô phỏng tiếng gõ Conga (low)
-        createGuitarTone(100, time, 0.1, 0.1);
-        // Mô phỏng tiếng "Chát" (high)
-        createGuitarTone(600, time + 0.5, 0.05, 0.05);
+    function animateString(s) {
+        const el = document.getElementById('s' + s);
+        el.classList.add('active-string');
+        setTimeout(() => el.classList.remove('active-string'), 200);
     }
 
-    function playBoleroBar(chord, startTime) {
-        const tempo = 0.8; // Giây mỗi nhịp
-        // Bass
-        let bass = notes.D2;
-        let triad = [notes.D3, notes.F3, notes.A3];
-        
-        if(chord === 'Gm') { bass = notes.G2; triad = [notes.G3, notes.Bb3, notes.D4]; }
-        if(chord === 'A7') { bass = notes.A2; triad = [notes.A3, notes.C4, notes.D4]; }
-        if(chord === 'Bb') { bass = notes.Bb3/2; triad = [notes.Bb3, notes.D4, notes.F3]; }
+    function playLoop(chord, startTime) {
+        const t = startTime;
+        const bassFreq = chord === 'Dm' ? 146 : 110; // Dây 4 hoặc dây 5
+        const bassString = chord === 'Dm' ? 4 : 5;
 
-        createGuitarTone(bass, startTime, 1.2, 0.6); // Bùm
-        createGuitarTone(triad[0], startTime + tempo*0.25, 0.4, 0.3); // rải 3
-        createGuitarTone(triad[1], startTime + tempo*0.35, 0.4, 0.3); // rải 2
-        createGuitarTone(triad[2], startTime + tempo*0.45, 0.4, 0.3); // rải 1
-        
-        // Tiếng Chát
-        createGuitarTone(triad[0], startTime + tempo*0.7, 0.1, 0.2);
-        createGuitarTone(triad[1], startTime + tempo*0.7, 0.1, 0.2);
-        createGuitarTone(triad[2], startTime + tempo*0.7, 0.1, 0.2);
-
-        playPercussion(startTime);
+        if (mode === 'rai') {
+            // Bass - 3 - 2 - 1
+            playNote(bassFreq, t, 1); animateString(bassString);
+            playNote(196, t + 0.3, 0.5); setTimeout(() => animateString(3), 300);
+            playNote(246, t + 0.6, 0.5); setTimeout(() => animateString(2), 600);
+            playNote(293, t + 0.9, 0.5); setTimeout(() => animateString(1), 900);
+        } else {
+            // Quạt: Bass - Xuống - Chát - Lên
+            playNote(bassFreq, t, 1); animateString(bassString);
+            // Giả lập tiếng quạt bằng cách phát nhanh nhiều nốt
+            [200, 250, 300].forEach((f, i) => {
+                playNote(f, t + 0.4 + (i*0.02), 0.2);
+                setTimeout(() => animateString(3-i), 400);
+            });
+        }
     }
-
-    const sequence = [
-        { t: 0, chord: 'Dm', line: 0 },
-        { t: 3.2, chord: 'Dm', line: 1 },
-        { t: 6.4, chord: 'Gm', line: 1 },
-        { t: 9.6, chord: 'Dm', line: 1 },
-        { t: 12.8, chord: 'F7', line: 2 },
-        { t: 16.0, chord: 'Bb', line: 2 },
-        { t: 19.2, chord: 'C7', line: 2 },
-        { t: 22.4, chord: 'A7', line: 3 },
-        { t: 25.6, chord: 'Dm', line: 3 },
-        { t: 28.8, chord: 'A7', line: 4 }
-    ];
 
     document.getElementById('startBtn').onclick = function() {
-        if (!audioCtx) audioCtx = new AudioCtx();
         if (isPlaying) return;
         isPlaying = true;
-        this.style.display = 'none';
+        this.disabled = true;
+        this.innerText = "ĐANG CHƠI...";
 
-        const startTime = audioCtx.currentTime + 0.5;
-
-        sequence.forEach(step => {
-            const playTime = startTime + step.t;
+        let now = audioCtx.currentTime;
+        
+        // Vòng lặp mô phỏng
+        for(let i=0; i<20; i++) {
+            let chord = i < 8 ? 'Dm' : 'Bb';
+            let line = i < 8 ? 'l1' : 'l2';
             
-            // Lên lịch chơi nhạc
-            playBoleroBar(step.chord, playTime);
-
-            // Lên lịch chạy lời
             setTimeout(() => {
                 document.querySelectorAll('.line').forEach(l => l.classList.remove('active'));
-                document.getElementById('l' + step.line).classList.add('active');
-                document.getElementById('lyricLines').style.top = (60 - (step.line * 50)) + 'px';
-                
-                // Visualizer nhẩy
-                document.querySelectorAll('.bar').forEach(b => b.style.height = Math.random()*100 + '%');
-            }, step.t * 1000);
-        });
+                document.getElementById(line).classList.add('active');
+            }, i * 1500);
+
+            playLoop(chord, now + (i * 1.5));
+        }
     };
 </script>
-
 </body>
 </html>
