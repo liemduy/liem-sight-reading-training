@@ -1,46 +1,136 @@
 // engine.js
-// Gộp Audio + Sequencer + Theory + State vào 1 file để đúng “3 file”.
-// UI chỉ gọi public API của engine, không đụng Tone.js trực tiếp.
+// Engine: Audio (Tone.js) + Sequencer (pattern) + Music-theory helpers + State store
+// Mục tiêu: UI chỉ gọi public API; không đụng trực tiếp Tone.js.
 
 export function createEngine({ Tone, SONGS, PATTERNS, CHORD_DB, GENRE_DEFAULTS }) {
   if (!Tone) throw new Error("Tone.js is required. Load Tone.js before app.js.");
 
   // =========================
-  // Constants (bám file mẫu)
+  // Sample config (MP3-first for mobile/Safari compatibility)
   // =========================
-  const SAMPLE_BASE_URL =
-    "https://cdn.jsdelivr.net/npm/tonejs-instrument-guitar-acoustic-ogg@1.1.0/";
-  const SAMPLE_URLS = {
-    E2: "E2.ogg",
-    F2: "F2.ogg",
-    G2: "G2.ogg",
-    A2: "A2.ogg",
-    B2: "B2.ogg",
-    C3: "C3.ogg",
-    D3: "D3.ogg",
-    E3: "E3.ogg",
-    F3: "F3.ogg",
-    G3: "G3.ogg",
-    A3: "A3.ogg",
-    B3: "B3.ogg",
-    C4: "C4.ogg",
-    D4: "D4.ogg",
-    E4: "E4.ogg",
-    F4: "F4.ogg",
-    G4: "G4.ogg",
+  const SAMPLE_PACK = {
+    mp3: {
+      baseUrl: "https://cdn.jsdelivr.net/npm/tonejs-instrument-guitar-acoustic-mp3@1.1.2/",
+      ext: "mp3",
+    },
+    ogg: {
+      baseUrl: "https://cdn.jsdelivr.net/npm/tonejs-instrument-guitar-acoustic-ogg@1.1.0/",
+      ext: "ogg",
+    },
   };
 
-  // Standard tuning MIDI for strings 6->1: E2 A2 D3 G3 B3 E4
-  const TUNING_MIDI_6_TO_1 = [40, 45, 50, 55, 59, 64];
+  function browserCanPlayOggVorbis() {
+    try {
+      const a = document.createElement("audio");
+      return Boolean(a && a.canPlayType && a.canPlayType('audio/ogg; codecs="vorbis"'));
+    } catch {
+      return false;
+    }
+  }
 
-  // Strum spread (bám file mẫu): 0.012s ~ 12ms
-  const STRUM_DELAY_SEC = 0.012;
+  // Thực dụng: MP3 là mặc định (ổn nhất trên iOS/Safari). Nếu bạn muốn ưu tiên OGG
+  // trên Chrome/Firefox, có thể đổi điều kiện bên dưới.
+  const SELECTED_PACK = SAMPLE_PACK.mp3; // browserCanPlayOggVorbis() ? SAMPLE_PACK.ogg : SAMPLE_PACK.mp3;
 
-  // Start offset để tránh click/glitch (bám file mẫu)
-  const TRANSPORT_START_OFFSET = "+0.05";
+  const SAMPLE_URLS = {
+    E2: `E2.${SELECTED_PACK.ext}`,
+    F2: `F2.${SELECTED_PACK.ext}`,
+    G2: `G2.${SELECTED_PACK.ext}`,
+    A2: `A2.${SELECTED_PACK.ext}`,
+    B2: `B2.${SELECTED_PACK.ext}`,
+    C3: `C3.${SELECTED_PACK.ext}`,
+    D3: `D3.${SELECTED_PACK.ext}`,
+    E3: `E3.${SELECTED_PACK.ext}`,
+    F3: `F3.${SELECTED_PACK.ext}`,
+    G3: `G3.${SELECTED_PACK.ext}`,
+    A3: `A3.${SELECTED_PACK.ext}`,
+    B3: `B3.${SELECTED_PACK.ext}`,
+    C4: `C4.${SELECTED_PACK.ext}`,
+    D4: `D4.${SELECTED_PACK.ext}`,
+    E4: `E4.${SELECTED_PACK.ext}`,
+    F4: `F4.${SELECTED_PACK.ext}`,
+    G4: `G4.${SELECTED_PACK.ext}`,
+  };
+
+  const LOAD_TIMEOUT_MS = 25_000;
+
+  function withTimeout(promise, ms, msg) {
+    let t;
+    const timeout = new Promise((_, rej) => {
+      t = setTimeout(() => rej(new Error(msg)), ms);
+    });
+    return Promise.race([promise.finally(() => clearTimeout(t)), timeout]);
+  }
 
   // =========================
-  // Internal audio nodes
+  // Timing constants
+  // =========================
+  const TRANSPORT_START_OFFSET = "+0.05"; // tránh click khi start
+
+  // Standard tuning (E2 A2 D3 G3 B3 E4) mapping strings 6..1
+  const TUNING_MIDI_6_TO_1 = [40, 45, 50, 55, 59, 64];
+
+  // =========================
+  // State
+  // =========================
+  const state = {
+    // runtime
+    ready: false,
+    playing: false,
+
+    // current song
+    song: null,
+    bpm: 78,
+    transpose: 0, // semitones
+
+    // controls
+    dynamics: 50,
+    dynamicsSmoothed: 50, // internal smoothing
+    changeMode: "nextBar", // "nextBar" | "immediate"
+    bassMode: "auto", // "auto" | 6 | 5 | 4
+    metronome: "off", // "off" | "on"
+
+    // lyric parsing / progression
+    lyricsTokens: [],
+    progression: [],
+    freestyle: [],
+    activeChordIndex: 0,
+    queuedChordIndex: null,
+    activeChordName: null,
+    queuedChordName: null,
+
+    // patterns / slots
+    slots: Array.from({ length: 6 }, () => ({ patternId: null })),
+    activeSlotIndex: 0,
+    activePatternId: null,
+    queuedPatternId: null,
+
+    // playback counters
+    stepIndex: 0,
+    barIndex: 0,
+    stepInBar: 0,
+    lastNote: "—",
+
+    // computed UI
+    lyricsHtml: "",
+
+    // melody pad (7 bậc)
+    melody: { notes: [] },
+
+    // song defaults
+    timeSig: { num: 4, den: 4 },
+    quantize: "BAR",
+
+    // fill
+    fillArmed: false,
+  };
+
+  // Dirty flags để tránh rebuild nặng mỗi tick
+  let lyricsDirty = true;
+  let melodyDirty = true;
+
+  // =========================
+  // Audio nodes
   // =========================
   let guitar = null;
   let reverb = null;
@@ -48,124 +138,131 @@ export function createEngine({ Tone, SONGS, PATTERNS, CHORD_DB, GENRE_DEFAULTS }
   let metroSynth = null;
 
   // =========================
-  // State + subscriptions
+  // Simple store
   // =========================
-  const subscribers = new Set();
+  const subs = new Set();
 
-  const state = {
-    ready: false,
-    playing: false,
+  function snapshot() {
+    // Trả snapshot “đủ dùng” cho UI, hạn chế clone nặng.
+    return {
+      ready: state.ready,
+      playing: state.playing,
 
-    // song context
-    song: null,
-    timeSig: { num: 4, den: 4 },
-    quantize: "BAR",
-    bpm: 78,
-    transpose: 0, // semitone
-    dynamics: 50, // 0..100 (target)
-    dynamicsSmoothed: 50, // internal smoothing
+      song: state.song,
+      bpm: state.bpm,
+      transpose: state.transpose,
 
-    // chord progression extracted from lyrics
-    progression: [], // chord names as they appear (raw)
-    freestyle: [], // unique chords for freestyle row
-    activeChordIndex: 0, // index in progression
-    queuedChordIndex: null, // index in progression (nextChord)
-    activeChordName: null, // raw chord name (progression[activeChordIndex] or freestyle)
-    queuedChordName: null, // raw chord name
+      dynamics: state.dynamics,
+      dynamicsSmoothed: state.dynamicsSmoothed,
+      changeMode: state.changeMode,
+      bassMode: state.bassMode,
+      metronome: state.metronome,
 
-    // patterns / slots
-    slots: Array.from({ length: 6 }, () => ({ patternId: null })),
-    activeSlotIndex: 0,
-    activePatternId: null,
-    queuedPatternId: null,
-    fillArmed: false,
+      lyricsHtml: state.lyricsHtml,
 
-    // sequencer runtime
-    stepIndex: 0,
-    barIndex: 0,
-    stepInBar: 0,
-    lastNote: "—",
+      progression: state.progression,
+      freestyle: state.freestyle,
+      activeChordIndex: state.activeChordIndex,
+      queuedChordIndex: state.queuedChordIndex,
+      activeChordName: state.activeChordName,
+      queuedChordName: state.queuedChordName,
 
-    // lyrics rendering
-    lyricsTokens: [], // {type:'text'|'chord', value, chordIndex?}
-    lyricsHtml: "",
+      slots: state.slots.map((s) => ({ patternId: s.patternId })),
+      activeSlotIndex: state.activeSlotIndex,
+      activePatternId: state.activePatternId,
+      queuedPatternId: state.queuedPatternId,
 
-    // melody pad
-    melody: {
-      labels: ["1", "2", "3", "4", "5", "6", "7"],
-      notes: [], // note names after transpose (e.g., ["D4","E4"...])
-    },
+      stepIndex: state.stepIndex,
+      barIndex: state.barIndex,
+      stepInBar: state.stepInBar,
+      lastNote: state.lastNote,
 
-    // modes (optional)
-    changeMode: "nextBar", // "nextBar" | "immediate"
-    bassMode: "auto", // "auto" | 6 | 5 | 4
-    metronome: "off", // "off" | "on"
-  };
+      melody: { notes: Array.isArray(state.melody.notes) ? [...state.melody.notes] : [] },
+
+      timeSig: state.timeSig,
+      quantize: state.quantize,
+      fillArmed: state.fillArmed,
+    };
+  }
 
   function emit() {
-    const snapshot = JSON.parse(JSON.stringify(state));
-    subscribers.forEach((fn) => {
+    const s = snapshot();
+    subs.forEach((fn) => {
       try {
-        fn(snapshot);
+        fn(s);
       } catch (e) {
-        console.error("[engine] subscriber error", e);
+        console.error("Subscriber error:", e);
       }
     });
   }
 
   function subscribe(fn) {
-    subscribers.add(fn);
-    fn(JSON.parse(JSON.stringify(state)));
-    return () => subscribers.delete(fn);
+    subs.add(fn);
+    fn(snapshot());
+    return () => subs.delete(fn);
   }
 
   // =========================
-  // Utility: time signature & steps
+  // Utility: time signature & quantize
   // =========================
   function resolveTimeSignature(song) {
     if (song?.time_signature?.num && song?.time_signature?.den) return song.time_signature;
-    const g = GENRE_DEFAULTS[song?.genre_id] || GENRE_DEFAULTS.bolero;
-    return g.time_signature;
+    const g = GENRE_DEFAULTS?.[song?.genre_id] || GENRE_DEFAULTS?.bolero;
+    return g?.time_signature || { num: 4, den: 4 };
   }
 
   function resolveQuantize(song) {
     if (song?.quantize) return song.quantize;
-    const g = GENRE_DEFAULTS[song?.genre_id] || GENRE_DEFAULTS.bolero;
-    return g.quantize || "BAR";
-  }
-
-  // 8th-note grid:
-  // - den=4: 1 beat = 2 steps (8th)
-  // - den=8: 1 beat = 1 step (8th)
-  function stepsPerBar(timeSig) {
-    const { num, den } = timeSig;
-    const stepsPerBeat = den === 4 ? 2 : 1;
-    return num * stepsPerBeat;
+    const g = GENRE_DEFAULTS?.[song?.genre_id] || GENRE_DEFAULTS?.bolero;
+    return g?.quantize || "BAR";
   }
 
   // =========================
-  // Theory: parse lyrics & transpose (visual)
+  // Utility: lyrics parsing
   // =========================
+  function escapeHtml(s) {
+    return String(s)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
   function parseLyrics(lyricsText) {
     const tokens = [];
     const progression = [];
+
+    const txt = String(lyricsText || "");
     const re = /\[([^\]]+)\]/g;
-    let lastIndex = 0;
-    let match;
+
+    let last = 0;
     let chordIndex = 0;
 
-    while ((match = re.exec(lyricsText)) !== null) {
-      const before = lyricsText.slice(lastIndex, match.index);
+    for (;;) {
+      const m = re.exec(txt);
+      if (!m) break;
+
+      const start = m.index;
+      const end = start + m[0].length;
+
+      const before = txt.slice(last, start);
       if (before) tokens.push({ type: "text", value: escapeHtml(before) });
 
-      const chordRaw = (match[1] || "").trim();
-      const idx = chordIndex++;
-      tokens.push({ type: "chord", value: chordRaw, chordIndex: idx });
-      progression.push(chordRaw);
+      const chordRaw = (m[1] || "").trim();
+      if (chordRaw) {
+        tokens.push({ type: "chord", value: chordRaw, chordIndex });
+        progression.push(chordRaw);
+        chordIndex += 1;
+      } else {
+        // rỗng: giữ nguyên như text
+        tokens.push({ type: "text", value: escapeHtml(m[0]) });
+      }
 
-      lastIndex = match.index + match[0].length;
+      last = end;
     }
-    const tail = lyricsText.slice(lastIndex);
+
+    const tail = txt.slice(last);
     if (tail) tokens.push({ type: "text", value: escapeHtml(tail) });
 
     return { tokens, progression };
@@ -174,21 +271,23 @@ export function createEngine({ Tone, SONGS, PATTERNS, CHORD_DB, GENRE_DEFAULTS }
   function uniqueByFirstAppearance(arr) {
     const seen = new Set();
     const out = [];
-    for (const x of arr) {
-      if (seen.has(x)) continue;
-      seen.add(x);
-      out.push(x);
+    for (const x of arr || []) {
+      if (!seen.has(x)) {
+        seen.add(x);
+        out.push(x);
+      }
     }
     return out;
   }
 
-  // Visual transpose chord name (root only, suffix preserved).
-  // MVP supports roots: A-G with optional #/b. Suffix: whatever remains (m,7,m7,...).
+  // =========================
+  // Utility: chord transpose
+  // =========================
   const NOTE_ORDER_SHARPS = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-  const NOTE_ORDER_FLATS  = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
+  const NOTE_ORDER_FLATS = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
 
   function parseChordName(chord) {
-    const m = /^([A-G])([#b]?)(.*)$/.exec(chord.trim());
+    const m = /^([A-G])([#b]?)(.*)$/.exec(String(chord || "").trim());
     if (!m) return null;
     return { root: m[1] + (m[2] || ""), suffix: m[3] || "" };
   }
@@ -210,19 +309,17 @@ export function createEngine({ Tone, SONGS, PATTERNS, CHORD_DB, GENRE_DEFAULTS }
   }
 
   function preferSharpsForKey(key) {
-    // Heuristic: nếu original_key có 'b' -> prefer flats; nếu có '#'/khác -> prefer sharps
     if (!key) return true;
-    if (key.includes("b")) return false;
-    if (key.includes("#")) return true;
-    // keys tự nhiên: mặc định sharps
+    if (String(key).includes("b")) return false;
+    if (String(key).includes("#")) return true;
     return true;
   }
 
-  function transposeChordName(chordRaw, semis, preferSharps) {
+  function transposeChordName(chordRaw, semis, preferSharps = true) {
     const p = parseChordName(chordRaw);
     if (!p) return chordRaw;
-    const rootT = transposeRoot(p.root, semis, preferSharps);
-    return `${rootT}${p.suffix}`;
+    const nextRoot = transposeRoot(p.root, semis, preferSharps);
+    return `${nextRoot}${p.suffix || ""}`;
   }
 
   function buildLyricsHtml(tokens) {
@@ -230,14 +327,16 @@ export function createEngine({ Tone, SONGS, PATTERNS, CHORD_DB, GENRE_DEFAULTS }
     const activeIdx = state.activeChordIndex;
     const queuedIdx = state.queuedChordIndex;
 
-    return tokens
+    return (tokens || [])
       .map((t) => {
         if (t.type === "text") return t.value;
+
         const chordDisp = transposeChordName(t.value, state.transpose, preferSharps);
         let cls = "chord";
         if (t.chordIndex === activeIdx) cls += " chord-active";
         else if (queuedIdx != null && t.chordIndex === queuedIdx) cls += " chord-queued";
         else if (t.chordIndex < activeIdx) cls += " chord-past";
+
         return `<span class="${cls}" data-chord-index="${t.chordIndex}">[${escapeHtml(
           chordDisp
         )}]</span>`;
@@ -245,96 +344,89 @@ export function createEngine({ Tone, SONGS, PATTERNS, CHORD_DB, GENRE_DEFAULTS }
       .join("");
   }
 
-  function escapeHtml(s) {
-    return String(s)
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
+  function refreshLyricsIfNeeded() {
+    if (!lyricsDirty) return;
+    state.lyricsHtml = buildLyricsHtml(state.lyricsTokens);
+    lyricsDirty = false;
   }
 
   // =========================
-  // Audio: voicing + trigger (bám file mẫu)
+  // Audio: voicing + trigger
   // =========================
   function midiToNoteName(midi) {
     return Tone.Frequency(midi, "midi").toNote();
   }
 
   function getNoteForString(chordRaw, stringNum) {
-    const entry = CHORD_DB[chordRaw];
+    const entry = CHORD_DB?.[chordRaw];
     if (!entry) return null;
-    const idx = 6 - stringNum; // 6->0 ... 1->5
-    const fret = entry.frets[idx];
+    const idx = 6 - stringNum; // string 6->0 ... 1->5
+    const fret = entry.frets?.[idx];
     if (fret == null || fret < 0) return null;
     const midi = TUNING_MIDI_6_TO_1[idx] + fret + state.transpose;
     return midiToNoteName(midi);
   }
 
-  function activeStrings(chordRaw) {
-    const arr = [];
-    for (let s = 6; s >= 1; s--) {
-      if (getNoteForString(chordRaw, s)) arr.push(s);
+  function safeTrigger(note, dur, time, vel) {
+    if (!guitar) return;
+    try {
+      guitar.triggerAttackRelease(note, dur, time, vel);
+      state.lastNote = note;
+    } catch (e) {
+      // Không crash transport khi sampler bị dispose hoặc chưa sẵn.
+      console.warn("trigger failed:", e);
     }
-    return arr; // 6->1
   }
 
-  function safeTrigger(note, duration, time, vel) {
-    if (!note || !guitar) return;
-    guitar.triggerAttackRelease(note, duration, time, vel);
-    state.lastNote = note;
-  }
-
-  function doStrum(direction, time, velBase) {
-    const chordRaw = state.activeChordName;
-    if (!chordRaw) return;
-
-    const strings = activeStrings(chordRaw);
-    const ordered = direction === "down" ? strings : [...strings].reverse();
-
-    ordered.forEach((s, idx) => {
-      const n = getNoteForString(chordRaw, s);
-      if (!n) return;
-      safeTrigger(n, "2n", time + idx * STRUM_DELAY_SEC, velBase);
-    });
-  }
-
-  function pickBassString(chordRaw, which) {
-    const entry = CHORD_DB[chordRaw];
-    const root = entry?.bass ?? 6;
-
+  function pickBassString(chordRaw) {
     if (state.bassMode !== "auto") return Number(state.bassMode);
-
-    if (which === "root") return root;
-    // alt: if root on 6/5 -> 4; if root on 4 -> 5 (best-effort)
-    if (root === 4) return 5;
-    return 4;
+    const entry = CHORD_DB?.[chordRaw];
+    const bass = entry?.bass;
+    if (bass === 6 || bass === 5 || bass === 4) return bass;
+    // fallback: ưu tiên dây 6 -> 5 -> 4 có nốt
+    if (getNoteForString(chordRaw, 6)) return 6;
+    if (getNoteForString(chordRaw, 5)) return 5;
+    if (getNoteForString(chordRaw, 4)) return 4;
+    return 5;
   }
 
-  function doBass(which, time, bassVel) {
-    const chordRaw = state.activeChordName;
-    if (!chordRaw) return;
-
-    const s = pickBassString(chordRaw, which);
-    const n = getNoteForString(chordRaw, s);
-    if (!n) return;
-    safeTrigger(n, "2n", time, bassVel);
-  }
-
-  function doPluck(stringNum, time, velBase) {
-    const chordRaw = state.activeChordName;
-    if (!chordRaw) return;
+  function playBass(chordRaw, time, vel) {
+    const stringNum = pickBassString(chordRaw);
     const n = getNoteForString(chordRaw, stringNum);
     if (!n) return;
-    safeTrigger(n, "2n", time, velBase);
+    safeTrigger(n, "8n", time, vel);
   }
 
+  function playPluck(chordRaw, stringNum, time, vel) {
+    const n = getNoteForString(chordRaw, stringNum);
+    if (!n) return;
+    safeTrigger(n, "8n", time, vel);
+  }
+
+  function strum(chordRaw, direction, time, velBase) {
+    // direction: "down" (6->1) or "up" (1->6)
+    const order = direction === "up" ? [1, 2, 3, 4, 5, 6] : [6, 5, 4, 3, 2, 1];
+    const STRUM_DELAY = 0.012; // seconds
+
+    let i = 0;
+    for (const sNum of order) {
+      const n = getNoteForString(chordRaw, sNum);
+      if (!n) continue;
+      safeTrigger(n, "8n", time + i * STRUM_DELAY, velBase);
+      i += 1;
+    }
+  }
+
+  // =========================
+  // Metronome
+  // =========================
   function maybeMetronome(stepInBar, time) {
     if (state.metronome !== "on" || !metroSynth) return;
 
     const accent = stepInBar === 0;
-    const isBeat = stepInBar % 2 === 0;
+    const isBeat = stepInBar % 2 === 0; // 8n grid: beat at even indices (0,2,4,6)
 
+    // 6/8 pulse: 1 & a 2 & a => pulse on 0 and 3 (giống file mẫu)
     const isSixEight = state.song?.genre_id === "six_eight";
     const isPulse = isSixEight ? stepInBar === 0 || stepInBar === 3 : isBeat;
 
@@ -343,20 +435,11 @@ export function createEngine({ Tone, SONGS, PATTERNS, CHORD_DB, GENRE_DEFAULTS }
   }
 
   // =========================
-  // Dynamics mapping (smooth)
+  // Dynamics
   // =========================
   function updateDynamicsSmoothing() {
-    // simple low-pass
     const a = 0.18; // responsiveness
     state.dynamicsSmoothed = state.dynamicsSmoothed + (state.dynamics - state.dynamicsSmoothed) * a;
-  }
-
-  function dynamicsToVelocity(dyn) {
-    // map 0..100 -> 0.35..0.85
-    const t = Math.min(100, Math.max(0, dyn)) / 100;
-    const base = 0.35 + t * (0.85 - 0.35);
-    const bass = Math.min(1.0, base + 0.15);
-    return { baseVel: base, bassVel: bass };
   }
 
   function dynRegion(dyn) {
@@ -365,23 +448,46 @@ export function createEngine({ Tone, SONGS, PATTERNS, CHORD_DB, GENRE_DEFAULTS }
     return "HARD";
   }
 
+  function dynamicsToVelocity(dyn) {
+    // map 0..100 -> ~0.35..0.85
+    const t = Math.min(100, Math.max(0, dyn)) / 100;
+    const baseVel = 0.35 + t * 0.5;
+    const bassVel = Math.min(0.95, baseVel + 0.08);
+    return { baseVel, bassVel };
+  }
+
   // =========================
-  // Sequencer (bám file mẫu: scheduleRepeat "8n")
+  // Patterns / Song defaults
   // =========================
   function getPatternById(id) {
-    return PATTERNS.find((p) => p.id === id) || null;
+    return (PATTERNS || []).find((p) => p.id === id) || null;
   }
 
   function resolveDefaultPatternForSong(song) {
-    // ưu tiên pattern cùng genre và khớp timeSig
-    const ts = resolveTimeSignature(song);
-    const candidates = PATTERNS.filter((p) => p.genre_id === song.genre_id);
-    const match = candidates.find((p) =>
-      (p.compatible_time_signatures || []).some((x) => x.num === ts.num && x.den === ts.den)
-    );
-    return match || candidates[0] || PATTERNS[0] || null;
+    // ưu tiên GENRE_DEFAULTS -> patternId -> match trong PATTERNS
+    const g = GENRE_DEFAULTS?.[song?.genre_id] || GENRE_DEFAULTS?.bolero || {};
+    const defId = g.default_pattern_id;
+    if (defId) {
+      const p = getPatternById(defId);
+      if (p) return p;
+    }
+    // fallback: pattern cùng genre
+    const candidates = (PATTERNS || []).filter((p) => p.genre_id === song?.genre_id);
+    return candidates[0] || (PATTERNS || [])[0] || null;
   }
 
+  function getPatternOptionsForSong(songOrId) {
+    const song =
+      typeof songOrId === "string" ? (SONGS || []).find((s) => s.id === songOrId) : songOrId;
+    const genreId = song?.genre_id;
+    return (PATTERNS || [])
+      .filter((p) => (genreId ? p.genre_id === genreId : true))
+      .map((p) => ({ id: p.id, name: p.name, genre_id: p.genre_id }));
+  }
+
+  // =========================
+  // Transport
+  // =========================
   function resetTransportState() {
     Tone.Transport.stop();
     Tone.Transport.cancel(0);
@@ -393,61 +499,65 @@ export function createEngine({ Tone, SONGS, PATTERNS, CHORD_DB, GENRE_DEFAULTS }
 
   function shouldCommitAtStep(stepInBar) {
     if (state.changeMode === "immediate") return true;
-    // nextBar: commit only at bar boundary
+    // nextBar
     return stepInBar === 0;
   }
 
-  function commitQueuedAtBarBoundary(stepInBar) {
-    if (stepInBar !== 0) return;
+  function maybeCommitQueued(stepInBar) {
+    let changed = false;
 
-    if (state.stepIndex > 0) state.barIndex += 1;
-
-    if (state.queuedChordName) {
+    if (state.queuedChordName && shouldCommitAtStep(stepInBar)) {
       state.activeChordName = state.queuedChordName;
       if (state.queuedChordIndex != null) state.activeChordIndex = state.queuedChordIndex;
       state.queuedChordName = null;
       state.queuedChordIndex = null;
+      changed = true;
     }
 
-    if (state.queuedPatternId) {
+    if (state.queuedPatternId && shouldCommitAtStep(stepInBar)) {
       state.activePatternId = state.queuedPatternId;
       state.queuedPatternId = null;
+      changed = true;
     }
 
-    // Fill chỉ tác động 1 lần
-    // (fillArmed reset trong scheduleTick khi đã “chạy fill”)
+    if (changed) lyricsDirty = true;
+    return changed;
   }
 
   function isInFillWindow(stepInBar, stepsBar) {
-    // fill ở 1 beat cuối: với den=4 => 2 step cuối; với den=8 => 2 step cuối vẫn ok
     return stepInBar >= Math.max(0, stepsBar - 2);
   }
 
   function scheduleTick(time) {
     const pattern = getPatternById(state.activePatternId);
-    if (!pattern || !state.activeChordName || !guitar) {
+    const chord = state.activeChordName;
+
+    if (!pattern || !chord || !guitar) {
       state.stepIndex += 1;
       emit();
       return;
     }
 
-    const len = pattern.steps.length;
-    const stepInBar = state.stepIndex % len;
+    const stepsBar = pattern.steps.length;
+    const stepInBar = state.stepIndex % stepsBar;
+
     state.stepInBar = stepInBar;
+    state.barIndex = Math.floor(state.stepIndex / stepsBar);
 
-    // Commit chord/pattern ở đầu ô nhịp (nextBar)
-    commitQueuedAtBarBoundary(stepInBar);
+    // Commit queued at boundary (đầu ô nhịp nếu nextBar)
+    maybeCommitQueued(stepInBar);
 
-    updateDynamicsSmoothing();
+    // Metronome
     maybeMetronome(stepInBar, time);
 
-    // Resolve step
+    // Smooth dynamics
+    updateDynamicsSmoothing();
+
+    // Pattern step
     let st = pattern.steps[stepInBar] || { type: "rest" };
 
-    // Fill: nếu armed và đang ở cửa sổ fill thì thay step bằng fill step mặc định
-    const stepsBar = stepsPerBar(state.timeSig);
+    // Fill override (cửa sổ cuối bar)
     if (state.fillArmed && isInFillWindow(stepInBar, stepsBar)) {
-      // default fill: D (step -2) then U (step -1)
       const isLast = stepInBar === Math.max(0, stepsBar - 1);
       st = { type: isLast ? "strumUp" : "strumDown" };
       if (isLast) state.fillArmed = false;
@@ -457,50 +567,41 @@ export function createEngine({ Tone, SONGS, PATTERNS, CHORD_DB, GENRE_DEFAULTS }
     const region = dynRegion(dyn);
     const { baseVel, bassVel } = dynamicsToVelocity(dyn);
 
-    // SOFT region policy: chỉ bass + pluck, hạn chế strum
+    // SOFT policy: hạn chế strum -> đổi sang pluck
     if (region === "SOFT") {
       if (st.type === "strumDown" || st.type === "strumUp") {
-        // thay strum bằng pluck string 3 để giữ nhịp nhưng nhẹ
         st = { type: "pluck", string: 3 };
       }
     }
 
-    // MID region: cho strum nhưng ít dây hơn (tối ưu đơn giản: giảm vel)
-    // HARD region: vel cao, strum đầy đủ.
-
+    // Execute step
     switch (st.type) {
-      case "rest":
+      case "bass":
+        playBass(chord, time, bassVel);
         break;
-
-      case "bass": {
-        const which = st.which || "root";
-        doBass(which, time, bassVel);
-        break;
-      }
 
       case "pluck": {
-        const s = Number(st.string || 3);
-        doPluck(s, time, baseVel);
+        const sNum = st.string ? Number(st.string) : 3;
+        playPluck(chord, sNum, time, baseVel);
         break;
       }
 
       case "strumDown":
-        doStrum("down", time, region === "MID" ? baseVel * 0.85 : baseVel);
+        strum(chord, "down", time, baseVel);
         break;
 
       case "strumUp":
-        doStrum("up", time, region === "MID" ? baseVel * 0.85 : baseVel);
+        strum(chord, "up", time, baseVel);
         break;
 
+      case "rest":
       default:
         break;
     }
 
-    // Update lyrics html (highlight active/queued)
-    state.lyricsHtml = buildLyricsHtml(state.lyricsTokens);
-
-    // Update melody pad notes
-    rebuildMelodyNotes();
+    // Chỉ rebuild khi thật sự thay đổi
+    refreshLyricsIfNeeded();
+    // melody pad chỉ rebuild khi transpose/song đổi; không làm mỗi tick
 
     state.stepIndex += 1;
     emit();
@@ -510,16 +611,16 @@ export function createEngine({ Tone, SONGS, PATTERNS, CHORD_DB, GENRE_DEFAULTS }
   // Melody pad (7 bậc) - MVP
   // =========================
   function rebuildMelodyNotes() {
-    // MVP: lấy key root từ song.original_key (root only), build major scale intervals.
-    // Nếu bài minor (key ends with 'm'), dùng natural minor.
-    const k = (state.song?.original_key || "C").trim();
+    const k = String(state.song?.original_key || "C").trim();
     const isMinor = k.endsWith("m");
     const keyRoot = isMinor ? k.slice(0, -1) : k;
 
     const preferSharps = preferSharpsForKey(keyRoot);
-    const rootIdx = noteIndex(keyRoot);
-    if (rootIdx < 0) {
+    const rootName = transposeRoot(keyRoot, state.transpose, preferSharps);
+    const rootIndexAfter = noteIndex(rootName);
+    if (rootIndexAfter < 0) {
       state.melody.notes = [];
+      melodyDirty = false;
       return;
     }
 
@@ -527,19 +628,25 @@ export function createEngine({ Tone, SONGS, PATTERNS, CHORD_DB, GENRE_DEFAULTS }
     const minorIntervals = [0, 2, 3, 5, 7, 8, 10];
     const intervals = isMinor ? minorIntervals : majorIntervals;
 
-    // Choose a comfortable octave around 4th string range: start at C4-ish.
-    // We'll map to note names; octave selection is heuristic.
-    // MIDI base: C4 = 60. For root, pick around 60..67.
-    const rootName = transposeRoot(keyRoot, state.transpose, preferSharps);
-    const rootIndexAfter = noteIndex(rootName);
-    if (rootIndexAfter < 0) {
-      state.melody.notes = [];
-      return;
-    }
-
-    // Base MIDI: find nearest root to 60
+    // Pick a comfortable octave around C4 (60)
     const baseMidi = 60 + ((rootIndexAfter - noteIndex("C") + 12) % 12);
     state.melody.notes = intervals.map((itv) => midiToNoteName(baseMidi + itv));
+    melodyDirty = false;
+  }
+
+  function refreshMelodyIfNeeded() {
+    if (!melodyDirty) return;
+    rebuildMelodyNotes();
+  }
+
+  function playMelodyDegree(degIndex, time = Tone.now()) {
+    if (!state.ready || !guitar) return;
+    refreshMelodyIfNeeded();
+    const notes = state.melody.notes || [];
+    const idx = Math.max(0, Math.min(notes.length - 1, Number(degIndex) || 0));
+    const n = notes[idx];
+    if (!n) return;
+    safeTrigger(n, "8n", time, 0.7);
   }
 
   // =========================
@@ -548,35 +655,80 @@ export function createEngine({ Tone, SONGS, PATTERNS, CHORD_DB, GENRE_DEFAULTS }
   async function init() {
     if (state.ready) return;
 
+    // Bắt buộc trên mobile: phải gọi trong user gesture
     await Tone.start();
 
-    guitar = new Tone.Sampler({ urls: SAMPLE_URLS, baseUrl: SAMPLE_BASE_URL });
+    try {
+      guitar = new Tone.Sampler({
+        urls: SAMPLE_URLS,
+        baseUrl: SELECTED_PACK.baseUrl,
+      });
 
-    reverb = new Tone.Reverb({ decay: 2.0, wet: 0.16 });
-    limiter = new Tone.Limiter(-1.0);
+      reverb = new Tone.Reverb({ decay: 2.0, wet: 0.16 });
+      limiter = new Tone.Limiter(-1.0);
 
-    guitar.connect(reverb);
-    reverb.connect(limiter);
-    limiter.toDestination();
+      guitar.connect(reverb);
+      reverb.connect(limiter);
+      limiter.toDestination();
 
-    // Optional: metronome synth (connect limiter)
-    metroSynth = new Tone.MembraneSynth({
-      pitchDecay: 0.01,
-      octaves: 2,
-      envelope: { attack: 0.001, decay: 0.08, sustain: 0.0, release: 0.01 },
-    }).connect(limiter);
+      metroSynth = new Tone.MembraneSynth({
+        pitchDecay: 0.01,
+        octaves: 2,
+        envelope: { attack: 0.001, decay: 0.08, sustain: 0.0, release: 0.01 },
+      }).connect(limiter);
 
-    await Tone.loaded();
+      // Đợi toàn bộ buffer load (timeout để báo lỗi rõ ràng)
+      await withTimeout(
+        Tone.loaded(),
+        LOAD_TIMEOUT_MS,
+        "Không tải được sample âm thanh (timeout). Nếu bạn đang mở trên iPhone/iPad, hãy dùng sample MP3 và mở bằng HTTPS."
+      );
 
-    state.ready = true;
-    resetTransportState();
-    emit();
+      // Default song
+      const song = (SONGS || [])[0];
+      if (!song) throw new Error("No songs found.");
+
+      // Load song state
+      loadSong(song);
+
+      state.ready = true;
+      lyricsDirty = true;
+      melodyDirty = true;
+      refreshLyricsIfNeeded();
+      refreshMelodyIfNeeded();
+
+      resetTransportState();
+      emit();
+    } catch (e) {
+      // Clean up partially created nodes to avoid dangling audio nodes
+      try {
+        guitar?.dispose?.();
+      } catch {}
+      try {
+        reverb?.dispose?.();
+      } catch {}
+      try {
+        limiter?.dispose?.();
+      } catch {}
+      try {
+        metroSynth?.dispose?.();
+      } catch {}
+      guitar = reverb = limiter = metroSynth = null;
+      state.ready = false;
+
+      // Enrich error message for common mobile case
+      const hint =
+        SELECTED_PACK.ext === "ogg"
+          ? "Thiết bị của bạn có thể không hỗ trợ OGG (đặc biệt iOS/Safari). Hãy đổi sang MP3 sample."
+          : "Nếu bạn đang mở bằng file:// hoặc mạng chặn CDN, hãy host qua HTTPS.";
+
+      throw new Error(`${e?.message || e}\n\nGợi ý: ${hint}`);
+    }
   }
 
   function loadSong(songOrId) {
     const song =
-      typeof songOrId === "string" ? SONGS.find((s) => s.id === songOrId) : songOrId;
-
+      typeof songOrId === "string" ? (SONGS || []).find((s) => s.id === songOrId) : songOrId;
     if (!song) throw new Error("Song not found.");
 
     state.song = song;
@@ -600,23 +752,24 @@ export function createEngine({ Tone, SONGS, PATTERNS, CHORD_DB, GENRE_DEFAULTS }
     state.activeChordName = progression[0] || "C";
     state.queuedChordName = null;
 
-    // default patterns + slots
     const def = resolveDefaultPatternForSong(song);
-    state.activePatternId = def?.id || PATTERNS[0]?.id || null;
+    state.activePatternId = def?.id || (PATTERNS || [])[0]?.id || null;
     state.queuedPatternId = null;
+
     state.activeSlotIndex = 0;
     state.slots = Array.from({ length: 6 }, () => ({ patternId: null }));
     if (state.activePatternId) state.slots[0].patternId = state.activePatternId;
 
     state.fillArmed = false;
-
     state.stepIndex = 0;
     state.barIndex = 0;
     state.stepInBar = 0;
     state.lastNote = "—";
 
-    state.lyricsHtml = buildLyricsHtml(state.lyricsTokens);
-    rebuildMelodyNotes();
+    lyricsDirty = true;
+    melodyDirty = true;
+    refreshLyricsIfNeeded();
+    refreshMelodyIfNeeded();
 
     resetTransportState();
     emit();
@@ -624,6 +777,7 @@ export function createEngine({ Tone, SONGS, PATTERNS, CHORD_DB, GENRE_DEFAULTS }
 
   async function play() {
     if (!state.ready) throw new Error("Engine not ready. Call init() first.");
+
     state.stepIndex = 0;
     state.barIndex = 0;
     state.stepInBar = 0;
@@ -640,67 +794,37 @@ export function createEngine({ Tone, SONGS, PATTERNS, CHORD_DB, GENRE_DEFAULTS }
   function stop() {
     Tone.Transport.stop();
     state.playing = false;
+    state.queuedChordName = null;
+    state.queuedChordIndex = null;
+    state.fillArmed = false;
     emit();
   }
 
-  function nextChord() {
-    // queue chord theo progression
-    if (!state.progression.length) return;
-    const nextIdx = Math.min(state.activeChordIndex + 1, state.progression.length - 1);
-    const chordRaw = state.progression[nextIdx];
-
-    if (state.changeMode === "immediate") {
-      state.activeChordIndex = nextIdx;
-      state.activeChordName = chordRaw;
-      state.queuedChordIndex = null;
-      state.queuedChordName = null;
-    } else {
-      state.queuedChordIndex = nextIdx;
-      state.queuedChordName = chordRaw;
-    }
-
-    state.lyricsHtml = buildLyricsHtml(state.lyricsTokens);
+  function setChangeMode(mode) {
+    state.changeMode = mode === "immediate" ? "immediate" : "nextBar";
     emit();
   }
 
-  function auditionChord(chordRaw) {
-    // Nếu đang stop: đánh thử chord ngay (down strum)
-    // Nếu đang play: queue như “nextBar”
-    if (!chordRaw) return;
-
-    if (!state.playing) {
-      state.activeChordName = chordRaw;
-      state.activeChordIndex = 0; // lyric highlight không còn ý nghĩa khi audition; giữ 0 cho đơn giản
-      const t = Tone.now() + 0.02;
-      doStrum("down", t, dynamicsToVelocity(state.dynamicsSmoothed).baseVel);
-      state.lyricsHtml = buildLyricsHtml(state.lyricsTokens);
-      emit();
-      return;
-    }
-
-    if (state.changeMode === "immediate") {
-      state.activeChordName = chordRaw;
-      state.queuedChordName = null;
-      state.queuedChordIndex = null;
-    } else {
-      state.queuedChordName = chordRaw;
-      state.queuedChordIndex = null; // freestyle chord không map vào lyric index
-    }
-
-    state.lyricsHtml = buildLyricsHtml(state.lyricsTokens);
+  function setBassMode(mode) {
+    if (mode === "auto") state.bassMode = "auto";
+    else if (mode === 6 || mode === 5 || mode === 4 || mode === "6" || mode === "5" || mode === "4")
+      state.bassMode = Number(mode);
     emit();
   }
 
-  function fill() {
-    state.fillArmed = true;
+  function setMetronome(mode) {
+    state.metronome = mode === "on" ? "on" : "off";
     emit();
   }
 
   function setTranspose(semitones) {
     const v = Math.max(-12, Math.min(12, Number(semitones) || 0));
+    if (v === state.transpose) return;
     state.transpose = v;
-    state.lyricsHtml = buildLyricsHtml(state.lyricsTokens);
-    rebuildMelodyNotes();
+    lyricsDirty = true;
+    melodyDirty = true;
+    refreshLyricsIfNeeded();
+    refreshMelodyIfNeeded();
     emit();
   }
 
@@ -724,70 +848,119 @@ export function createEngine({ Tone, SONGS, PATTERNS, CHORD_DB, GENRE_DEFAULTS }
     emit();
   }
 
-  function selectSlot(slotIndex) {
-    const i = Math.max(0, Math.min(5, Number(slotIndex) || 0));
-    state.activeSlotIndex = i;
+  function fill() {
+    state.fillArmed = true;
+    emit();
+  }
 
-    const pid = state.slots[i]?.patternId;
+  function nextChord() {
+    const prog = state.progression || [];
+    if (!prog.length) return;
+
+    const nextIdx = Math.min(prog.length - 1, (state.queuedChordIndex ?? state.activeChordIndex) + 1);
+    const chordRaw = prog[nextIdx];
+
+    if (state.changeMode === "immediate") {
+      state.activeChordIndex = nextIdx;
+      state.activeChordName = chordRaw;
+      state.queuedChordIndex = null;
+      state.queuedChordName = null;
+    } else {
+      state.queuedChordIndex = nextIdx;
+      state.queuedChordName = chordRaw;
+    }
+
+    lyricsDirty = true;
+    refreshLyricsIfNeeded();
+    emit();
+  }
+
+  // Cho “đệm thực tế”: chạm vào chord trên lyrics để nhảy thẳng đến chordIndex đó
+  function setChordIndex(index) {
+    const prog = state.progression || [];
+    if (!prog.length) return;
+
+    const idx = Math.max(0, Math.min(prog.length - 1, Number(index) || 0));
+    const chordRaw = prog[idx];
+
+    if (state.changeMode === "immediate") {
+      state.activeChordIndex = idx;
+      state.activeChordName = chordRaw;
+      state.queuedChordIndex = null;
+      state.queuedChordName = null;
+    } else {
+      state.queuedChordIndex = idx;
+      state.queuedChordName = chordRaw;
+    }
+
+    lyricsDirty = true;
+    refreshLyricsIfNeeded();
+    emit();
+  }
+
+  function auditionChord(chordRaw) {
+    const chord = String(chordRaw || "").trim();
+    if (!chord) return;
+
+    if (!state.playing) {
+      // Nếu đang stop: strum thử ngay
+      strum(chord, "down", Tone.now(), 0.65);
+      state.lastNote = chord;
+      emit();
+      return;
+    }
+
+    if (state.changeMode === "immediate") {
+      state.activeChordName = chord;
+      state.queuedChordName = null;
+      state.queuedChordIndex = null;
+    } else {
+      state.queuedChordName = chord;
+      state.queuedChordIndex = null; // freestyle chord không map vào lyric index
+    }
+
+    lyricsDirty = true;
+    refreshLyricsIfNeeded();
+    emit();
+  }
+
+  function selectSlot(slotIndex) {
+    const idx = Math.max(0, Math.min(state.slots.length - 1, Number(slotIndex) || 0));
+    state.activeSlotIndex = idx;
+
+    const pid = state.slots[idx]?.patternId || null;
     if (!pid) {
       emit();
       return;
     }
 
-    // Quantize switching at bar boundary
-    state.queuedPatternId = pid;
-    emit();
-  }
-
-  function assignPatternToSlot(slotIndex, patternId) {
-    const i = Math.max(0, Math.min(5, Number(slotIndex) || 0));
-    const p = getPatternById(patternId);
-    if (!p) throw new Error("Pattern not found.");
-
-    state.slots[i].patternId = p.id;
-
-    // Nếu đang gán vào slot đang active, cho queue đổi luôn
-    if (i === state.activeSlotIndex) {
-      state.queuedPatternId = p.id;
+    // Thay pattern: immediate -> set; nextBar -> queue
+    if (state.changeMode === "immediate") {
+      state.activePatternId = pid;
+      state.queuedPatternId = null;
+    } else {
+      state.queuedPatternId = pid;
     }
 
     emit();
   }
 
-  function getPatternOptionsForSong() {
-    if (!state.song) return [];
-    const ts = state.timeSig;
-    return PATTERNS.filter((p) => {
-      if (p.genre_id !== state.song.genre_id) return false;
-      const compat = p.compatible_time_signatures || [];
-      if (!compat.length) return true;
-      return compat.some((x) => x.num === ts.num && x.den === ts.den);
-    });
-  }
+  function assignPatternToSlot(slotIndex, patternId) {
+    const idx = Math.max(0, Math.min(state.slots.length - 1, Number(slotIndex) || 0));
+    const pid = patternId ? String(patternId) : null;
 
-  function setChangeMode(mode) {
-    state.changeMode = mode === "immediate" ? "immediate" : "nextBar";
-    emit();
-  }
+    state.slots[idx].patternId = pid;
 
-  function setBassMode(mode) {
-    if (mode === "auto") state.bassMode = "auto";
-    else if (mode === 6 || mode === 5 || mode === 4 || mode === "6" || mode === "5" || mode === "4")
-      state.bassMode = Number(mode);
-    emit();
-  }
+    // Nếu assign vào active slot thì áp dụng luôn (theo changeMode)
+    if (idx === state.activeSlotIndex && pid) {
+      if (state.changeMode === "immediate") {
+        state.activePatternId = pid;
+        state.queuedPatternId = null;
+      } else {
+        state.queuedPatternId = pid;
+      }
+    }
 
-  function setMetronome(mode) {
-    state.metronome = mode === "on" ? "on" : "off";
-    emit();
-  }
-
-  function playMelodyDegree(degreeIndex) {
-    const i = Math.max(0, Math.min(6, Number(degreeIndex) || 0));
-    const note = state.melody.notes[i];
-    if (!note) return;
-    const vel = dynamicsToVelocity(state.dynamicsSmoothed).baseVel * 0.85;
-    safeTrigger(note, "8n", Tone.now() + 0.02, vel);
     emit();
   }
 
@@ -795,15 +968,18 @@ export function createEngine({ Tone, SONGS, PATTERNS, CHORD_DB, GENRE_DEFAULTS }
     // lifecycle
     init,
     loadSong,
+
+    // transport
     play,
     stop,
 
-    // core controls
+    // chord control
     nextChord,
-    fill,
     auditionChord,
+    setChordIndex,
 
-    // settings
+    // performance
+    fill,
     setTranspose,
     adjustTranspose,
     setBpm,
