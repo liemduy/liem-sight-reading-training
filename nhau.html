@@ -1,391 +1,413 @@
-/**
- * GUITAR VIET AI - CORE ENGINE (UPGRADED)
- * Bao gồm: Logic nhạc lý + Web Audio Synth (Tạo tiếng thật)
- */
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GuitarViệt AI - Đệm Đàn Thực Chiến</title>
+    <!-- Font chữ đẹp, hỗ trợ tiếng Việt -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;800&family=Patrick+Hand&display=swap" rel="stylesheet">
+    
+    <!-- Icon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-// ==========================================
-// 1. WEB AUDIO GUITAR (TẠO TIẾNG THẬT)
-// ==========================================
-class WebAudioGuitar {
-    constructor() {
-        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-        this.masterGain = this.ctx.createGain();
-        this.masterGain.gain.value = 0.5;
-        this.masterGain.connect(this.ctx.destination);
-        this.reverbNode = this.createReverb();
-    }
-
-    // Kích hoạt âm thanh (Bắt buộc do chính sách trình duyệt)
-    resume() {
-        if (this.ctx.state === 'suspended') {
-            this.ctx.resume();
+    <style>
+        :root {
+            --bg-dark: #1a1512;
+            --wood-dark: #2e231e;
+            --wood-light: #4a3b32;
+            --gold-accent: #ffb700;
+            --text-glow: #ffeebb;
+            --btn-active: #ffcc33;
+            --chord-color: #ff6b6b;
         }
-    }
 
-    getCurrentTime() {
-        return this.ctx.currentTime;
-    }
+        * {
+            box-sizing: border-box;
+            user-select: none; /* Chống bôi đen văn bản khi bấm liên tục */
+            -webkit-tap-highlight-color: transparent;
+        }
 
-    // Tạo hiệu ứng vang (Reverb giả lập)
-    createReverb() {
-        const convolver = this.ctx.createConvolver();
-        // Tạo impulse response đơn giản
-        const rate = this.ctx.sampleRate;
-        const length = rate * 2.0; // 2 giây
-        const decay = 2.0;
-        const buffer = this.ctx.createBuffer(2, length, rate);
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-dark);
+            background-image: radial-gradient(circle at center, #2e231e 0%, #0f0c0a 100%);
+            color: #eee;
+            font-family: 'Be Vietnam Pro', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* --- Màn hình cảnh báo xoay ngang --- */
+        #portrait-warning {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: #000;
+            z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; padding: 20px;
+        }
         
-        for (let channel = 0; channel < 2; channel++) {
-            const data = buffer.getChannelData(channel);
-            for (let i = 0; i < length; i++) {
-                data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, decay);
+        .rotate-icon {
+            font-size: 4rem; color: var(--gold-accent);
+            animation: rotate-phone 2s infinite ease-in-out; margin-bottom: 20px;
+        }
+
+        @keyframes rotate-phone {
+            0%, 10% { transform: rotate(0deg); }
+            40%, 60% { transform: rotate(-90deg); }
+            90%, 100% { transform: rotate(0deg); }
+        }
+
+        @media (orientation: landscape) { #portrait-warning { display: none; } }
+
+        /* --- MÀN HÌNH SETUP (PRE-GAME) --- */
+        #setup-screen {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.95);
+            z-index: 1000;
+            display: flex; flex-direction: column;
+            padding: 20px; overflow-y: auto;
+        }
+        
+        .setup-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .setup-header h2 { color: var(--gold-accent); margin: 0; }
+        
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; color: #aaa; margin-bottom: 5px; font-size: 0.9rem; }
+        
+        input[type="text"], input[type="number"], select, textarea {
+            width: 100%; background: #2a211b; border: 1px solid #5c4a3f;
+            color: #fff; padding: 10px; border-radius: 8px;
+            font-family: 'Be Vietnam Pro', sans-serif; font-size: 1rem;
+        }
+        
+        textarea { height: 150px; font-family: monospace; white-space: pre; overflow-x: auto; font-size: 1.1rem; }
+
+        .btn-confirm {
+            background: var(--gold-accent); color: #1a1512; border: none;
+            padding: 15px 30px; border-radius: 50px; font-weight: 800; font-size: 1.2rem;
+            cursor: pointer; width: 100%; margin-top: 10px;
+            box-shadow: 0 4px 15px rgba(255, 183, 0, 0.3); transition: transform 0.1s;
+        }
+        .btn-confirm:active { transform: scale(0.98); }
+
+        /* --- MÀN HÌNH GAME (MAIN) --- */
+        #game-screen { display: none; height: 100%; }
+        #app-container {
+            display: grid; grid-template-columns: 280px 1fr; height: 100%; width: 100%;
+        }
+
+        /* KHU VỰC TAY TRÁI (STYLE ZONE) */
+        #left-panel {
+            background: rgba(0, 0, 0, 0.3);
+            border-right: 2px solid var(--wood-light);
+            padding: 10px;
+            display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr 1fr; gap: 12px;
+            box-shadow: 5px 0 15px rgba(0,0,0,0.5);
+        }
+
+        .style-btn {
+            background: linear-gradient(145deg, #3d3028, #2a211b);
+            border: 1px solid #5c4a3f; border-radius: 12px;
+            color: #aaa; font-weight: 800; font-size: 1.1rem;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            cursor: pointer; position: relative;
+            box-shadow: 4px 4px 8px #15100d, -2px -2px 5px #4a3b32;
+        }
+        .style-btn i { font-size: 1.5rem; margin-bottom: 5px; color: #888; }
+        .style-btn:active, .style-btn.active-hold {
+            background: linear-gradient(145deg, var(--gold-accent), #d49000);
+            color: #1a1512; transform: scale(0.96); border-color: #ffeebb;
+        }
+        .style-btn:active i, .style-btn.active-hold i { color: #1a1512; }
+        .btn-fill { border-color: #4a9eff; }
+        .btn-end { border-color: #ff4a4a; }
+
+        /* KHU VỰC TAY PHẢI (HARMONY ZONE) */
+        #right-panel {
+            position: relative; display: flex; flex-direction: column; overflow: hidden;
+        }
+        #top-bar {
+            height: 50px; background: rgba(0,0,0,0.4);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 20px; border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .song-info h1 { font-size: 1.2rem; margin: 0; color: var(--gold-accent); }
+        .controls { display: flex; gap: 15px; }
+        .ctrl-btn {
+            background: none; border: 1px solid rgba(255,255,255,0.2);
+            color: #ddd; padding: 5px 12px; border-radius: 20px; font-size: 0.9rem;
+        }
+
+        #lyrics-viewport {
+            flex: 1; position: relative; overflow-y: auto; scroll-behavior: smooth;
+            padding: 0 20px 80px 20px;
+            -webkit-mask-image: linear-gradient(to bottom, transparent, black 10%, black 80%, transparent);
+            mask-image: linear-gradient(to bottom, transparent, black 10%, black 80%, transparent);
+        }
+
+        #focus-line {
+            position: absolute; left: 0; right: 0; bottom: 35%; height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(255, 183, 0, 0.2), transparent);
+            pointer-events: none; z-index: 5;
+        }
+
+        .lyric-line {
+            font-family: 'Patrick Hand', cursive; font-size: 1.8rem; line-height: 2.8rem;
+            margin-bottom: 25px; color: #888; transition: color 0.3s;
+            display: flex; flex-wrap: wrap; align-items: flex-end;
+        }
+        .lyric-line.active { color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.2); }
+
+        .word-wrapper {
+            position: relative; display: inline-block; margin-right: 12px;
+            cursor: pointer; padding-top: 30px;
+        }
+        .chord-badge {
+            position: absolute; top: -5px; left: 50%; transform: translateX(-50%);
+            background: #44332a; color: var(--chord-color);
+            font-family: 'Be Vietnam Pro', sans-serif; font-weight: 800; font-size: 1rem;
+            padding: 2px 8px; border-radius: 6px; border: 1px solid var(--chord-color);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: all 0.1s;
+        }
+        .word-wrapper:active .chord-badge, .word-wrapper.chord-active .chord-badge {
+            background: var(--chord-color); color: #fff;
+            transform: translateX(-50%) scale(1.1); box-shadow: 0 0 15px var(--chord-color); z-index: 10;
+        }
+
+        #visualizer {
+            height: 60px; background: linear-gradient(to top, #0f0c0a, transparent);
+            position: absolute; bottom: 0; left: 0; right: 0;
+            display: flex; flex-direction: column; justify-content: space-evenly;
+            padding: 10px 0; pointer-events: none;
+        }
+        .string {
+            width: 100%; height: 2px; background: rgba(255,255,255,0.2);
+            position: relative; transition: all 0.05s;
+        }
+        .string.vibrate {
+            background: var(--gold-accent); box-shadow: 0 0 8px var(--gold-accent);
+        }
+
+        .spacer { height: 50vh; }
+    </style>
+</head>
+<body>
+
+    <!-- Cảnh báo xoay ngang -->
+    <div id="portrait-warning">
+        <div class="rotate-icon"><i class="fa-solid fa-mobile-screen-button"></i></div>
+        <h2>Vui lòng xoay ngang thiết bị</h2>
+        <p>Để có trải nghiệm "Nhạc trưởng" tốt nhất</p>
+    </div>
+
+    <!-- MÀN HÌNH SETUP -->
+    <div id="setup-screen">
+        <div class="setup-header">
+            <h2><i class="fa-solid fa-sliders"></i> Thiết Lập Bài Hát</h2>
+        </div>
+        <div class="input-group">
+            <label>Tên bài hát</label>
+            <input type="text" id="input-title" value="Đắp Mộ Cuộc Tình">
+        </div>
+        <div class="input-group" style="display: flex; gap: 10px;">
+            <div style="flex: 1;">
+                <label>Tempo (BPM)</label>
+                <input type="number" id="input-tempo" value="60">
+            </div>
+            <div style="flex: 1;">
+                <label>Điệu</label>
+                <select id="input-style">
+                    <option value="Bolero">Bolero</option>
+                </select>
+            </div>
+        </div>
+        <div class="input-group">
+            <label>Nhập Lời & Hợp âm (Ví dụ: [Dm] Say giấc...)</label>
+            <textarea id="input-lyrics">
+[Dm] Say giấc mộng ban đầu [Bb] yêu người thủa mới đôi [F] mươi em [C] đang độ trăng [Dm] tròn
+Từng ngày qua [Bb] phố áo [C] em trắng cả đường [F] về
+Lá [Gm] thư ướp mộng học [Bb] trò mối [Am] tình xanh như khúc [F] hát.
+            </textarea>
+        </div>
+        <button class="btn-confirm" onclick="startGame()">BẮT ĐẦU NHẬU <i class="fa-solid fa-beer-mug-empty"></i></button>
+    </div>
+
+    <!-- MÀN HÌNH GAME -->
+    <div id="game-screen">
+        <div id="app-container">
+            <!-- TAY TRÁI (Style Zone) -->
+            <div id="left-panel">
+                <!-- Hàng Trên: Kỹ thuật -->
+                <div class="style-btn" id="btn-bass" data-id="4" onmousedown="handleStyle(4, 'PRESS')" onmouseup="handleStyle(4, 'RELEASE')" ontouchstart="handleStyle(4, 'PRESS')" ontouchend="handleStyle(4, 'RELEASE')">
+                    <i class="fa-solid fa-shoe-prints"></i><small>BASS/WALK</small>
+                </div>
+                <div class="style-btn btn-fill" id="btn-fill" data-id="5" onmousedown="handleStyle(5, 'PRESS')" ontouchstart="handleStyle(5, 'PRESS')">
+                    <i class="fa-solid fa-drum"></i><small>BÁO (FILL)</small>
+                </div>
+                
+                <!-- Hàng Dưới: Năng lượng -->
+                <div class="style-btn" id="btn-intro" data-id="1" onmousedown="handleStyle(1, 'PRESS')" ontouchstart="handleStyle(1, 'PRESS')">
+                    <i class="fa-solid fa-water"></i><small>RẢI (ÊM)</small>
+                </div>
+                <div class="style-btn" id="btn-verse" data-id="2" onmousedown="handleStyle(2, 'PRESS')" ontouchstart="handleStyle(2, 'PRESS')">
+                    <i class="fa-solid fa-guitar"></i><small>ĐỆM (VỪA)</small>
+                </div>
+                <div class="style-btn" id="btn-chorus" data-id="3" onmousedown="handleStyle(3, 'PRESS')" ontouchstart="handleStyle(3, 'PRESS')">
+                    <i class="fa-solid fa-fire"></i><small>QUẠT (SUNG)</small>
+                </div>
+                <div class="style-btn btn-end" id="btn-end" data-id="6" onmousedown="handleStyle(6, 'PRESS')" ontouchstart="handleStyle(6, 'PRESS')" ondblclick="handleStyle(6, 'DOUBLE_TAP')">
+                    <i class="fa-solid fa-hand"></i><small>DẰN/KẾT</small>
+                </div>
+            </div>
+
+            <!-- TAY PHẢI (Harmony Zone) -->
+            <div id="right-panel">
+                <div id="top-bar">
+                    <div class="song-info"><h1 id="display-title">Tên bài hát</h1></div>
+                    <div class="controls"><button class="ctrl-btn" id="display-tempo">60 BPM</button></div>
+                </div>
+                <div id="focus-line"></div>
+                <div id="lyrics-viewport">
+                    <div class="spacer"></div>
+                    <div id="lyrics-content"><!-- Nội dung JS render --></div>
+                    <div class="spacer"></div>
+                </div>
+                <div id="visualizer">
+                    <div class="string" id="string-0"></div><div class="string" id="string-1"></div>
+                    <div class="string" id="string-2"></div><div class="string" id="string-3"></div>
+                    <div class="string" id="string-4"></div><div class="string" id="string-5"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT -->
+    <script src="magic.js"></script> 
+
+    <script>
+        let appEngine = null;
+
+        // Visualizer Callback
+        function visualizerCallback(stringIndex) {
+            const stringEl = document.getElementById(`string-${stringIndex}`);
+            if(stringEl) {
+                stringEl.style.animation = 'none'; stringEl.offsetHeight; 
+                stringEl.style.animation = null; stringEl.classList.add('vibrate');
+                setTimeout(() => stringEl.classList.remove('vibrate'), 100);
             }
         }
-        convolver.buffer = buffer;
-        
-        const reverbGain = this.ctx.createGain();
-        reverbGain.gain.value = 0.3; // Mức độ vang
-        convolver.connect(reverbGain);
-        reverbGain.connect(this.masterGain);
-        return convolver;
-    }
 
-    // Mô phỏng tiếng gảy dây (Karplus-Strong simplified or Subtractive)
-    playString(stringIndex, midiNote, velocity, time) {
-        // Chuyển MIDI sang Tần số
-        const frequency = 440 * Math.pow(2, (midiNote - 69) / 12);
-        const startTime = Math.max(time, this.ctx.currentTime);
-        const volume = velocity / 127;
+        function startGame() {
+            // 1. Lấy dữ liệu setup
+            const rawLyrics = document.getElementById('input-lyrics').value;
+            const tempo = parseInt(document.getElementById('input-tempo').value);
+            const title = document.getElementById('input-title').value;
 
-        // 1. Oscillator (Dây đàn)
-        const osc = this.ctx.createOscillator();
-        osc.type = 'triangle'; // Tam giác cho tiếng ấm
-        osc.frequency.value = frequency;
+            // 2. Parse dữ liệu (từ magic.js)
+            if(typeof parseSongInput === 'undefined') { alert("Chưa load được magic.js!"); return; }
+            const songData = parseSongInput(rawLyrics);
 
-        // 2. Filter (Mô phỏng độ bật của dây)
-        const filter = this.ctx.createBiquadFilter();
-        filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(500 + (velocity * 10), startTime);
-        filter.frequency.exponentialRampToValueAtTime(100, startTime + 0.5);
+            // 3. Khởi tạo Audio Engine
+            const audio = new WebAudioGuitar();
+            audio.resume();
+            
+            // Override playString để hiện visual
+            const originalPlay = audio.playString.bind(audio);
+            audio.playString = function(s, n, v, t) {
+                originalPlay(s, n, v, t);
+                const delay = Math.max(0, t - this.getCurrentTime()) * 1000;
+                setTimeout(() => visualizerCallback(s), delay);
+            };
 
-        // 3. Envelope (Độ to nhỏ theo thời gian)
-        const env = this.ctx.createGain();
-        env.gain.setValueAtTime(0, startTime);
-        env.gain.linearRampToValueAtTime(volume, startTime + 0.01); // Attack cực nhanh
-        env.gain.exponentialRampToValueAtTime(0.001, startTime + 2.0); // Decay từ từ
+            // 4. Khởi tạo Logic Engine
+            appEngine = new GuitarVietEngine(audio);
+            appEngine.context.tempo = tempo;
 
-        // Kết nối: Osc -> Filter -> Env -> Reverb & Master
-        osc.connect(filter);
-        filter.connect(env);
-        env.connect(this.masterGain);
-        env.connect(this.reverbNode); // Gửi sang Reverb
-
-        osc.start(startTime);
-        osc.stop(startTime + 2.5);
-    }
-
-    playNote(midiNote, velocity, time) {
-        // Tiếng solo (sáng hơn chút)
-        this.playString(0, midiNote, velocity, time); 
-    }
-
-    stopAll() {
-        // Trong WebAudio đơn giản, ta để nốt tự tắt (Decay) cho tự nhiên
-    }
-}
-
-// ==========================================
-// 2. LOGIC ENGINE (GIỮ NGUYÊN TỪ PHIÊN BẢN TRƯỚC)
-// ==========================================
-// Cấu hình
-const CONFIG = {
-    TICK_RATE: 20,
-    LOOK_AHEAD: 0.1,
-    HUMANIZE_VELOCITY: 15,
-    HUMANIZE_TIMING: 0.02,
-    QUANTIZE_WINDOW_LATE: 0.15,
-};
-
-const ACTION = {
-    BASS_ROOT: 'BASS_ROOT', BASS_ALT: 'BASS_ALT',
-    PLUCK_LOW: 'PLUCK_LOW', PLUCK_MID: 'PLUCK_MID', PLUCK_HIGH: 'PLUCK_HIGH',
-    STRUM_DOWN: 'STRUM_DOWN', STRUM_UP: 'STRUM_UP',
-    MUTE: 'MUTE', FILL_NOTE: 'FILL_NOTE'
-};
-
-const MusicTheory = {
-    ChordMap: {
-        'C':  { string: 4, altString: 5, rootMIDI: 48, type: 'maj' },
-        'Cm': { string: 4, altString: 5, rootMIDI: 48, type: 'min' },
-        'D':  { string: 3, altString: 4, rootMIDI: 50, type: 'maj' },
-        'Dm': { string: 3, altString: 4, rootMIDI: 50, type: 'min' },
-        'E':  { string: 5, altString: 4, rootMIDI: 40, type: 'maj' },
-        'Em': { string: 5, altString: 4, rootMIDI: 40, type: 'min' },
-        'F':  { string: 5, altString: 4, rootMIDI: 41, type: 'maj' },
-        'Fm': { string: 5, altString: 4, rootMIDI: 41, type: 'min' },
-        'G':  { string: 5, altString: 3, rootMIDI: 43, type: 'maj' },
-        'Gm': { string: 5, altString: 3, rootMIDI: 43, type: 'min' },
-        'A':  { string: 4, altString: 5, rootMIDI: 45, type: 'maj' },
-        'Am': { string: 4, altString: 5, rootMIDI: 45, type: 'min' },
-        'Bb': { string: 4, altString: 3, rootMIDI: 46, type: 'maj' },
-        'B':  { string: 4, altString: 5, rootMIDI: 47, type: 'maj' },
-        'Bm': { string: 4, altString: 5, rootMIDI: 47, type: 'min' },
-    },
-    Voicings: {
-        'maj': [0, 4, 7, 12], 'min': [0, 3, 7, 12], '7': [0, 4, 7, 10],
-    },
-    getBassInfo: function(chordName) {
-        // Xử lý cơ bản, nếu không tìm thấy thì fallback về C
-        return this.ChordMap[chordName] || this.ChordMap['C'];
-    }
-};
-
-const Styles = {
-    'Bolero': {
-        tempo: 60,
-        'ARPEGGIO': [
-            [{ time: 0.0, action: ACTION.BASS_ROOT, vel: 110 }, { time: 0.5, action: ACTION.PLUCK_LOW, vel: 70 }, { time: 1.0, action: ACTION.PLUCK_MID, vel: 70 }, { time: 1.5, action: ACTION.PLUCK_HIGH, vel: 75 }, { time: 2.0, action: ACTION.PLUCK_MID, vel: 60 }, { time: 2.5, action: ACTION.PLUCK_LOW, vel: 60 }, { time: 3.0, action: ACTION.BASS_ROOT, vel: 90 }, { time: 3.5, action: ACTION.PLUCK_MID, vel: 60 }],
-            [{ time: 0.0, action: ACTION.BASS_ALT, vel: 105 }, { time: 0.5, action: ACTION.PLUCK_LOW, vel: 70 }, { time: 1.0, action: ACTION.PLUCK_MID, vel: 70 }, { time: 1.5, action: ACTION.PLUCK_HIGH, vel: 75 }, { time: 2.0, action: ACTION.PLUCK_MID, vel: 60 }, { time: 2.5, action: ACTION.PLUCK_LOW, vel: 60 }, { time: 3.0, action: ACTION.BASS_ROOT, vel: 90 }, { time: 3.5, action: ACTION.PLUCK_MID, vel: 60 }],
-            [{ time: 0.0, action: ACTION.BASS_ROOT, vel: 110 }, { time: 0.5, action: ACTION.PLUCK_LOW, vel: 70 }, { time: 1.0, action: ACTION.PLUCK_MID, vel: 70 }, { time: 1.5, action: ACTION.PLUCK_HIGH, vel: 75 }, { time: 2.0, action: ACTION.PLUCK_MID, vel: 60 }, { time: 2.5, action: ACTION.PLUCK_LOW, vel: 60 }, { time: 3.0, action: ACTION.BASS_ROOT, vel: 90 }, { time: 3.5, action: ACTION.PLUCK_MID, vel: 60 }],
-            [{ time: 0.0, action: ACTION.BASS_ALT, vel: 110 }, { time: 0.5, action: ACTION.PLUCK_MID, vel: 70 }, { time: 1.0, action: ACTION.PLUCK_HIGH, vel: 80 }, { time: 1.5, action: ACTION.PLUCK_MID, vel: 70 }, { time: 2.0, action: ACTION.FILL_NOTE, noteOffset: 7, vel: 90 }, { time: 2.5, action: ACTION.FILL_NOTE, noteOffset: 5, vel: 95 }, { time: 3.0, action: ACTION.FILL_NOTE, noteOffset: 4, vel: 100 }, { time: 3.5, action: ACTION.FILL_NOTE, noteOffset: 2, vel: 105 }]
-        ],
-        'STRUM_LIGHT': [ // Đệm nhẹ
-             [{ time: 0.0, action: ACTION.BASS_ROOT, vel: 100 }, { time: 1.0, action: ACTION.STRUM_DOWN, vel: 50 }, { time: 2.0, action: ACTION.STRUM_DOWN, vel: 60 }, { time: 3.0, action: ACTION.BASS_ALT, vel: 90 }]
-        ],
-        'STRUM': [ // Quạt sung
-            [{ time: 0.0, action: ACTION.BASS_ROOT, vel: 127 }, { time: 0.5, action: ACTION.STRUM_DOWN, vel: 90 }, { time: 1.0, action: ACTION.STRUM_DOWN, vel: 80 }, { time: 1.5, action: ACTION.STRUM_UP, vel: 70 }, { time: 2.0, action: ACTION.STRUM_DOWN, vel: 100 }, { time: 2.5, action: ACTION.STRUM_DOWN, vel: 60 }, { time: 3.0, action: ACTION.BASS_ALT, vel: 110 }, { time: 3.5, action: ACTION.STRUM_DOWN, vel: 70 }]
-        ]
-    }
-};
-
-class GuitarVietEngine {
-    constructor(audioOutput) {
-        this.audio = audioOutput;
-        this.context = { tempo: 60, isPlaying: false, currentBeat: 0, barCount: 0, nextNoteTime: 0 };
-        this.inputState = { rightHandChord: null, leftHandMode: 'ARPEGGIO', isFillActive: false };
-        this.intervalID = null;
-    }
-
-    setRightHandChord(chordName) {
-        // Đảm bảo Audio Context đã bật khi user tương tác
-        this.audio.resume();
-
-        const now = this.audio.getCurrentTime();
-        this.inputState.rightHandChord = chordName;
-
-        if (!this.context.isPlaying) {
-            this.start();
-            return;
-        }
-        
-        // Smart Quantize Logic
-        const beatDuration = 60 / this.context.tempo;
-        const timeToNextBeat = this.context.nextNoteTime - now;
-        if (timeToNextBeat > (beatDuration - CONFIG.QUANTIZE_WINDOW_LATE)) {
-             this.playImmediateAccent(chordName);
-        }
-    }
-
-    setLeftHandAction(buttonId, actionType) {
-        this.audio.resume();
-        switch (buttonId) {
-            case 1: this.inputState.leftHandMode = 'ARPEGGIO'; break;
-            case 2: this.inputState.leftHandMode = 'STRUM_LIGHT'; break;
-            case 3: this.inputState.leftHandMode = 'STRUM'; break;
-            case 5: if (actionType === 'PRESS') this.triggerFillIn(); break;
-            case 6: if (actionType === 'PRESS') this.triggerStop(); 
-                    else if (actionType === 'DOUBLE_TAP') this.triggerOutro(); break;
-        }
-    }
-
-    start() {
-        if (this.context.isPlaying) return;
-        this.audio.resume();
-        this.context.isPlaying = true;
-        this.context.nextNoteTime = this.audio.getCurrentTime() + 0.1;
-        this.context.barCount = 0;
-        this.context.currentBeat = 0;
-        this.intervalID = setInterval(() => this.scheduler(), CONFIG.TICK_RATE);
-    }
-
-    scheduler() {
-        while (this.context.nextNoteTime < this.audio.getCurrentTime() + CONFIG.LOOK_AHEAD) {
-            this.scheduleBeat();
-            this.advanceBeat();
-        }
-    }
-
-    scheduleBeat() {
-        const barIndex = this.context.barCount % 4;
-        let styleMode = this.inputState.leftHandMode;
-        
-        // Fallback nếu mode chưa định nghĩa
-        if(!Styles['Bolero'][styleMode]) styleMode = 'ARPEGGIO';
-
-        const styleData = Styles['Bolero'][styleMode];
-        const patternBar = styleData[barIndex] ? styleData[barIndex] : styleData[0];
-        const events = patternBar.filter(e => Math.abs(e.time - this.context.currentBeat) < 0.01);
-
-        events.forEach(event => this.processEvent(event, this.context.nextNoteTime));
-    }
-
-    advanceBeat() {
-        const secondsPerBeat = 60 / this.context.tempo;
-        this.context.nextNoteTime += (secondsPerBeat * 0.5);
-        this.context.currentBeat += 0.5;
-        if (this.context.currentBeat >= 4.0) {
-            this.context.currentBeat = 0;
-            this.context.barCount++;
-        }
-    }
-
-    processEvent(event, time) {
-        const chordName = this.inputState.rightHandChord;
-        if (!chordName) return;
-
-        const bassInfo = MusicTheory.getBassInfo(chordName);
-        const voicings = MusicTheory.Voicings[bassInfo.type];
-        
-        const humanVel = event.vel + (Math.random() * CONFIG.HUMANIZE_VELOCITY * 2 - CONFIG.HUMANIZE_VELOCITY);
-        const humanTime = time + (Math.random() * CONFIG.HUMANIZE_TIMING);
-
-        switch (event.action) {
-            case ACTION.BASS_ROOT:
-                this.audio.playString(bassInfo.string, bassInfo.rootMIDI, humanVel, humanTime);
-                break;
-            case ACTION.BASS_ALT:
-                const altNote = bassInfo.rootMIDI - 5; 
-                this.audio.playString(bassInfo.altString, altNote, humanVel, humanTime);
-                break;
-            case ACTION.PLUCK_LOW:
-            case ACTION.PLUCK_MID:
-            case ACTION.PLUCK_HIGH:
-                const stringIdx = (event.action === ACTION.PLUCK_LOW) ? 2 : (event.action === ACTION.PLUCK_MID ? 1 : 0);
-                const note = bassInfo.rootMIDI + voicings[stringIdx % voicings.length] + 12; 
-                this.audio.playString(stringIdx, note, humanVel, humanTime);
-                break;
-            case ACTION.STRUM_DOWN:
-                this.strumChord(chordName, 'DOWN', humanVel, humanTime);
-                break;
-            case ACTION.STRUM_UP:
-                this.strumChord(chordName, 'UP', humanVel, humanTime);
-                break;
-            case ACTION.FILL_NOTE:
-                const fillNote = bassInfo.rootMIDI + event.noteOffset;
-                this.audio.playNote(fillNote, humanVel, humanTime);
-                break;
-        }
-    }
-
-    strumChord(chordName, direction, velocity, startTime) {
-        const bassInfo = MusicTheory.getBassInfo(chordName);
-        const startString = bassInfo.string;
-        const strumSpeed = 0.03; 
-        for (let i = 0; i < 4; i++) {
-            const stringIdx = (startString - i);
-            if (stringIdx < 0) break;
-            const note = bassInfo.rootMIDI + MusicTheory.Voicings[bassInfo.type][i] + 12;
-            const timeOffset = (direction === 'DOWN') ? (i * strumSpeed) : ((3-i) * strumSpeed);
-            this.audio.playString(stringIdx, note, velocity * 0.9, startTime + timeOffset);
-        }
-    }
-    
-    playImmediateAccent(chordName) {
-        const now = this.audio.getCurrentTime();
-        const bassInfo = MusicTheory.getBassInfo(chordName);
-        this.audio.playString(bassInfo.string, bassInfo.rootMIDI, 127, now);
-    }
-
-    triggerFillIn() { console.log("Fill-in trigger!"); }
-    triggerStop() { 
-        this.context.isPlaying = false; 
-        clearInterval(this.intervalID); 
-        this.audio.stopAll(); 
-    }
-    triggerOutro() { console.log("Outro trigger!"); }
-}
-
-// Hàm hỗ trợ Parse Input
-function parseSongInput(inputText) {
-    const lines = inputText.split('\n');
-    const songData = [];
-    
-    lines.forEach(line => {
-        if (!line.trim()) {
-            songData.push({ line: "" }); // Dòng trống
-            return;
+            // 5. Render UI và chuyển màn hình
+            renderGameUI(songData, title, tempo);
+            document.getElementById('setup-screen').style.display = 'none';
+            document.getElementById('game-screen').style.display = 'block';
         }
 
-        // Regex tìm hợp âm trong ngoặc vuông [Dm] hoặc tròn (Dm)
-        const regex = /\[([A-Za-z0-9#]+)\]|\(([A-Za-z0-9#]+)\)/g;
-        let match;
-        const chords = [];
-        let cleanLine = line;
-        
-        // Vì vị trí hợp âm trong text gốc có thể nằm giữa từ, ta cần logic map
-        // Ở đây dùng logic đơn giản: Hợp âm đứng trước từ nào thì gán cho từ đó
-        
-        // Cách tiếp cận đơn giản hơn cho MVP:
-        // Tách chuỗi thành các phần tử, nếu là hợp âm thì gán cho từ tiếp theo
-        const parts = line.split(/(\[[^\]]+\]|\([^\)]+\)|\s+)/).filter(p => p.trim().length > 0);
-        
-        let wordIndex = 0;
-        let pendingChord = null;
-        let lineText = "";
-        
-        // Parse lại dòng
-        // Ví dụ: "[Dm] Say [Bb] giấc" -> 
-        // Token 1: [Dm] -> pendingChord = Dm
-        // Token 2: Say -> chords.push({wordIndex: 0, chord: Dm}), pendingChord = null, wordIndex++
-        
-        // Lưu ý: Logic này cần xử lý chuỗi input phức tạp. 
-        // Để an toàn và nhanh, ta dùng Regex thay thế hợp âm để lấy text sạch,
-        // và tính toán vị trí tương đối.
-        
-        // 1. Lấy text sạch (chỉ lời)
-        const textOnly = line.replace(regex, "").trim();
-        if(!textOnly) return; // Dòng chỉ có hợp âm (Intro?) bỏ qua hoặc xử lý riêng
-        
-        // 2. Tìm vị trí hợp âm
-        let currentTextIndex = 0;
-        let rawWords = line.split(/\s+/); // Tách theo khoảng trắng của dòng gốc
-        
-        // Logic đơn giản hóa cho MVP:
-        // User nhập: [Dm] Say giấc mộng [Bb] ban đầu
-        // Output: line: "Say giấc mộng ban đầu", chords: [{idx:0, Dm}, {idx:3, Bb}]
-        
-        const finalWords = [];
-        let currentWordIdx = 0;
-        
-        // Tách bằng khoảng trắng nhưng giữ lại delimiter
-        // Ta dùng một parser thủ công
-        const tokens = line.split(' ');
-        
-        tokens.forEach(token => {
-            // Check nếu token bắt đầu bằng hợp âm
-            const chordMatch = token.match(/^\[([A-Za-z0-9#]+)\]/);
-            if (chordMatch) {
-                const chord = chordMatch[1];
-                const word = token.replace(chordMatch[0], ""); // Lấy phần từ còn lại
-                if (word) {
-                    chords.push({ wordIndex: currentWordIdx, text: word, chord: chord });
-                    finalWords.push(word);
-                    currentWordIdx++;
+        function renderGameUI(songData, title, tempo) {
+            document.getElementById('display-title').innerText = title;
+            document.getElementById('display-tempo').innerText = tempo + " BPM";
+            
+            const content = document.getElementById('lyrics-content');
+            content.innerHTML = '';
+
+            songData.forEach((item, lineIndex) => {
+                const lineDiv = document.createElement('div');
+                lineDiv.className = 'lyric-line';
+                lineDiv.id = `line-${lineIndex}`;
+
+                if (item.line.trim() === "") {
+                    lineDiv.innerHTML = "&nbsp;";
                 } else {
-                    pendingChord = chord; // Hợp âm đứng một mình, gán cho từ sau
+                    const words = item.line.split(' ');
+                    words.forEach((word, wordIdx) => {
+                        // Tìm hợp âm khớp với vị trí từ này
+                        const chordInfo = item.chords.find(c => c.wordIndex === wordIdx);
+                        
+                        const wrapper = document.createElement('span');
+                        wrapper.className = 'word-wrapper';
+                        wrapper.innerText = word + " ";
+
+                        if (chordInfo) {
+                            wrapper.setAttribute('data-chord', chordInfo.chord);
+                            // Event: Tay phải bấm hợp âm
+                            const handler = (e) => {
+                                e.preventDefault();
+                                playChord(chordInfo.chord, wrapper, lineIndex);
+                            };
+                            wrapper.addEventListener('mousedown', handler);
+                            wrapper.addEventListener('touchstart', handler);
+
+                            const badge = document.createElement('div');
+                            badge.className = 'chord-badge';
+                            badge.innerText = chordInfo.chord;
+                            wrapper.appendChild(badge);
+                        }
+                        lineDiv.appendChild(wrapper);
+                    });
                 }
-            } else {
-                if (pendingChord) {
-                    chords.push({ wordIndex: currentWordIdx, text: token, chord: pendingChord });
-                    pendingChord = null;
-                }
-                finalWords.push(token);
-                currentWordIdx++;
+                content.appendChild(lineDiv);
+            });
+        }
+
+        function playChord(chordName, element, lineIndex) {
+            if (!appEngine) return;
+            appEngine.setRightHandChord(chordName);
+
+            // UI Feedback
+            document.querySelectorAll('.word-wrapper').forEach(el => el.classList.remove('chord-active'));
+            element.classList.add('chord-active');
+
+            // Scroll thông minh
+            const lineEl = document.getElementById(`line-${lineIndex}`);
+            document.querySelectorAll('.lyric-line').forEach(el => el.classList.remove('active'));
+            lineEl.classList.add('active');
+            lineEl.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+
+        function handleStyle(btnId, actionType) {
+            if (!appEngine) return;
+            appEngine.setLeftHandAction(btnId, actionType);
+
+            // UI Feedback
+            const btn = document.querySelector(`.style-btn[data-id="${btnId}"]`);
+            if ([1, 2, 3].includes(btnId) && actionType === 'PRESS') {
+                document.querySelectorAll('.style-btn').forEach(b => b.classList.remove('active-hold'));
+                btn.classList.add('active-hold');
+            } else if ([4,5,6].includes(btnId)) {
+                if(actionType === 'PRESS') btn.classList.add('active-hold');
+                else btn.classList.remove('active-hold');
             }
-        });
-        
-        songData.push({ line: finalWords.join(" "), chords: chords });
-    });
-    
-    return songData;
-}
+        }
+    </script>
+</body>
+</html>
