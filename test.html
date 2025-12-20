@@ -1,381 +1,142 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Ballad 4/4 – Picking + Chord Buttons (C Em F Am Dm G)</title>
-  <style>
-    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
-    body { margin: 0; padding: 18px; background: #0b0f14; color: #e7edf5; }
-    h1 { font-size: 18px; margin: 0 0 12px; }
-    .row { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 14px; }
-    .card { background: #121924; border: 1px solid #223047; border-radius: 12px; padding: 14px; }
-    .muted { color: #a9b6c8; font-size: 13px; line-height: 1.4; }
-    .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 10px; }
-    button {
-      background: #1f2b3e; color: #e7edf5; border: 1px solid #2d3f5c;
-      padding: 9px 11px; border-radius: 10px; cursor: pointer;
-    }
-    button:disabled { opacity: 0.55; cursor: not-allowed; }
-    button.primary { background: #2a4a7a; border-color: #3a66a8; }
-    button.danger { background: #5a1f2c; border-color: #7a2a3c; }
-    .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
-    .chip {
-      padding: 6px 10px; border-radius: 999px; border: 1px solid #2d3f5c; background: #0f1520;
-      font-size: 13px; color: #cfe0f7;
-    }
-    .grid { display: grid; gap: 8px; }
-    .pattern {
-      display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 8px; margin-top: 10px;
-    }
-    .step {
-      border: 1px solid #2d3f5c; border-radius: 10px; padding: 10px 8px;
-      background: #0f1520; text-align: center;
-    }
-    .step .top { font-weight: 700; font-size: 14px; }
-    .step .bot { font-size: 12px; color: #a9b6c8; margin-top: 3px; }
-    .step.active { outline: 2px solid #72a7ff; background: #13233a; }
-    .chords { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
-    .chords button.active { outline: 2px solid #72a7ff; }
-    label { font-size: 13px; color: #cfe0f7; display: inline-flex; gap: 6px; align-items: center; }
-    input[type="range"] { width: 180px; }
-    select { background: #0f1520; color: #e7edf5; border: 1px solid #2d3f5c; border-radius: 10px; padding: 8px 10px; }
-    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
-    .footer { margin-top: 10px; font-size: 12px; color: #a9b6c8; }
-  </style>
-
-  <!-- Tone.js via CDN -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.18/Tone.js"></script>
-
-  <!-- tonejs-instruments (SampleLibrary) via jsDelivr GitHub -->
-  <script src="https://cdn.jsdelivr.net/gh/nbrosowsky/tonejs-instruments@master/Tonejs-Instruments.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thực hành Guitar Bolero</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f4f9; display: flex; justify-content: center; padding: 20px; }
+        .container { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 800px; }
+        h2 { text-align: center; color: #2c3e50; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+        .section { border: 1px solid #ddd; padding: 15px; border-radius: 10px; background: #fafafa; }
+        h3 { margin-top: 0; font-size: 1.1em; color: #e67e22; border-bottom: 2px solid #e67e22; padding-bottom: 5px; }
+        label { display: block; margin: 10px 0; cursor: pointer; padding: 8px; border-radius: 5px; transition: background 0.3s; }
+        label:hover { background: #eee; }
+        input[type="radio"] { margin-right: 10px; }
+        .controls { margin-top: 30px; text-align: center; border-top: 2px solid #eee; pt: 20px; }
+        button { background: #27ae60; color: white; border: none; padding: 12px 30px; font-size: 1.1em; border-radius: 25px; cursor: pointer; transition: 0.3s; }
+        button:hover { background: #219150; transform: scale(1.05); }
+        button:disabled { background: #bdc3c7; cursor: not-allowed; }
+        .visualizer { margin-top: 20px; height: 60px; display: flex; align-items: flex-end; justify-content: center; gap: 5px; }
+        .bar { width: 10px; background: #3498db; transition: height 0.1s; border-radius: 5px 5px 0 0; }
+        .status { margin-top: 10px; font-weight: bold; color: #7f8c8d; }
+    </style>
 </head>
-
 <body>
-  <h1>Ballad 4/4 – Mẫu đệm tay phải + Nút hợp âm (C / Em / F / Am / Dm / G)</h1>
 
-  <div class="row">
-    <!-- LEFT: Pattern -->
-    <div class="card">
-      <div class="muted">
-        Mẫu đang mô phỏng đúng bài hướng dẫn kiểu: <span class="mono">Bass – 3 – 2 – 3 – 1 – 3 – 2 – 3</span>
-        (8 nốt móc đơn trong 1 ô nhịp 4/4). Bạn bấm hợp âm ở cột phải, hệ thống sẽ rải theo đúng mẫu này.
-      </div>
+<div class="container">
+    <h2>Học Đệm Guitar Bolero</h2>
+    
+    <div class="grid">
+        <div class="section">
+            <h3>1. Chọn Cách Đệm</h3>
+            <label>
+                <input type="radio" name="rhythm" value="basic" checked> 
+                <strong>Cách 1: Cơ bản</strong><br>
+                <small>(Bát - 3 - 2 - 1 - 3 - 2 - 3 - 1 - 2 - 3)</small>
+            </label>
+            <label>
+                <input type="radio" name="rhythm" value="legend"> 
+                <strong>Cách 2: Huyền thoại</strong><br>
+                <small>(Bát-321 - Chát - Bát - Chát...)</small>
+            </label>
+        </div>
 
-      <div class="controls">
-        <button id="btnInit" class="primary">1) Start Audio + Load Guitar</button>
-        <button id="btnPlay" class="primary" disabled>2) Play</button>
-        <button id="btnStop" class="danger" disabled>Stop</button>
-
-        <label>
-          Tempo: <span id="tempoLabel" class="mono">78</span> BPM
-          <input id="tempo" type="range" min="50" max="120" value="78" />
-        </label>
-
-        <label>
-          Đổi hợp âm:
-          <select id="changeMode" title="Cách đổi hợp âm khi bấm nút">
-            <option value="nextBar" selected>Đầu ô nhịp kế tiếp (khuyến nghị)</option>
-            <option value="immediate">Đổi ngay lập tức</option>
-          </select>
-        </label>
-
-        <label>
-          Bass:
-          <select id="bassMode" title="Auto dùng bass đúng kiểu hợp âm; 6/5/4 để luyện đổi bass">
-            <option value="auto" selected>Auto</option>
-            <option value="6">Dây 6</option>
-            <option value="5">Dây 5</option>
-            <option value="4">Dây 4</option>
-          </select>
-        </label>
-
-        <label title="Giảm số sample tải về (tải nhanh hơn, âm có thể kém chi tiết hơn)">
-          <input id="minify" type="checkbox" checked />
-          Load nhanh (minify)
-        </label>
-      </div>
-
-      <div class="chips">
-        <div class="chip">Hợp âm hiện tại: <span id="curChord" class="mono">—</span></div>
-        <div class="chip">Hợp âm kế tiếp: <span id="nextChord" class="mono">—</span></div>
-        <div class="chip">Ô nhịp: <span id="barCount" class="mono">0</span></div>
-      </div>
-
-      <div id="pattern" class="pattern"></div>
-
-      <div class="footer">
-        Gợi ý: Khi mới tập, hãy bấm hợp âm chậm và chỉ đổi ở đầu ô nhịp (nghe “liền” hơn).
-      </div>
+        <div class="section">
+            <h3>2. Chọn Hợp Âm</h3>
+            <label><input type="radio" name="chord" value="Am" checked> <b>La Thứ (Am)</b> - Trầm buồn</label>
+            <label><input type="radio" name="chord" value="Dm"> <b>Rê Thứ (Dm)</b> - Da diết</label>
+            <label><input type="radio" name="chord" value="E"> <b>Mi Trưởng (E)</b> - Căng thẳng</label>
+        </div>
     </div>
 
-    <!-- RIGHT: Chords -->
-    <div class="card">
-      <div class="muted">
-        Bấm nút hợp âm để “set” tay trái. Âm bạn nghe là dạng rải (arpeggio), vì mẫu tay phải đang lần lượt pluck từng dây.
-      </div>
-
-      <div class="chords" id="chordButtons"></div>
-
-      <div class="grid" style="margin-top:10px;">
-        <div class="chip">Voicing (mô phỏng dây 6→1): <span id="voicing" class="mono">—</span></div>
-        <div class="chip">Note đang đánh: <span id="lastNote" class="mono">—</span></div>
-      </div>
-
-      <div class="footer">
-        Lưu ý: “F” ở đây là dạng dễ cho người mới (thường nghe gần F hoặc Fmaj7 tuỳ cách bấm).  
-        Nếu bạn muốn đúng 100% theo đúng thế bấm/video của bạn (ví dụ F barre hay F dễ), chỉ cần đổi map dây-nốt ở phần JS.
-      </div>
+    <div class="controls">
+        <button id="playBtn">PHÁT THỬ (PLAY)</button>
+        <div class="status" id="statusText">Sẵn sàng thực hành!</div>
+        <div class="visualizer" id="viz">
+            <div class="bar" style="height: 10%"></div>
+            <div class="bar" style="height: 10%"></div>
+            <div class="bar" style="height: 10%"></div>
+            <div class="bar" style="height: 10%"></div>
+            <div class="bar" style="height: 10%"></div>
+        </div>
     </div>
-  </div>
+</div>
 
 <script>
-(() => {
-  // ======================
-  // 1) Chord shapes (strings 6 -> 1)
-  // ======================
-  // Note naming: Tone.js scientific pitch notation, e.g. "C4"
-  // null = muted string
-  const CHORDS = {
-    "C":  { bassString: 5, strings: {6:null, 5:"C3", 4:"E3", 3:"G3", 2:"C4", 1:"E4"} },
-    "Em": { bassString: 6, strings: {6:"E2", 5:"B2", 4:"E3", 3:"G3", 2:"B3", 1:"E4"} },
-    // "F easy" (no barre): 0-1-2-3 on strings 1-2-3-4 => sounds like Fmaj7-ish
-    "F":  { bassString: 4, strings: {6:null, 5:null, 4:"F3", 3:"A3", 2:"C4", 1:"E4"} },
-    "Am": { bassString: 5, strings: {6:null, 5:"A2", 4:"E3", 3:"A3", 2:"C4", 1:"E4"} },
-    "Dm": { bassString: 4, strings: {6:null, 5:"A2", 4:"D3", 3:"A3", 2:"D4", 1:"F4"} },
-    "G":  { bassString: 6, strings: {6:"G2", 5:"B2", 4:"D3", 3:"G3", 2:"B3", 1:"G4"} }
-  };
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    let isPlaying = false;
 
-  // ======================
-  // 2) Picking pattern (8 eighth-notes per bar)
-  // ======================
-  // Video-style: Bass + 3-2-3-1-3-2-3
-  const PATTERN = [
-    { label: "B", finger: "P", string: "BASS" },
-    { label: "3", finger: "i", string: 3 },
-    { label: "2", finger: "m", string: 2 },
-    { label: "3", finger: "i", string: 3 },
-    { label: "1", finger: "a", string: 1 },
-    { label: "3", finger: "i", string: 3 },
-    { label: "2", finger: "m", string: 2 },
-    { label: "3", finger: "i", string: 3 }
-  ];
+    // Tần số các hợp âm (tượng trưng)
+    const frequencies = {
+        'Am': [110, 220, 261, 329], // A2, A3, C4, E4
+        'Dm': [146, 293, 349, 440], // D3, D4, F4, A4
+        'E': [82, 164, 207, 246]    // E2, E3, G#3, B3
+    };
 
-  // ======================
-  // 3) UI
-  // ======================
-  const $ = (id) => document.getElementById(id);
+    function playNote(freq, type, duration, volume = 0.5) {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+        gain.gain.setValueAtTime(volume, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + duration);
+        
+        // Hiệu ứng visualizer
+        const bars = document.querySelectorAll('.bar');
+        bars.forEach(bar => bar.style.height = Math.random() * 100 + '%');
+        setTimeout(() => bars.forEach(bar => bar.style.height = '10%'), duration * 1000);
+    }
 
-  const elPattern = $("pattern");
-  const elChordButtons = $("chordButtons");
-  const elCurChord = $("curChord");
-  const elNextChord = $("nextChord");
-  const elBarCount = $("barCount");
-  const elTempo = $("tempo");
-  const elTempoLabel = $("tempoLabel");
-  const elChangeMode = $("changeMode");
-  const elBassMode = $("bassMode");
-  const elMinify = $("minify");
-  const elVoicing = $("voicing");
-  const elLastNote = $("lastNote");
+    async function playSequence() {
+        if (isPlaying) return;
+        isPlaying = true;
+        document.getElementById('playBtn').disabled = true;
+        
+        const rhythm = document.querySelector('input[name="rhythm"]:checked').value;
+        const chordKey = document.querySelector('input[name="chord"]:checked').value;
+        const f = frequencies[chordKey];
+        const status = document.getElementById('statusText');
 
-  const btnInit = $("btnInit");
-  const btnPlay = $("btnPlay");
-  const btnStop = $("btnStop");
+        if (rhythm === 'basic') {
+            status.innerText = "Đang chơi: Cách 1 (Rải dây)...";
+            const pattern = [f[0], f[1], f[2], f[3], f[1], f[2], f[1], f[3], f[2], f[1]];
+            for (let note of pattern) {
+                playNote(note, 'sine', 0.4);
+                await new Promise(r => setTimeout(r, 400));
+            }
+        } else {
+            status.innerText = "Đang chơi: Cách 2 (Quạt/Chát)...";
+            // Bass
+            playNote(f[0], 'triangle', 0.5, 0.8);
+            await new Promise(r => setTimeout(r, 400));
+            // 321
+            playNote(f[1], 'sine', 0.2); playNote(f[2], 'sine', 0.2); playNote(f[3], 'sine', 0.2);
+            await new Promise(r => setTimeout(r, 400));
+            // Chát
+            status.innerText = "Chát!";
+            playNote(f[1], 'square', 0.1, 0.3); playNote(f[2], 'square', 0.1, 0.3);
+            await new Promise(r => setTimeout(r, 400));
+            // Bass phụ
+            playNote(f[1], 'triangle', 0.5, 0.6);
+            await new Promise(r => setTimeout(r, 400));
+        }
 
-  // Render pattern
-  const stepEls = PATTERN.map((s, i) => {
-    const div = document.createElement("div");
-    div.className = "step";
-    div.innerHTML = `<div class="top">${s.label}</div><div class="bot">${s.finger}</div>`;
-    elPattern.appendChild(div);
-    return div;
-  });
+        isPlaying = false;
+        document.getElementById('playBtn').disabled = false;
+        status.innerText = "Hoàn thành! Chọn tổ hợp khác và thử lại.";
+    }
 
-  // Render chord buttons
-  const chordNames = Object.keys(CHORDS);
-  const chordBtnEls = {};
-  chordNames.forEach(name => {
-    const b = document.createElement("button");
-    b.textContent = name;
-    b.disabled = true;
-    b.addEventListener("click", () => onChordPressed(name));
-    elChordButtons.appendChild(b);
-    chordBtnEls[name] = b;
-  });
-
-  // ======================
-  // 4) Audio engine
-  // ======================
-  let guitar = null;
-  let isReady = false;
-
-  let currentChord = null;
-  let queuedChord = null;
-
-  let stepIndex = 0;     // global step counter
-  let barIndex = 0;      // bar counter
-
-  function setChordUI(activeName) {
-    Object.entries(chordBtnEls).forEach(([name, el]) => {
-      el.classList.toggle("active", name === activeName);
+    document.getElementById('playBtn').addEventListener('click', () => {
+        if (ctx.state === 'suspended') ctx.resume();
+        playSequence();
     });
-  }
-
-  function voicingString(chordName) {
-    const shape = CHORDS[chordName]?.strings;
-    if (!shape) return "—";
-    // 6 -> 1
-    const parts = [6,5,4,3,2,1].map(s => shape[s] ?? null).map(x => x ?? "x");
-    return parts.join(" ");
-  }
-
-  function updateHud() {
-    elCurChord.textContent = currentChord ?? "—";
-    elNextChord.textContent = queuedChord ?? "—";
-    elBarCount.textContent = String(barIndex);
-    elVoicing.textContent = currentChord ? voicingString(currentChord) : "—";
-    setChordUI(currentChord);
-  }
-
-  function getBassStringForChord(chordName) {
-    const mode = elBassMode.value;
-    if (mode === "auto") return CHORDS[chordName].bassString;
-    return Number(mode);
-  }
-
-  function getNoteForStep(chordName, patStep) {
-    const shape = CHORDS[chordName];
-    if (!shape) return null;
-
-    const s = PATTERN[patStep].string;
-    if (s === "BASS") {
-      const bassStr = getBassStringForChord(chordName);
-      return shape.strings[bassStr] ?? null;
-    }
-    return shape.strings[s] ?? null;
-  }
-
-  function highlightStep(patStep) {
-    stepEls.forEach((el, idx) => el.classList.toggle("active", idx === patStep));
-  }
-
-  function scheduleTick(time) {
-    const patStep = stepIndex % PATTERN.length;
-
-    // Change chord at bar boundary (step 0) if queued
-    if (patStep === 0) {
-      if (stepIndex > 0) barIndex += 1;
-      if (queuedChord) {
-        currentChord = queuedChord;
-        queuedChord = null;
-      }
-      updateHud();
-    }
-
-    highlightStep(patStep);
-
-    const note = currentChord ? getNoteForStep(currentChord, patStep) : null;
-
-    if (note && guitar) {
-      const isBass = (PATTERN[patStep].string === "BASS");
-      const vel = isBass ? 0.9 : 0.65;
-      // a short pluck; tweak to taste
-      guitar.triggerAttackRelease(note, "16n", time, vel);
-      elLastNote.textContent = note;
-    } else {
-      elLastNote.textContent = "—";
-    }
-
-    stepIndex += 1;
-  }
-
-  function onChordPressed(name) {
-    const mode = elChangeMode.value;
-    if (!currentChord) {
-      currentChord = name;
-      queuedChord = null;
-    } else if (mode === "immediate") {
-      currentChord = name;
-      queuedChord = null;
-    } else {
-      queuedChord = name;
-    }
-    updateHud();
-  }
-
-  // Tempo control
-  elTempo.addEventListener("input", () => {
-    elTempoLabel.textContent = elTempo.value;
-    Tone.Transport.bpm.value = Number(elTempo.value);
-  });
-
-  // Init/load
-  btnInit.addEventListener("click", async () => {
-    btnInit.disabled = true;
-    btnInit.textContent = "Loading…";
-
-    try {
-      await Tone.start();
-
-      // Load guitar from tonejs-instruments
-      guitar = SampleLibrary.load({
-        instruments: "guitar-acoustic",
-        baseUrl: "https://nbrosowsky.github.io/tonejs-instruments/samples/",
-        minify: elMinify.checked
-      });
-
-      // Connect output
-      if (typeof guitar.toDestination === "function") guitar.toDestination();
-      else if (typeof guitar.toMaster === "function") guitar.toMaster();
-
-      Tone.Transport.bpm.value = Number(elTempo.value);
-
-      // schedule 8th-note ticks
-      Tone.Transport.cancel();
-      Tone.Transport.scheduleRepeat(scheduleTick, "8n");
-
-      // Wait until buffers loaded (tonejs-instruments README suggests Tone.Buffer.on('load', ...) )
-      Tone.Buffer.on("load", () => {
-        isReady = true;
-        btnPlay.disabled = false;
-        btnStop.disabled = false;
-        Object.values(chordBtnEls).forEach(b => b.disabled = false);
-
-        if (!currentChord) currentChord = "C";
-        updateHud();
-
-        btnInit.textContent = "Loaded";
-      });
-
-      // In case it is already loaded quickly:
-      // (Tone.Buffer.on('load') fires when all Tone.Buffer are loaded; keep as primary signal.)
-    } catch (e) {
-      console.error(e);
-      btnInit.disabled = false;
-      btnInit.textContent = "Start Audio + Load Guitar (retry)";
-      alert("Không load được audio. Mở Console để xem lỗi. Gợi ý: chạy trang qua http(s), không mở file://");
-    }
-  });
-
-  btnPlay.addEventListener("click", async () => {
-    if (!isReady) return;
-    stepIndex = 0;
-    barIndex = 0;
-    queuedChord = null;
-    updateHud();
-    await Tone.start();
-    Tone.Transport.start("+0.05");
-  });
-
-  btnStop.addEventListener("click", () => {
-    Tone.Transport.stop();
-    highlightStep(-1);
-  });
-
-  // Init HUD
-  updateHud();
-})();
 </script>
+
 </body>
 </html>
