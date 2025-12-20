@@ -1,232 +1,506 @@
-// app.js (PRD Layout Binder)
-import { SONGS, PATTERNS, CHORD_DB, GENRE_DEFAULTS } from "./data.js";
-import { createEngine } from "./engine.js";
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"
+    />
+    <meta name="theme-color" content="#0b0f14" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>Guitar Nhậu</title>
 
-const el = {
-  overlay: document.getElementById("orientationOverlay"),
+    <style>
+      :root{
+        --bg:#0b0f14;
+        --panel:#121924;
+        --border:#223047;
+        --text:#e7edf5;
+        --muted:rgba(231,237,245,.75);
+        --hero:#ff8a00;
+        --heroBorder:#ffb15a;
+        --ok:rgba(72,255,179,.20);
+        --warn:rgba(255,184,107,.20);
+      }
 
-  // modal
-  modal: document.getElementById("patternModal"),
-  modalTitle: document.getElementById("modalTitle"),
-  patternList: document.getElementById("patternList"),
-  btnModalClose: document.getElementById("btnModalClose"),
+      html, body { height:100%; width:100%; margin:0; background:var(--bg); color:var(--text); }
+      body{
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+        -webkit-tap-highlight-color: transparent;
+        user-select:none;
+        touch-action: manipulation;
+        overflow:hidden;
+      }
 
-  // left
-  melodyBtns: Array.from({ length: 7 }, (_, i) => document.getElementById(`mel${i}`)),
-  slotBtns: Array.from({ length: 6 }, (_, i) => document.getElementById(`slot${i}`)),
-  btnNextChord: document.getElementById("btnNextChord"),
-  nextChordPreview: document.getElementById("nextChordPreview"),
-  btnFill: document.getElementById("btnFill"),
-  btnTransMinus: document.getElementById("btnTransMinus"),
-  btnTransPlus: document.getElementById("btnTransPlus"),
-  transposeVal: document.getElementById("transposeVal"),
-  btnBpmMinus: document.getElementById("btnBpmMinus"),
-  btnBpmPlus: document.getElementById("btnBpmPlus"),
-  bpmVal: document.getElementById("bpmVal"),
-  changeMode: document.getElementById("changeMode"),
-  metroMode: document.getElementById("metroMode"),
-  status: document.getElementById("status"),
+      /* Landscape overlay */
+      #orientationOverlay{
+        position:fixed; inset:0;
+        background:rgba(0,0,0,.92);
+        z-index:9999;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+      }
+      #orientationOverlay.hidden{ display:none; }
+      .overlayCard{
+        width:min(560px, 92vw);
+        background:var(--panel);
+        border:1px solid var(--border);
+        border-radius:18px;
+        padding:18px;
+        text-align:center;
+      }
+      .overlayTitle{ font-weight:900; font-size:20px; margin-bottom:8px; }
+      .overlaySub{ color:var(--muted); }
 
-  // middle
-  songTitle: document.getElementById("songTitle"),
-  songSelect: document.getElementById("songSelect"),
-  btnPlay: document.getElementById("btnPlay"),
-  btnStop: document.getElementById("btnStop"),
-  songGenre: document.getElementById("songGenre"),
-  activePattern: document.getElementById("activePattern"),
-  activeChord: document.getElementById("activeChord"),
-  queuedChord: document.getElementById("queuedChord"),
-  freestyleRow: document.getElementById("freestyleRow"),
-  lyricsView: document.getElementById("lyricsView"),
+      /* Layout 3 columns */
+      #app{
+        height:100%;
+        width:100%;
+        display:flex;
+        gap:12px;
+        padding:12px;
+        box-sizing:border-box;
+      }
+      .col{
+        height:100%;
+        background:var(--panel);
+        border:1px solid var(--border);
+        border-radius:18px;
+        box-sizing:border-box;
+        overflow:hidden;
+        display:flex;
+        flex-direction:column;
+      }
+      #colLeft{ width:30%; min-width:280px; }
+      #colMid{ width:55%; min-width:320px; }
+      #colRight{ width:15%; min-width:140px; }
 
-  // right
-  dynSlider: document.getElementById("dynSlider"),
-};
+      .section{
+        padding:12px;
+        border-bottom:1px solid var(--border);
+      }
+      .sectionTitle{
+        font-weight:900;
+        margin-bottom:10px;
+        letter-spacing:.2px;
+      }
 
-const engine = createEngine({
-  Tone: window.Tone,
-  SONGS,
-  PATTERNS,
-  CHORD_DB,
-  GENRE_DEFAULTS,
-});
+      /* Buttons */
+      button{
+        background:#1f2b3e;
+        border:1px solid #2d3f5c;
+        color:var(--text);
+        border-radius:14px;
+        padding:12px 12px;
+        cursor:pointer;
+      }
+      button:active{ transform: translateY(1px); }
 
-let currentState = null;
-let pendingAssignSlotIndex = null; // slot index for modal selection
+      /* Left column - Melody Pad */
+      .melodyRow{
+        display:grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap:8px;
+      }
+      .melodyBtn{
+        padding:12px 8px;
+        font-weight:900;
+        white-space:pre-line;
+        min-height:62px;
+      }
 
-boot().catch((e) => {
-  console.error(e);
-  alert(String(e?.message || e));
-});
+      /* Pattern slots */
+      .slotsGrid{
+        display:grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap:10px;
+      }
+      .slotBtn{
+        border-radius:999px;
+        min-height:64px;
+        font-weight:900;
+        white-space:pre-line;
+      }
+      .slotBtn.empty{
+        border-style:dashed;
+        opacity:.9;
+      }
+      .slotBtn.active{
+        outline:2px solid #72a7ff;
+        box-shadow: 0 0 18px rgba(114,167,255,.35);
+      }
 
-async function boot() {
-  // populate song selector
-  el.songSelect.innerHTML = "";
-  SONGS.forEach((s) => {
-    const opt = document.createElement("option");
-    opt.value = s.id;
-    opt.textContent = s.title;
-    el.songSelect.appendChild(opt);
-  });
+      /* Master control */
+      .master{
+        display:flex;
+        gap:10px;
+        height:100%;
+      }
+      .hero{
+        flex:1;
+        background:var(--hero);
+        border:1px solid var(--heroBorder);
+        color:#0b0f14;
+        font-weight:1000;
+        font-size:22px;
+        border-radius:18px;
+        display:flex;
+        flex-direction:column;
+        justify-content:center;
+        align-items:center;
+        position:relative;
+        min-height:160px;
+      }
+      .hero small{
+        position:absolute;
+        left:12px;
+        bottom:10px;
+        font-size:12px;
+        font-weight:900;
+        opacity:.85;
+      }
+      .rightGrid{
+        width:46%;
+        display:flex;
+        flex-direction:column;
+        gap:10px;
+      }
+      .btnFill{
+        background:#7a2a3c;
+        border:1px solid #a83a52;
+        font-weight:900;
+        padding:14px 10px;
+        border-radius:16px;
+      }
+      .miniControls{
+        background:#0f1520;
+        border:1px solid #2d3f5c;
+        border-radius:16px;
+        padding:10px;
+      }
+      .ctrlRow{
+        display:grid;
+        grid-template-columns: 42px 1fr 42px;
+        gap:8px;
+        align-items:center;
+        margin-top:8px;
+      }
+      .ctrlRow .val{
+        text-align:center;
+        font-weight:1000;
+        font-size:16px;
+      }
+      .ctrlLabel{
+        font-weight:900;
+        color:var(--muted);
+        font-size:12px;
+      }
 
-  wireEvents();
-  updateOrientationOverlay();
+      /* Center column */
+      .headerTop{
+        display:flex;
+        align-items:center;
+        gap:10px;
+        flex-wrap:wrap;
+      }
+      .songTitle{
+        font-weight:1000;
+        font-size:18px;
+      }
+      select{
+        background:#0f1520;
+        border:1px solid #2d3f5c;
+        color:var(--text);
+        border-radius:12px;
+        padding:10px;
+      }
+      .headerMeta{
+        display:flex;
+        gap:10px;
+        flex-wrap:wrap;
+        margin-top:10px;
+        color:var(--muted);
+        font-size:13px;
+      }
+      .playBtn{
+        background:#2a4a7a;
+        border:1px solid #3a66a8;
+        font-weight:900;
+        padding:12px 14px;
+        border-radius:14px;
+      }
+      .stopBtn{
+        background:#5a1f2c;
+        border:1px solid #7a2a3c;
+        font-weight:900;
+        padding:12px 14px;
+        border-radius:14px;
+      }
 
-  engine.subscribe((s) => {
-    currentState = s;
-    render(s);
-  });
+      .freestyleRow{
+        display:flex;
+        gap:8px;
+        overflow-x:auto;
+        padding-bottom:6px;
+      }
+      .freestyleRow button{
+        border-radius:999px;
+        padding:10px 12px;
+        font-weight:900;
+        white-space:nowrap;
+      }
 
-  await engine.init();
-  engine.loadSong(SONGS[0].id);
-}
+      .lyrics{
+        flex:1;
+        overflow:auto;
+        padding:12px;
+        font-size:22px;
+        line-height:1.55;
+        white-space:pre-wrap;
+      }
+      .chord{ font-weight:1000; padding:0 5px; border-radius:10px; }
+      .chord-active{ background:var(--ok); }
+      .chord-queued{ background:var(--warn); }
+      .chord-past{ opacity:.55; }
 
-function wireEvents() {
-  window.addEventListener("resize", updateOrientationOverlay);
-  window.addEventListener("orientationchange", updateOrientationOverlay);
+      /* Right column - Dynamics slider vertical */
+      .dynWrap{
+        flex:1;
+        display:flex;
+        flex-direction:column;
+        gap:10px;
+        padding:12px;
+      }
+      .dynLabelTop, .dynLabelBottom{
+        font-weight:1000;
+        color:var(--muted);
+        text-align:center;
+      }
+      .dynSliderWrap{
+        flex:1;
+        display:flex;
+        justify-content:center;
+        align-items:center;
+      }
+      input[type="range"].vertical{
+        -webkit-appearance:none;
+        appearance:none;
+        width: 260px;
+        height: 38px;
+        transform: rotate(-90deg);
+        background:transparent;
+      }
+      input[type="range"].vertical::-webkit-slider-runnable-track{
+        height:10px;
+        background:#0f1520;
+        border:1px solid #2d3f5c;
+        border-radius:999px;
+      }
+      input[type="range"].vertical::-webkit-slider-thumb{
+        -webkit-appearance:none;
+        appearance:none;
+        width:34px;
+        height:34px;
+        border-radius:50%;
+        background:#e7edf5;
+        border:1px solid #2d3f5c;
+        margin-top:-13px;
+      }
 
-  el.btnPlay.addEventListener("click", () => engine.play().catch(console.error));
-  el.btnStop.addEventListener("click", () => engine.stop());
+      /* Modal pattern picker */
+      #patternModal{
+        position:fixed; inset:0;
+        background:rgba(0,0,0,.72);
+        display:none;
+        align-items:center;
+        justify-content:center;
+        z-index:9998;
+      }
+      #patternModal.open{ display:flex; }
+      .modalCard{
+        width:min(720px, 92vw);
+        max-height:min(80vh, 680px);
+        overflow:auto;
+        background:var(--panel);
+        border:1px solid var(--border);
+        border-radius:18px;
+        padding:14px;
+      }
+      .modalTitle{ font-weight:1000; font-size:16px; margin-bottom:10px; }
+      .patternList{
+        display:grid;
+        grid-template-columns: 1fr;
+        gap:10px;
+      }
+      .patternItem{
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        gap:10px;
+        padding:12px;
+        border:1px solid #2d3f5c;
+        border-radius:14px;
+        background:#0f1520;
+      }
+      .patternItem .name{ font-weight:1000; }
+      .patternItem .meta{ color:var(--muted); font-size:12px; }
+      .modalActions{ display:flex; justify-content:flex-end; margin-top:12px; }
+    </style>
+  </head>
 
-  el.songSelect.addEventListener("change", () => engine.loadSong(el.songSelect.value));
+  <body>
+    <!-- Portrait overlay -->
+    <div id="orientationOverlay" class="hidden">
+      <div class="overlayCard">
+        <div class="overlayTitle">Xoay ngang máy để bắt đầu nhậu!</div>
+        <div class="overlaySub">Landscape only</div>
+      </div>
+    </div>
 
-  el.btnNextChord.addEventListener("click", () => engine.nextChord());
-  el.btnFill.addEventListener("click", () => engine.fill());
+    <!-- Pattern picker modal -->
+    <div id="patternModal">
+      <div class="modalCard">
+        <div class="modalTitle" id="modalTitle">Chọn điệu</div>
+        <div class="patternList" id="patternList"></div>
+        <div class="modalActions">
+          <button id="btnModalClose">Đóng</button>
+        </div>
+      </div>
+    </div>
 
-  el.btnTransMinus.addEventListener("click", () => engine.adjustTranspose(-1));
-  el.btnTransPlus.addEventListener("click", () => engine.adjustTranspose(+1));
+    <!-- App layout -->
+    <div id="app">
+      <!-- LEFT: Control Panel -->
+      <div class="col" id="colLeft">
+        <!-- Melody Pad -->
+        <div class="section">
+          <div class="sectionTitle">Smart Melody Pad</div>
+          <div class="melodyRow">
+            <button class="melodyBtn" id="mel0">1</button>
+            <button class="melodyBtn" id="mel1">2</button>
+            <button class="melodyBtn" id="mel2">3</button>
+            <button class="melodyBtn" id="mel3">4</button>
+            <button class="melodyBtn" id="mel4">5</button>
+            <button class="melodyBtn" id="mel5">6</button>
+            <button class="melodyBtn" id="mel6">7</button>
+          </div>
+        </div>
 
-  el.btnBpmMinus.addEventListener("click", () => engine.adjustBpm(-1));
-  el.btnBpmPlus.addEventListener("click", () => engine.adjustBpm(+1));
+        <!-- Pattern Slots -->
+        <div class="section">
+          <div class="sectionTitle">Pattern Slots</div>
+          <div class="slotsGrid">
+            <button class="slotBtn empty" id="slot0">+</button>
+            <button class="slotBtn empty" id="slot1">+</button>
+            <button class="slotBtn empty" id="slot2">+</button>
+            <button class="slotBtn empty" id="slot3">+</button>
+            <button class="slotBtn empty" id="slot4">+</button>
+            <button class="slotBtn empty" id="slot5">+</button>
+          </div>
+        </div>
 
-  el.dynSlider.addEventListener("input", () => engine.setDynamics(Number(el.dynSlider.value)));
+        <!-- Master Control -->
+        <div class="section" style="border-bottom:0; flex:1; display:flex; flex-direction:column;">
+          <div class="sectionTitle">Master Control</div>
 
-  el.changeMode.addEventListener("change", () => engine.setChangeMode(el.changeMode.value));
-  el.metroMode.addEventListener("change", () => engine.setMetronome(el.metroMode.value));
+          <div class="master" style="flex:1;">
+            <button class="hero" id="btnNextChord">
+              NEXT CHORD
+              <small>Tiếp theo: <span id="nextChordPreview">—</span></small>
+            </button>
 
-  // Melody pad
-  el.melodyBtns.forEach((btn, i) => btn.addEventListener("click", () => engine.playMelodyDegree(i)));
+            <div class="rightGrid">
+              <button class="btnFill" id="btnFill">QUẠT VÀO (FILL)</button>
 
-  // Slots
-  el.slotBtns.forEach((btn, idx) => {
-    btn.addEventListener("click", () => onSlotClick(idx));
-  });
+              <div class="miniControls">
+                <div class="ctrlLabel">Transpose</div>
+                <div class="ctrlRow">
+                  <button id="btnTransMinus">-</button>
+                  <div class="val" id="transposeVal">0</div>
+                  <button id="btnTransPlus">+</button>
+                </div>
 
-  // Modal close
-  el.btnModalClose.addEventListener("click", closePatternModal);
-  el.modal.addEventListener("click", (ev) => {
-    if (ev.target === el.modal) closePatternModal();
-  });
-}
+                <div class="ctrlLabel" style="margin-top:10px;">BPM</div>
+                <div class="ctrlRow">
+                  <button id="btnBpmMinus">-</button>
+                  <div class="val" id="bpmVal">78</div>
+                  <button id="btnBpmPlus">+</button>
+                </div>
+              </div>
 
-function updateOrientationOverlay() {
-  const isPortrait = window.matchMedia("(orientation: portrait)").matches;
-  el.overlay.classList.toggle("hidden", !isPortrait);
+              <!-- Optional debug toggles (can hide later) -->
+              <div class="miniControls">
+                <div class="ctrlLabel">Chế độ đổi hợp âm</div>
+                <select id="changeMode" style="width:100%;">
+                  <option value="nextBar" selected>Đầu ô nhịp</option>
+                  <option value="immediate">Đổi ngay</option>
+                </select>
 
-  // If portrait, you may want to stop audio immediately (optional):
-  // if (isPortrait && currentState?.playing) engine.stop();
-}
+                <div class="ctrlLabel" style="margin-top:10px;">Metronome</div>
+                <select id="metroMode" style="width:100%;">
+                  <option value="off" selected>Tắt</option>
+                  <option value="on">Bật</option>
+                </select>
+              </div>
+            </div>
+          </div>
 
-function onSlotClick(slotIndex) {
-  if (!currentState) return;
-  const pid = currentState.slots?.[slotIndex]?.patternId;
+          <div style="margin-top:10px; color:var(--muted); font-size:12px;">
+            Status: <span id="status">—</span>
+          </div>
+        </div>
+      </div>
 
-  if (!pid) {
-    // empty -> open modal to assign
-    pendingAssignSlotIndex = slotIndex;
-    openPatternModalForSong();
-    return;
-  }
+      <!-- MIDDLE: The Stage -->
+      <div class="col" id="colMid">
+        <!-- Header -->
+        <div class="section">
+          <div class="headerTop">
+            <div class="songTitle" id="songTitle">Guitar Nhậu</div>
+            <select id="songSelect"></select>
+            <button class="playBtn" id="btnPlay">Play</button>
+            <button class="stopBtn" id="btnStop">Stop</button>
+          </div>
 
-  // assigned -> select (queue switch at bar boundary inside engine)
-  engine.selectSlot(slotIndex);
-}
+          <div class="headerMeta">
+            <div>Điệu: <span id="songGenre">—</span></div>
+            <div>Pattern: <span id="activePattern">—</span></div>
+            <div>Chord: <span id="activeChord">—</span></div>
+            <div>Queued: <span id="queuedChord">—</span></div>
+          </div>
+        </div>
 
-function openPatternModalForSong() {
-  const opts = engine.getPatternOptionsForSong();
-  el.patternList.innerHTML = "";
+        <!-- Freestyle Row (sticky) -->
+        <div class="section" style="position:sticky; top:0; z-index:5; background:var(--panel);">
+          <div class="sectionTitle" style="margin-bottom:8px;">Freestyle Chord Row</div>
+          <div class="freestyleRow" id="freestyleRow"></div>
+        </div>
 
-  el.modalTitle.textContent = `Chọn điệu (Slot ${pendingAssignSlotIndex + 1})`;
+        <!-- Lyrics -->
+        <div class="lyrics" id="lyricsView"></div>
+      </div>
 
-  opts.forEach((p) => {
-    const row = document.createElement("div");
-    row.className = "patternItem";
+      <!-- RIGHT: Dynamics -->
+      <div class="col" id="colRight">
+        <div class="section" style="border-bottom:0; flex:1; display:flex; flex-direction:column;">
+          <div class="sectionTitle">Dynamics</div>
 
-    const left = document.createElement("div");
-    const name = document.createElement("div");
-    name.className = "name";
-    name.textContent = p.name;
+          <div class="dynWrap">
+            <div class="dynLabelTop">MẠNH (Quạt)</div>
+            <div class="dynSliderWrap">
+              <input id="dynSlider" class="vertical" type="range" min="0" max="100" value="50" />
+            </div>
+            <div class="dynLabelBottom">NHẸ (Rải)</div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-    const meta = document.createElement("div");
-    meta.className = "meta";
-    meta.textContent = `genre: ${p.genre_id} • id: ${p.id}`;
-
-    left.appendChild(name);
-    left.appendChild(meta);
-
-    const btn = document.createElement("button");
-    btn.textContent = "Chọn";
-    btn.addEventListener("click", () => {
-      engine.assignPatternToSlot(pendingAssignSlotIndex, p.id);
-      // select that slot immediately
-      engine.selectSlot(pendingAssignSlotIndex);
-      closePatternModal();
-    });
-
-    row.appendChild(left);
-    row.appendChild(btn);
-    el.patternList.appendChild(row);
-  });
-
-  el.modal.classList.add("open");
-}
-
-function closePatternModal() {
-  el.modal.classList.remove("open");
-  pendingAssignSlotIndex = null;
-}
-
-function render(s) {
-  // left status + values
-  el.status.textContent = s.ready ? (s.playing ? "Đang chạy" : "Sẵn sàng") : "Đang load...";
-  el.transposeVal.textContent = String(s.transpose);
-  el.bpmVal.textContent = String(s.bpm);
-  el.dynSlider.value = String(s.dynamics);
-
-  // hero next chord preview
-  el.nextChordPreview.textContent = s.queuedChordName ?? "—";
-
-  // slots
-  el.slotBtns.forEach((btn, i) => {
-    const pid = s.slots?.[i]?.patternId;
-    btn.classList.toggle("empty", !pid);
-    btn.classList.toggle("active", i === s.activeSlotIndex);
-    btn.textContent = pid ? pid : "+";
-  });
-
-  // melody buttons show label + note (2 lines)
-  el.melodyBtns.forEach((btn, i) => {
-    const label = s.melody?.labels?.[i] ?? String(i + 1);
-    const note = s.melody?.notes?.[i] ?? "—";
-    btn.textContent = `${label}\n${note}`;
-  });
-
-  // middle header
-  el.songTitle.textContent = s.song?.title ?? "Guitar Nhậu";
-  el.songGenre.textContent = s.song?.genre_id ?? "—";
-  el.activePattern.textContent = s.activePatternId ?? "—";
-  el.activeChord.textContent = s.activeChordName ?? "—";
-  el.queuedChord.textContent = s.queuedChordName ?? "—";
-
-  // freestyle row
-  el.freestyleRow.innerHTML = "";
-  (s.freestyle || []).forEach((ch) => {
-    const b = document.createElement("button");
-    b.textContent = ch;
-    b.addEventListener("click", () => engine.auditionChord(ch));
-    el.freestyleRow.appendChild(b);
-  });
-
-  // lyrics view
-  el.lyricsView.innerHTML = s.lyricsHtml || "";
-}
+    <!-- Tone.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.18/Tone.js"></script>
+    <!-- App -->
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
