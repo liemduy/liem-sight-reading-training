@@ -1,0 +1,769 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>liemnhau — TayĐệm demo</title>
+  <style>
+    :root{
+      --bg:#0b0f14;
+      --panel:#111824;
+      --panel2:#0f1620;
+      --text:#e6edf3;
+      --muted:#9fb0c0;
+      --accent:#67e8f9;
+      --accent2:#a78bfa;
+      --danger:#fb7185;
+      --ok:#34d399;
+      --border:rgba(255,255,255,0.08);
+      --shadow: 0 10px 25px rgba(0,0,0,0.35);
+      --r:14px;
+      --btn:#1f2a3a;
+      --btn2:#182233;
+    }
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; margin:0; background:var(--bg); color:var(--text); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; }
+    a{ color:var(--accent); }
+    .app{
+      height:100%;
+      display:flex;
+      flex-direction:column;
+      padding:14px;
+      gap:12px;
+    }
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:10px 12px;
+      border:1px solid var(--border);
+      border-radius:var(--r);
+      background:linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+      box-shadow: var(--shadow);
+    }
+    .title{
+      display:flex; flex-direction:column; gap:2px;
+    }
+    .title h1{
+      margin:0;
+      font-size:16px;
+      letter-spacing:0.2px;
+      font-weight:700;
+    }
+    .title .sub{
+      margin:0;
+      font-size:12px;
+      color:var(--muted);
+    }
+    .status{
+      display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+      font-size:12px; color:var(--muted);
+    }
+    .pill{
+      padding:4px 8px;
+      border:1px solid var(--border);
+      border-radius:999px;
+      background:rgba(255,255,255,0.03);
+      color:var(--muted);
+      white-space:nowrap;
+    }
+    .pill strong{ color:var(--text); font-weight:700; }
+    .warn{
+      color:#fbbf24;
+      border-color:rgba(251,191,36,0.25);
+      background:rgba(251,191,36,0.08);
+    }
+
+    .main{
+      flex:1;
+      min-height:0;
+      display:grid;
+      grid-template-columns: 380px 1fr;
+      gap:12px;
+    }
+    @media (max-width: 960px){
+      .main{ grid-template-columns: 1fr; }
+    }
+    .panel{
+      border:1px solid var(--border);
+      border-radius:var(--r);
+      background:var(--panel);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      min-height:0;
+    }
+    .panel .hdr{
+      padding:10px 12px;
+      border-bottom:1px solid var(--border);
+      background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .panel .hdr .h{
+      font-weight:700;
+      font-size:13px;
+      color:var(--text);
+    }
+    .panel .body{
+      padding:12px;
+      overflow:auto;
+      min-height:0;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+    }
+    .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    label{ font-size:12px; color:var(--muted); display:block; margin-bottom:4px; }
+    select, input[type="text"], input[type="number"], textarea{
+      width:100%;
+      padding:10px 10px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background:var(--panel2);
+      color:var(--text);
+      outline:none;
+    }
+    textarea{ min-height: 170px; resize:vertical; line-height:1.3; }
+    .btn{
+      appearance:none;
+      border:none;
+      border-radius:12px;
+      padding:10px 12px;
+      background:var(--btn);
+      color:var(--text);
+      cursor:pointer;
+      font-weight:700;
+      font-size:13px;
+      border:1px solid var(--border);
+      transition: transform 0.03s ease, background 0.15s ease;
+      user-select:none;
+    }
+    .btn:active{ transform: translateY(1px); }
+    .btn.primary{ background:rgba(103,232,249,0.12); border-color:rgba(103,232,249,0.28); }
+    .btn.ok{ background:rgba(52,211,153,0.12); border-color:rgba(52,211,153,0.25); }
+    .btn.danger{ background:rgba(251,113,133,0.10); border-color:rgba(251,113,133,0.25); }
+    .btn.ghost{ background:var(--btn2); }
+    .btn.small{ padding:8px 10px; font-size:12px; border-radius:10px; }
+    .btnGroup{ display:flex; gap:8px; flex-wrap:wrap; }
+    .sep{ height:1px; background:var(--border); margin:12px 0; }
+    .kpi{
+      font-size:12px; color:var(--muted);
+      display:flex; gap:10px; flex-wrap:wrap;
+    }
+    .kpi span{ white-space:nowrap; }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+
+    /* Lyric/chord rendering */
+    .lyricWrap{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      min-height:0;
+      height:100%;
+    }
+    .lyricView{
+      flex:1;
+      min-height:0;
+      overflow:auto;
+      padding:10px 10px;
+      border:1px solid var(--border);
+      border-radius:var(--r);
+      background:rgba(255,255,255,0.02);
+      line-height:1.45;
+    }
+    .line{
+      padding:8px 6px;
+      border-radius:12px;
+      border:1px solid transparent;
+    }
+    .line:hover{ border-color:rgba(255,255,255,0.06); background:rgba(255,255,255,0.02); }
+    .txt{ color:var(--text); }
+    .chordBtn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:3px 8px;
+      margin:0 2px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,0.14);
+      background:rgba(167,139,250,0.14);
+      color:var(--text);
+      font-weight:800;
+      font-size:12px;
+      cursor:pointer;
+      user-select:none;
+      vertical-align:baseline;
+    }
+    .chordBtn.next{
+      outline:2px solid rgba(103,232,249,0.55);
+      background:rgba(103,232,249,0.18);
+      border-color:rgba(103,232,249,0.28);
+    }
+    .chordBtn.active{
+      outline:2px solid rgba(52,211,153,0.55);
+      background:rgba(52,211,153,0.16);
+      border-color:rgba(52,211,153,0.30);
+    }
+    .chordBtn:active{ transform: translateY(1px); }
+    .hint{
+      font-size:12px;
+      color:var(--muted);
+      margin-top:6px;
+    }
+    .banner{
+      border:1px solid rgba(251,191,36,0.25);
+      background:rgba(251,191,36,0.10);
+      color:#fcd34d;
+      border-radius:12px;
+      padding:10px 12px;
+      font-size:12px;
+      line-height:1.35;
+    }
+    .err{
+      border:1px solid rgba(251,113,133,0.30);
+      background:rgba(251,113,133,0.10);
+      color:#fecdd3;
+      border-radius:12px;
+      padding:10px 12px;
+      font-size:12px;
+      line-height:1.35;
+      display:none;
+    }
+  </style>
+
+  <!-- Dependency: WebAudioFont player (required by taydem.audio.js) -->
+  <script src="https://surikov.github.io/webaudiofont/npm/dist/WebAudioFontPlayer.js"></script>
+
+  <!-- Your 3 JS files (same folder as this HTML) -->
+  <script src="taydem.data.js"></script>
+  <script src="taydem.audio.js"></script>
+  <script src="taydem.engine.js"></script>
+</head>
+
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div class="title">
+        <h1>Liêmnhậu — TayĐệm (demo)</h1>
+        <p class="sub">Lyric là bàn phím: ca sĩ hát tới đâu, bấm hợp âm ngay chữ đó.</p>
+      </div>
+      <div class="status" id="statusBar">
+        <span class="pill warn">Lưu ý: nên mở qua HTTP server (không mở trực tiếp file://) để WebAudioFont load preset ổn.</span>
+      </div>
+    </div>
+
+    <div class="main">
+      <!-- LEFT: Controls -->
+      <div class="panel">
+        <div class="hdr">
+          <div class="h">Điều khiển (nhạc trưởng)</div>
+          <div class="kpi mono" id="kpi">—</div>
+        </div>
+        <div class="body">
+          <div class="err" id="errBox"></div>
+
+          <div class="btnGroup">
+            <button class="btn primary" id="btnEnable">Bật âm thanh</button>
+            <button class="btn ok" id="btnHold">Start Hold</button>
+            <button class="btn danger" id="btnStop">Stop</button>
+            <button class="btn ghost" id="btnOneShot">One‑shot</button>
+          </div>
+
+          <div class="sep"></div>
+
+          <div class="grid">
+            <div>
+              <label>Chord hiện tại</label>
+              <div class="row">
+                <input id="inpChord" type="text" value="Dm" placeholder="Dm, Gm, A7..." class="mono"/>
+                <button class="btn small" id="btnSetChord">Set</button>
+                <button class="btn small" id="btnBackChord" title="Quay lại hợp âm trước đó (UI-level undo)">Back</button>
+              </div>
+              <div class="hint">Mẹo: bấm trực tiếp hợp âm trên lyric (bên phải) để đổi hợp âm theo chữ.</div>
+            </div>
+
+            <div>
+              <label>BPM</label>
+              <div class="row">
+                <input id="inpBpm" type="number" min="40" max="220" value="84" />
+                <button class="btn small" id="btnSetBpm">Set</button>
+                <button class="btn small" id="btnBpmMinus">-2</button>
+                <button class="btn small" id="btnBpmPlus">+2</button>
+              </div>
+            </div>
+
+            <div>
+              <label>Style</label>
+              <select id="selStyle"></select>
+            </div>
+
+            <div>
+              <label>Groove preset</label>
+              <select id="selGroove">
+                <option value="nhau">nhậu</option>
+                <option value="phongtra">phòng trà</option>
+                <option value="tiktok">tiktok</option>
+              </select>
+            </div>
+
+            <div>
+              <label>Instrument</label>
+              <select id="selMode">
+                <option value="guitar">guitar</option>
+                <option value="piano">piano</option>
+                <option value="band">band</option>
+              </select>
+            </div>
+
+            <div>
+              <label>Output</label>
+              <select id="selOutput">
+                <option value="phone">phone</option>
+                <option value="external">external</option>
+              </select>
+            </div>
+
+            <div>
+              <label>Part</label>
+              <select id="selPart">
+                <option value="verse">verse</option>
+                <option value="chorus">chorus</option>
+              </select>
+            </div>
+
+            <div>
+              <label>Right-hand</label>
+              <select id="selRH">
+                <option value="auto">auto</option>
+                <option value="down">down</option>
+                <option value="up">up</option>
+              </select>
+            </div>
+
+            <div>
+              <label>Energy</label>
+              <select id="selEnergy">
+                <option value="low">low</option>
+                <option value="normal" selected>normal</option>
+                <option value="high">high</option>
+              </select>
+            </div>
+
+            <div>
+              <label>Humanize</label>
+              <div class="row">
+                <button class="btn small" id="btnHumanLow">Mềm</button>
+                <button class="btn small" id="btnHumanMid">Vừa</button>
+                <button class="btn small" id="btnHumanHigh">Đậm</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="sep"></div>
+
+          <div class="grid">
+            <div>
+              <label>Fill</label>
+              <div class="btnGroup">
+                <button class="btn small" id="btnFillSoft">Fill soft</button>
+                <button class="btn small" id="btnFillHard">Fill hard</button>
+              </div>
+            </div>
+            <div>
+              <label>Kết</label>
+              <div class="btnGroup">
+                <button class="btn small" id="btnEndShort">End short</button>
+                <button class="btn small" id="btnEndLong">End long</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="sep"></div>
+
+          <div class="banner">
+            Nếu mở trực tiếp bằng <span class="mono">file://</span> có thể bị chặn tải preset. Cách nhanh: chạy server trong thư mục này:
+            <div class="mono" style="margin-top:6px;">python -m http.server 8000</div>
+            Sau đó mở: <span class="mono">http://localhost:8000/liemnhau.html</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Lyric + chords -->
+      <div class="panel">
+        <div class="hdr">
+          <div class="h">Lyric (touchable chords)</div>
+          <div class="btnGroup">
+            <button class="btn small" id="btnRender">Render</button>
+            <button class="btn small" id="btnClearActive">Clear highlight</button>
+          </div>
+        </div>
+        <div class="body">
+          <div class="lyricWrap">
+            <textarea id="inpLyric" spellcheck="false" class="mono"></textarea>
+            <div class="lyricView" id="lyricView"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  "use strict";
+
+  const $ = (id)=>document.getElementById(id);
+
+  const errBox = $("errBox");
+  function showErr(msg){
+    errBox.style.display = "block";
+    errBox.textContent = msg;
+  }
+  function clearErr(){
+    errBox.style.display = "none";
+    errBox.textContent = "";
+  }
+
+  // Quick sanity check
+  if (!window.TayDemData || !window.TayDemAudio || !window.TayDemEngine){
+    showErr("Thiếu dependency: chưa load được TayDemData/TayDemAudio/TayDemEngine. Kiểm tra 3 file JS nằm cùng thư mục và load thành công.");
+    return;
+  }
+  if (!window.WebAudioFontPlayer){
+    showErr("Thiếu dependency: WebAudioFontPlayer chưa load được. Kiểm tra kết nối mạng hoặc URL script.");
+    return;
+  }
+
+  const data = window.TayDemData;
+  const audio = window.TayDemAudio.create({ outputMode: data.defaults.outputMode || "phone" });
+  const engine = window.TayDemEngine.create({
+    data,
+    now: ()=>audio.now(),
+    schedule: (evt)=>audio.schedule(evt),
+    onState: (s)=>{ updateKpi(s); }
+  });
+
+  // Expose for console debugging
+  window.taydem = { data, audio, engine };
+
+  // Populate style select
+  const selStyle = $("selStyle");
+  Object.keys(data.styles || {}).forEach((sid)=>{
+    const opt=document.createElement("option");
+    opt.value=sid;
+    opt.textContent = sid + " — " + (data.styles[sid].name || "");
+    selStyle.appendChild(opt);
+  });
+  selStyle.value = data.defaults.styleId || "bolero";
+
+  // Defaults UI
+  $("inpChord").value = data.defaults.chord || "Dm";
+  $("inpBpm").value = data.defaults.bpm || 84;
+  $("selGroove").value = data.defaults.groovePreset || "nhau";
+  $("selMode").value = data.defaults.instrumentMode || "guitar";
+  $("selOutput").value = data.defaults.outputMode || "phone";
+  $("selEnergy").value = data.defaults.energy || "normal";
+  $("selPart").value = data.defaults.part || "verse";
+  $("selRH").value = data.defaults.rightHand || "auto";
+
+  // Sample lyric text (you can paste your own)
+  $("inpLyric").value =
+`Song-name: Gõ cửa trái tim
+Artist: Vinh Sử
+tone-defaut: Dm
+style-defaut: bolero
+
+1. Gõ cửa trái [Dm] tim [Gm] van em được [Dm] vào
+[F7] Dù tình xót [Bb] xa [C7] chung thân huyệt [F] đào
+Ngủ [A7] vùi với chiêm [Dm] bao, nỗi [D7] niềm mắt xanh [Gm] xao
+Nhưng anh vẫn [F] ngóng tim em mở [A7] cửa
+
+2. Gõ cửa trái [Dm] tim [Gm] sao em hững [Dm] hờ
+[F7] Ngõ hồn tái [Bb] tê [C7] năm canh thẫn [F] thờ
+Nhện [A7] lòng mắc giăng [Dm] tơ, để [D7] một mối bơ [Gm] vơ
+Khi không em [A7] nhốt anh trong đợi [Dm] chờ [Gm][Dm]
+
+ĐK: [Bb] Ôi cửa tim em bằng [Dm] vàng
+[D7] Nên tiếng [Gm] kêu nghe [Dm] bẽ bàng
+Để anh gõ [Dm] cửa miên man
+[Bb] Mà em không [F] chút hỏi han
+[C] Anh [A7] buồn lang [Dm] thang [Gm][Dm]`;
+
+  // Simple UI-level chord undo stack (not in engine)
+  let chordStack = [];
+  let activeChordEl = null;
+  let chordEls = []; // in order
+  let nextIndex = -1;
+
+  function setChordFromUI(chord, fromLyric=false){
+    clearErr();
+    const sym = window.TayDemEngine.normalizeChordSymbol(chord || "");
+    if (!sym) return;
+    $("inpChord").value = sym;
+
+    const st = engine.getState();
+    if (st && st.currentChord) chordStack.push(st.currentChord);
+
+    engine.setChord(sym); // oneShot if not running; pendingChord if running+hold
+    markActiveChord(sym, fromLyric);
+  }
+
+  function markActiveChord(sym, autoScroll){
+    chordEls.forEach(el=>{
+      el.classList.remove("active");
+      el.classList.remove("next");
+    });
+
+    // mark first matching as active
+    const idx = chordEls.findIndex(el => (el.dataset.chord||"")===sym);
+    if (idx >= 0){
+      chordEls[idx].classList.add("active");
+      activeChordEl = chordEls[idx];
+
+      // next suggestion is next chord in linear order
+      nextIndex = Math.min(idx+1, chordEls.length-1);
+      if (nextIndex >= 0 && chordEls[nextIndex] && nextIndex !== idx){
+        chordEls[nextIndex].classList.add("next");
+      }
+
+      if (autoScroll){
+        chordEls[idx].scrollIntoView({ block:"center", behavior:"smooth" });
+      }
+    }
+  }
+
+  function clearHighlight(){
+    chordEls.forEach(el=>{
+      el.classList.remove("active");
+      el.classList.remove("next");
+    });
+    activeChordEl = null;
+    nextIndex = -1;
+  }
+
+  // Render lyric into clickable chord pills
+  function renderLyric(){
+    const src = $("inpLyric").value || "";
+    const view = $("lyricView");
+    view.innerHTML = "";
+    chordEls = [];
+
+    const lines = src.split(/\r?\n/);
+    const chordRe = /\[([^\]]+)\]/g;
+
+    lines.forEach((line)=>{
+      const div = document.createElement("div");
+      div.className = "line";
+
+      // If metadata line, show muted
+      const isMeta = /^\s*(Song-name|Artist|tone-defaut|style-defaut)\s*:/i.test(line);
+      if (isMeta) div.style.opacity = "0.85";
+
+      let last = 0;
+      let m;
+      while ((m = chordRe.exec(line)) !== null){
+        const before = line.slice(last, m.index);
+        if (before){
+          const span = document.createElement("span");
+          span.className = "txt";
+          span.textContent = before;
+          div.appendChild(span);
+        }
+
+        const rawChord = m[1];
+        const chord = window.TayDemEngine.normalizeChordSymbol(rawChord);
+
+        const btn = document.createElement("span");
+        btn.className = "chordBtn mono";
+        btn.textContent = chord || rawChord;
+        btn.dataset.chord = chord || rawChord;
+
+        // Large hitbox: click chord itself
+        btn.addEventListener("click", (ev)=>{
+          ev.preventDefault();
+          setChordFromUI(btn.dataset.chord, true);
+        });
+
+        div.appendChild(btn);
+        chordEls.push(btn);
+        last = m.index + m[0].length;
+      }
+
+      const rest = line.slice(last);
+      if (rest){
+        const span = document.createElement("span");
+        span.className = "txt";
+        span.textContent = rest;
+        div.appendChild(span);
+      }
+
+      view.appendChild(div);
+    });
+
+    // Auto-mark current chord if possible
+    const cur = engine.getState().currentChord || $("inpChord").value;
+    if (cur) markActiveChord(cur, false);
+  }
+
+  // KPI / status display
+  function updateKpi(lastEvent){
+    const st = engine.getState();
+    const a = audio.getState();
+    const parts = [
+      `Engine:${st.version}`,
+      `Audio:${a.version}`,
+      `running=${st.running ? "1":"0"}`,
+      `hold=${st.holdOn ? "1":"0"}`,
+      `chord=${st.currentChord}`,
+      `bpm=${Math.round(st.tempoCurrent)}`,
+      `style=${st.styleId}`,
+      `groove=${st.groovePresetId}`,
+      `mode=${st.instrumentMode}`,
+      `out=${st.outputMode}`,
+      `energy=${st.energy}`,
+      `part=${st.part}`,
+      `RH=${st.rightHand}`,
+      `mud=${st.mudGuardLevel}`
+    ];
+    $("kpi").textContent = parts.join("  •  ");
+
+    // mirror to top status (lightweight)
+    const statusBar = $("statusBar");
+    statusBar.innerHTML = "";
+    const mk = (label, val)=>{
+      const s = document.createElement("span");
+      s.className = "pill";
+      s.innerHTML = `<strong>${label}</strong> ${val}`;
+      statusBar.appendChild(s);
+    };
+    mk("Chord", st.currentChord || "—");
+    mk("BPM", Math.round(st.tempoCurrent || 0));
+    mk("Style", st.styleId || "—");
+    mk("Mode", st.instrumentMode || "—");
+    mk("Output", st.outputMode || "—");
+
+    if (lastEvent && (lastEvent.type==="stylePending" || lastEvent.type==="groovePresetPending" || lastEvent.type==="energyPending" || lastEvent.type==="rightHandPending" || lastEvent.type==="partPending")){
+      const w=document.createElement("span");
+      w.className="pill warn";
+      w.textContent="Có thay đổi pending (sẽ áp dụng ở đầu ô nhịp kế).";
+      statusBar.appendChild(w);
+    }
+
+    // keep active highlight roughly aligned with current chord
+    if (st.currentChord) markActiveChord(st.currentChord, false);
+  }
+
+  // Wiring controls
+  $("btnEnable").addEventListener("click", async ()=>{
+    clearErr();
+    try{
+      await audio.enable();
+      updateKpi({type:"audioEnabled"});
+    }catch(e){
+      showErr("Không bật được audio: " + (e && e.message ? e.message : String(e)));
+    }
+  });
+
+  $("btnHold").addEventListener("click", ()=>{
+    clearErr();
+    const c = $("inpChord").value || "Dm";
+    try{
+      engine.setStyle(selStyle.value);
+      engine.setGroovePreset($("selGroove").value);
+      engine.setInstrumentMode($("selMode").value);
+      engine.setOutputMode($("selOutput").value);
+      audio.setOutputMode($("selOutput").value);
+      engine.setEnergy($("selEnergy").value);
+      engine.setPresetPart($("selPart").value);
+      engine.setRightHandVariant($("selRH").value);
+      engine.setTempo(Number($("inpBpm").value || 84));
+      engine.startHold(c);
+      updateKpi({type:"hold"});
+    }catch(e){
+      showErr("StartHold lỗi: " + (e && e.message ? e.message : String(e)));
+    }
+  });
+
+  $("btnStop").addEventListener("click", ()=>{
+    clearErr();
+    try{
+      engine.stop();
+      audio.stop();
+      updateKpi({type:"stop"});
+    }catch(e){
+      showErr("Stop lỗi: " + (e && e.message ? e.message : String(e)));
+    }
+  });
+
+  $("btnOneShot").addEventListener("click", ()=>{
+    clearErr();
+    const c = $("inpChord").value || "Dm";
+    try{
+      engine.oneShot(c);
+      markActiveChord(window.TayDemEngine.normalizeChordSymbol(c), true);
+    }catch(e){
+      showErr("OneShot lỗi: " + (e && e.message ? e.message : String(e)));
+    }
+  });
+
+  $("btnSetChord").addEventListener("click", ()=> setChordFromUI($("inpChord").value, true));
+
+  $("btnBackChord").addEventListener("click", ()=>{
+    if (!chordStack.length) return;
+    const prev = chordStack.pop();
+    if (prev) setChordFromUI(prev, true);
+  });
+
+  $("btnSetBpm").addEventListener("click", ()=>{
+    clearErr();
+    const bpm = Number($("inpBpm").value || 84);
+    engine.setTempo(bpm);
+    updateKpi({type:"bpm"});
+  });
+  $("btnBpmMinus").addEventListener("click", ()=>{
+    const bpm = Number($("inpBpm").value || 84) - 2;
+    $("inpBpm").value = bpm;
+    engine.setTempo(bpm);
+  });
+  $("btnBpmPlus").addEventListener("click", ()=>{
+    const bpm = Number($("inpBpm").value || 84) + 2;
+    $("inpBpm").value = bpm;
+    engine.setTempo(bpm);
+  });
+
+  selStyle.addEventListener("change", ()=> engine.setStyle(selStyle.value));
+  $("selGroove").addEventListener("change", ()=> engine.setGroovePreset($("selGroove").value));
+  $("selMode").addEventListener("change", ()=> engine.setInstrumentMode($("selMode").value));
+  $("selOutput").addEventListener("change", ()=>{
+    const v = $("selOutput").value;
+    engine.setOutputMode(v);
+    audio.setOutputMode(v);
+  });
+  $("selEnergy").addEventListener("change", ()=> engine.setEnergy($("selEnergy").value));
+  $("selPart").addEventListener("change", ()=> engine.setPresetPart($("selPart").value));
+  $("selRH").addEventListener("change", ()=> engine.setRightHandVariant($("selRH").value));
+
+  $("btnFillSoft").addEventListener("click", ()=> engine.triggerFill("soft"));
+  $("btnFillHard").addEventListener("click", ()=> engine.triggerFill("hard"));
+  $("btnEndShort").addEventListener("click", ()=> engine.triggerEnd("short"));
+  $("btnEndLong").addEventListener("click", ()=> engine.triggerEnd("long"));
+
+  $("btnHumanLow").addEventListener("click", ()=> engine.setHumanize({loi:0.75, human:0.55}));
+  $("btnHumanMid").addEventListener("click", ()=> engine.setHumanize({loi:0.60, human:0.45}));
+  $("btnHumanHigh").addEventListener("click", ()=> engine.setHumanize({loi:0.40, human:0.25}));
+
+  $("btnRender").addEventListener("click", renderLyric);
+  $("btnClearActive").addEventListener("click", clearHighlight);
+
+  // Initial render
+  renderLyric();
+  updateKpi({type:"init"});
+
+})();
+</script>
+</body>
+</html>
