@@ -3,456 +3,379 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Ballad 4/4 Picking Trainer (Bass–3231323)</title>
+  <title>Ballad 4/4 – Picking + Chord Buttons (C Em F Am Dm G)</title>
   <style>
     :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
-    body { margin: 24px; line-height: 1.35; }
-    h1 { margin: 0 0 8px; font-size: 20px; }
-    .muted { color: #555; }
-    .panel { border: 1px solid #ddd; border-radius: 12px; padding: 14px; margin: 12px 0; }
-    .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
-    label { font-size: 13px; color: #222; }
-    input[type="text"], input[type="number"], select {
-      padding: 8px 10px; border: 1px solid #ccc; border-radius: 10px; min-width: 220px;
-    }
-    input[type="number"] { min-width: 110px; }
+    body { margin: 0; padding: 18px; background: #0b0f14; color: #e7edf5; }
+    h1 { font-size: 18px; margin: 0 0 12px; }
+    .row { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 14px; }
+    .card { background: #121924; border: 1px solid #223047; border-radius: 12px; padding: 14px; }
+    .muted { color: #a9b6c8; font-size: 13px; line-height: 1.4; }
+    .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 10px; }
     button {
-      padding: 10px 12px; border: 1px solid #222; background: #111; color: #fff;
-      border-radius: 10px; cursor: pointer;
+      background: #1f2b3e; color: #e7edf5; border: 1px solid #2d3f5c;
+      padding: 9px 11px; border-radius: 10px; cursor: pointer;
     }
-    button.secondary { background: #fff; color: #111; border-color: #ccc; }
-    button:disabled { opacity: .5; cursor: not-allowed; }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(8, minmax(64px, 1fr));
-      gap: 8px;
-      margin-top: 10px;
+    button:disabled { opacity: 0.55; cursor: not-allowed; }
+    button.primary { background: #2a4a7a; border-color: #3a66a8; }
+    button.danger { background: #5a1f2c; border-color: #7a2a3c; }
+    .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    .chip {
+      padding: 6px 10px; border-radius: 999px; border: 1px solid #2d3f5c; background: #0f1520;
+      font-size: 13px; color: #cfe0f7;
     }
-    .cell {
-      border: 1px solid #ddd;
-      border-radius: 12px;
-      padding: 10px;
-      text-align: center;
-      user-select: none;
+    .grid { display: grid; gap: 8px; }
+    .pattern {
+      display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 8px; margin-top: 10px;
     }
-    .cell .top { font-size: 12px; color: #666; margin-bottom: 6px; }
-    .cell .mid { font-size: 16px; font-weight: 700; }
-    .cell .bot { font-size: 12px; color: #666; margin-top: 6px; }
-    .active { outline: 3px solid #111; }
-    .status { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
-    .warn { color: #a00; }
-    .ok { color: #0a5; }
-    .small { font-size: 12px; }
-    .notes { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; }
+    .step {
+      border: 1px solid #2d3f5c; border-radius: 10px; padding: 10px 8px;
+      background: #0f1520; text-align: center;
+    }
+    .step .top { font-weight: 700; font-size: 14px; }
+    .step .bot { font-size: 12px; color: #a9b6c8; margin-top: 3px; }
+    .step.active { outline: 2px solid #72a7ff; background: #13233a; }
+    .chords { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+    .chords button.active { outline: 2px solid #72a7ff; }
+    label { font-size: 13px; color: #cfe0f7; display: inline-flex; gap: 6px; align-items: center; }
+    input[type="range"] { width: 180px; }
+    select { background: #0f1520; color: #e7edf5; border: 1px solid #2d3f5c; border-radius: 10px; padding: 8px 10px; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+    .footer { margin-top: 10px; font-size: 12px; color: #a9b6c8; }
   </style>
-</head>
-<body>
-  <h1>Ballad 4/4 – mẫu rải “Bass – 3 – 2 – 3 – 1 – 3 – 2 – 3”</h1>
-  <div class="muted small">
-    Trang này mô phỏng đúng <b>nhịp và thứ tự dây</b> như bài hướng dẫn. Âm thanh là synth (giả tiếng đàn) để bạn luyện nhịp/đổi hợp âm.
-    Trình duyệt cần thao tác người dùng để bật audio (nút Start).
-  </div>
-
-  <div class="panel">
-    <div class="row">
-      <div>
-        <label>Vòng hợp âm (mỗi hợp âm = 1 ô nhịp; cách nhau bằng dấu cách hoặc dấu phẩy)</label><br/>
-        <input id="prog" type="text" value="C Em Am Dm G" />
-        <div class="small muted">Hỗ trợ: C, Em, F (dạng dễ = Fmaj7), Am, Dm, G</div>
-      </div>
-
-      <div>
-        <label>Tempo (BPM)</label><br/>
-        <input id="bpm" type="number" min="40" max="220" value="78" />
-      </div>
-
-      <div>
-        <label>Âm lượng</label><br/>
-        <input id="vol" type="number" min="-36" max="0" value="-10" />
-      </div>
-
-      <div>
-        <label>Metronome</label><br/>
-        <select id="metro">
-          <option value="on" selected>Bật</option>
-          <option value="off">Tắt</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="row" style="margin-top: 12px;">
-      <button id="start">Start</button>
-      <button id="stop" class="secondary" disabled>Stop</button>
-      <span class="status" id="status">Trạng thái: <span class="warn">chưa chạy</span></span>
-    </div>
-  </div>
-
-  <div class="panel">
-    <div><b>1 ô nhịp 4/4 = 8 móc</b> (đếm: 1 &amp; 2 &amp; 3 &amp; 4 &amp;)</div>
-    <div class="grid" id="grid"></div>
-    <div class="small muted" style="margin-top: 10px;">
-      Quy ước dây: 6 (trầm nhất) → 1 (cao nhất). Mẫu này là “Bass rồi gảy dây 3-2-3-1-3-2-3”.
-    </div>
-  </div>
-
-  <div class="panel">
-    <div class="row">
-      <div>
-        <div><b>Hợp âm hiện tại</b></div>
-        <div class="status" id="curChord">—</div>
-      </div>
-      <div>
-        <div><b>Ô nhịp</b></div>
-        <div class="status" id="curBar">—</div>
-      </div>
-      <div>
-        <div><b>Đếm</b></div>
-        <div class="status" id="curCount">—</div>
-      </div>
-    </div>
-    <div style="margin-top: 10px;">
-      <div class="small muted">Nốt của từng dây theo hợp âm hiện tại (6→1):</div>
-      <div class="notes" id="stringNotes">—</div>
-    </div>
-  </div>
 
   <!-- Tone.js via CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/tone@14.8.49/build/Tone.js"></script>
-  <script>
-    // -----------------------------
-    // 1) Dữ liệu: tuning + chord shapes
-    // -----------------------------
-    // MIDI cho standard tuning (theo thứ tự dây 6→1): E2 A2 D3 G3 B3 E4
-    const TUNING_MIDI = [40, 45, 50, 55, 59, 64];
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.18/Tone.js"></script>
 
-    // Hợp âm dạng open (frets theo thứ tự dây 6→1)
-    // -1 = mute, 0 = open, n = fret n
-    // Lưu ý: "F dễ" theo mô tả video thực tế là xx3210 (Fmaj7) - rất hay cho người mới.
-    const CHORDS = {
-      "C":  [-1, 3, 2, 0, 1, 0],
-      "Em": [ 0, 2, 2, 0, 0, 0],
-      "Am": [-1, 0, 2, 2, 1, 0],
-      "Dm": [-1,-1, 0, 2, 3, 1],
-      "G":  [ 3, 2, 0, 0, 0, 3],
-      "F":  [-1,-1, 3, 2, 1, 0], // Fmaj7 (dạng dễ)
-    };
+  <!-- tonejs-instruments (SampleLibrary) via jsDelivr GitHub -->
+  <script src="https://cdn.jsdelivr.net/gh/nbrosowsky/tonejs-instruments@master/Tonejs-Instruments.js"></script>
+</head>
 
-    // Bass mặc định (theo thực hành phổ biến cho beginner)
-    const DEFAULT_BASS_STRING = {
-      "C": 5,
-      "Am": 5,
-      "Em": 6,
-      "Dm": 4,
-      "F": 4,
-      "G": 6,
-    };
+<body>
+  <h1>Ballad 4/4 – Mẫu đệm tay phải + Nút hợp âm (C / Em / F / Am / Dm / G)</h1>
 
-    // -----------------------------
-    // 2) Mẫu ballad 4/4: Bass – 3–2–3–1–3–2–3
-    // -----------------------------
-    const PATTERN = ["BASS", 3, 2, 3, 1, 3, 2, 3];
-    const COUNTS  = ["1", "&", "2", "&", "3", "&", "4", "&"];
+  <div class="row">
+    <!-- LEFT: Pattern -->
+    <div class="card">
+      <div class="muted">
+        Mẫu đang mô phỏng đúng bài hướng dẫn kiểu: <span class="mono">Bass – 3 – 2 – 3 – 1 – 3 – 2 – 3</span>
+        (8 nốt móc đơn trong 1 ô nhịp 4/4). Bạn bấm hợp âm ở cột phải, hệ thống sẽ rải theo đúng mẫu này.
+      </div>
 
-    // Tone position "bars:beats:sixteenths"
-    function stepToTransportTime(barIndex, stepIndex) {
-      // 8th-note grid => stepIndex 0..7
-      // beat = floor(step/2), sixteenth = (step%2)*2
-      const beat = Math.floor(stepIndex / 2);
-      const sixteenth = (stepIndex % 2) * 2;
-      return `${barIndex}:${beat}:${sixteenth}`;
+      <div class="controls">
+        <button id="btnInit" class="primary">1) Start Audio + Load Guitar</button>
+        <button id="btnPlay" class="primary" disabled>2) Play</button>
+        <button id="btnStop" class="danger" disabled>Stop</button>
+
+        <label>
+          Tempo: <span id="tempoLabel" class="mono">78</span> BPM
+          <input id="tempo" type="range" min="50" max="120" value="78" />
+        </label>
+
+        <label>
+          Đổi hợp âm:
+          <select id="changeMode" title="Cách đổi hợp âm khi bấm nút">
+            <option value="nextBar" selected>Đầu ô nhịp kế tiếp (khuyến nghị)</option>
+            <option value="immediate">Đổi ngay lập tức</option>
+          </select>
+        </label>
+
+        <label>
+          Bass:
+          <select id="bassMode" title="Auto dùng bass đúng kiểu hợp âm; 6/5/4 để luyện đổi bass">
+            <option value="auto" selected>Auto</option>
+            <option value="6">Dây 6</option>
+            <option value="5">Dây 5</option>
+            <option value="4">Dây 4</option>
+          </select>
+        </label>
+
+        <label title="Giảm số sample tải về (tải nhanh hơn, âm có thể kém chi tiết hơn)">
+          <input id="minify" type="checkbox" checked />
+          Load nhanh (minify)
+        </label>
+      </div>
+
+      <div class="chips">
+        <div class="chip">Hợp âm hiện tại: <span id="curChord" class="mono">—</span></div>
+        <div class="chip">Hợp âm kế tiếp: <span id="nextChord" class="mono">—</span></div>
+        <div class="chip">Ô nhịp: <span id="barCount" class="mono">0</span></div>
+      </div>
+
+      <div id="pattern" class="pattern"></div>
+
+      <div class="footer">
+        Gợi ý: Khi mới tập, hãy bấm hợp âm chậm và chỉ đổi ở đầu ô nhịp (nghe “liền” hơn).
+      </div>
+    </div>
+
+    <!-- RIGHT: Chords -->
+    <div class="card">
+      <div class="muted">
+        Bấm nút hợp âm để “set” tay trái. Âm bạn nghe là dạng rải (arpeggio), vì mẫu tay phải đang lần lượt pluck từng dây.
+      </div>
+
+      <div class="chords" id="chordButtons"></div>
+
+      <div class="grid" style="margin-top:10px;">
+        <div class="chip">Voicing (mô phỏng dây 6→1): <span id="voicing" class="mono">—</span></div>
+        <div class="chip">Note đang đánh: <span id="lastNote" class="mono">—</span></div>
+      </div>
+
+      <div class="footer">
+        Lưu ý: “F” ở đây là dạng dễ cho người mới (thường nghe gần F hoặc Fmaj7 tuỳ cách bấm).  
+        Nếu bạn muốn đúng 100% theo đúng thế bấm/video của bạn (ví dụ F barre hay F dễ), chỉ cần đổi map dây-nốt ở phần JS.
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  // ======================
+  // 1) Chord shapes (strings 6 -> 1)
+  // ======================
+  // Note naming: Tone.js scientific pitch notation, e.g. "C4"
+  // null = muted string
+  const CHORDS = {
+    "C":  { bassString: 5, strings: {6:null, 5:"C3", 4:"E3", 3:"G3", 2:"C4", 1:"E4"} },
+    "Em": { bassString: 6, strings: {6:"E2", 5:"B2", 4:"E3", 3:"G3", 2:"B3", 1:"E4"} },
+    // "F easy" (no barre): 0-1-2-3 on strings 1-2-3-4 => sounds like Fmaj7-ish
+    "F":  { bassString: 4, strings: {6:null, 5:null, 4:"F3", 3:"A3", 2:"C4", 1:"E4"} },
+    "Am": { bassString: 5, strings: {6:null, 5:"A2", 4:"E3", 3:"A3", 2:"C4", 1:"E4"} },
+    "Dm": { bassString: 4, strings: {6:null, 5:"A2", 4:"D3", 3:"A3", 2:"D4", 1:"F4"} },
+    "G":  { bassString: 6, strings: {6:"G2", 5:"B2", 4:"D3", 3:"G3", 2:"B3", 1:"G4"} }
+  };
+
+  // ======================
+  // 2) Picking pattern (8 eighth-notes per bar)
+  // ======================
+  // Video-style: Bass + 3-2-3-1-3-2-3
+  const PATTERN = [
+    { label: "B", finger: "P", string: "BASS" },
+    { label: "3", finger: "i", string: 3 },
+    { label: "2", finger: "m", string: 2 },
+    { label: "3", finger: "i", string: 3 },
+    { label: "1", finger: "a", string: 1 },
+    { label: "3", finger: "i", string: 3 },
+    { label: "2", finger: "m", string: 2 },
+    { label: "3", finger: "i", string: 3 }
+  ];
+
+  // ======================
+  // 3) UI
+  // ======================
+  const $ = (id) => document.getElementById(id);
+
+  const elPattern = $("pattern");
+  const elChordButtons = $("chordButtons");
+  const elCurChord = $("curChord");
+  const elNextChord = $("nextChord");
+  const elBarCount = $("barCount");
+  const elTempo = $("tempo");
+  const elTempoLabel = $("tempoLabel");
+  const elChangeMode = $("changeMode");
+  const elBassMode = $("bassMode");
+  const elMinify = $("minify");
+  const elVoicing = $("voicing");
+  const elLastNote = $("lastNote");
+
+  const btnInit = $("btnInit");
+  const btnPlay = $("btnPlay");
+  const btnStop = $("btnStop");
+
+  // Render pattern
+  const stepEls = PATTERN.map((s, i) => {
+    const div = document.createElement("div");
+    div.className = "step";
+    div.innerHTML = `<div class="top">${s.label}</div><div class="bot">${s.finger}</div>`;
+    elPattern.appendChild(div);
+    return div;
+  });
+
+  // Render chord buttons
+  const chordNames = Object.keys(CHORDS);
+  const chordBtnEls = {};
+  chordNames.forEach(name => {
+    const b = document.createElement("button");
+    b.textContent = name;
+    b.disabled = true;
+    b.addEventListener("click", () => onChordPressed(name));
+    elChordButtons.appendChild(b);
+    chordBtnEls[name] = b;
+  });
+
+  // ======================
+  // 4) Audio engine
+  // ======================
+  let guitar = null;
+  let isReady = false;
+
+  let currentChord = null;
+  let queuedChord = null;
+
+  let stepIndex = 0;     // global step counter
+  let barIndex = 0;      // bar counter
+
+  function setChordUI(activeName) {
+    Object.entries(chordBtnEls).forEach(([name, el]) => {
+      el.classList.toggle("active", name === activeName);
+    });
+  }
+
+  function voicingString(chordName) {
+    const shape = CHORDS[chordName]?.strings;
+    if (!shape) return "—";
+    // 6 -> 1
+    const parts = [6,5,4,3,2,1].map(s => shape[s] ?? null).map(x => x ?? "x");
+    return parts.join(" ");
+  }
+
+  function updateHud() {
+    elCurChord.textContent = currentChord ?? "—";
+    elNextChord.textContent = queuedChord ?? "—";
+    elBarCount.textContent = String(barIndex);
+    elVoicing.textContent = currentChord ? voicingString(currentChord) : "—";
+    setChordUI(currentChord);
+  }
+
+  function getBassStringForChord(chordName) {
+    const mode = elBassMode.value;
+    if (mode === "auto") return CHORDS[chordName].bassString;
+    return Number(mode);
+  }
+
+  function getNoteForStep(chordName, patStep) {
+    const shape = CHORDS[chordName];
+    if (!shape) return null;
+
+    const s = PATTERN[patStep].string;
+    if (s === "BASS") {
+      const bassStr = getBassStringForChord(chordName);
+      return shape.strings[bassStr] ?? null;
     }
+    return shape.strings[s] ?? null;
+  }
 
-    function midiToNoteName(midi) {
-      return Tone.Frequency(midi, "midi").toNote();
-    }
+  function highlightStep(patStep) {
+    stepEls.forEach((el, idx) => el.classList.toggle("active", idx === patStep));
+  }
 
-    function getNoteForString(chordName, stringNum) {
-      const shape = CHORDS[chordName];
-      if (!shape) return null;
-      const idx = 6 - stringNum; // string 6 -> idx 0, string 1 -> idx 5
-      const fret = shape[idx];
-      if (fret == null || fret < 0) return null;
-      return midiToNoteName(TUNING_MIDI[idx] + fret);
-    }
+  function scheduleTick(time) {
+    const patStep = stepIndex % PATTERN.length;
 
-    function getChordStringNotes(chordName) {
-      const notes = [];
-      for (let s = 6; s >= 1; s--) {
-        const n = getNoteForString(chordName, s);
-        notes.push(n ? n : "x");
+    // Change chord at bar boundary (step 0) if queued
+    if (patStep === 0) {
+      if (stepIndex > 0) barIndex += 1;
+      if (queuedChord) {
+        currentChord = queuedChord;
+        queuedChord = null;
       }
-      return notes; // [string6..string1]
+      updateHud();
     }
 
-    // -----------------------------
-    // 3) UI: render pattern grid
-    // -----------------------------
-    const gridEl = document.getElementById("grid");
-    const cells = [];
+    highlightStep(patStep);
 
-    function renderGrid() {
-      gridEl.innerHTML = "";
-      cells.length = 0;
-      for (let i = 0; i < 8; i++) {
-        const cell = document.createElement("div");
-        cell.className = "cell";
-        const top = document.createElement("div");
-        top.className = "top";
-        top.textContent = COUNTS[i];
+    const note = currentChord ? getNoteForStep(currentChord, patStep) : null;
 
-        const mid = document.createElement("div");
-        mid.className = "mid";
-        mid.textContent = (PATTERN[i] === "BASS") ? "Bass" : `Dây ${PATTERN[i]}`;
-
-        const bot = document.createElement("div");
-        bot.className = "bot";
-        bot.textContent = (PATTERN[i] === "BASS") ? "P (ngón cái)" : "i/m/a";
-
-        cell.appendChild(top);
-        cell.appendChild(mid);
-        cell.appendChild(bot);
-        gridEl.appendChild(cell);
-        cells.push(cell);
-      }
-    }
-    renderGrid();
-
-    function setActiveStep(stepIdx) {
-      cells.forEach((c, i) => c.classList.toggle("active", i === stepIdx));
+    if (note && guitar) {
+      const isBass = (PATTERN[patStep].string === "BASS");
+      const vel = isBass ? 0.9 : 0.65;
+      // a short pluck; tweak to taste
+      guitar.triggerAttackRelease(note, "16n", time, vel);
+      elLastNote.textContent = note;
+    } else {
+      elLastNote.textContent = "—";
     }
 
-    // -----------------------------
-    // 4) Audio graph (Tone.js): pluck synth + optional metronome
-    // -----------------------------
-    let pluck, reverb, gain;
-    let metroSynth;
-    let isRunning = false;
-    let uiTimer = null;
-    let scheduled = false;
+    stepIndex += 1;
+  }
 
-    const statusEl = document.getElementById("status");
-    const curChordEl = document.getElementById("curChord");
-    const curBarEl = document.getElementById("curBar");
-    const curCountEl = document.getElementById("curCount");
-    const stringNotesEl = document.getElementById("stringNotes");
-
-    function setStatus(text, cls) {
-      statusEl.innerHTML = `Trạng thái: <span class="${cls}">${text}</span>`;
+  function onChordPressed(name) {
+    const mode = elChangeMode.value;
+    if (!currentChord) {
+      currentChord = name;
+      queuedChord = null;
+    } else if (mode === "immediate") {
+      currentChord = name;
+      queuedChord = null;
+    } else {
+      queuedChord = name;
     }
+    updateHud();
+  }
 
-    function parseProgression(raw) {
-      const cleaned = raw.replace(/\|/g, " ").replace(/,+/g, " ").trim();
-      if (!cleaned) return [];
-      const parts = cleaned.split(/\s+/).map(s => s.trim()).filter(Boolean);
+  // Tempo control
+  elTempo.addEventListener("input", () => {
+    elTempoLabel.textContent = elTempo.value;
+    Tone.Transport.bpm.value = Number(elTempo.value);
+  });
 
-      // Chuẩn hoá tên hợp âm đơn giản
-      const normalized = parts.map(ch => {
-        // Cho phép nhập "Emin" "Amin" kiểu vui, vẫn map về Em/Am...
-        const t = ch
-          .replace(/min$/i, "m")
-          .replace(/maj7$/i, "maj7")
-          .replace(/\s+/g, "");
-        return t;
-      });
+  // Init/load
+  btnInit.addEventListener("click", async () => {
+    btnInit.disabled = true;
+    btnInit.textContent = "Loading…";
 
-      // Chỉ chấp nhận set trong CHORDS
-      const unknown = normalized.filter(ch => !CHORDS[ch]);
-      return { chords: normalized, unknown };
-    }
-
-    function buildAudio() {
-      gain = new Tone.Gain(Tone.dbToGain(-10)).toDestination();
-      reverb = new Tone.Reverb({ decay: 2.2, wet: 0.22 }).connect(gain);
-
-      pluck = new Tone.PluckSynth({
-        attackNoise: 1.0,
-        dampening: 3200,
-        resonance: 0.85,
-      }).connect(reverb);
-
-      metroSynth = new Tone.MembraneSynth({
-        pitchDecay: 0.01,
-        octaves: 2,
-        envelope: { attack: 0.001, decay: 0.08, sustain: 0.0, release: 0.01 }
-      }).connect(gain);
-    }
-
-    function clearSchedule() {
-      Tone.Transport.stop();
-      Tone.Transport.cancel(0);
-      scheduled = false;
-    }
-
-    function scheduleProgression(chords) {
-      clearSchedule();
-
-      // Loop theo số ô nhịp = chords.length
-      Tone.Transport.loop = true;
-      Tone.Transport.loopStart = "0:0:0";
-      Tone.Transport.loopEnd = `${chords.length}:0:0`;
-
-      // Metronome (quarter notes)
-      const metroMode = document.getElementById("metro").value;
-      if (metroMode === "on") {
-        for (let b = 0; b < chords.length; b++) {
-          for (let beat = 0; beat < 4; beat++) {
-            const t = `${b}:${beat}:0`;
-            Tone.Transport.schedule((time) => {
-              // Accent beat 1
-              const vel = (beat === 0) ? 0.9 : 0.55;
-              metroSynth.triggerAttackRelease("C2", "32n", time, vel);
-            }, t);
-          }
-        }
-      }
-
-      // Pattern events
-      for (let bar = 0; bar < chords.length; bar++) {
-        const chordName = chords[bar];
-        const bassString = DEFAULT_BASS_STRING[chordName] ?? 6;
-
-        for (let step = 0; step < 8; step++) {
-          const when = stepToTransportTime(bar, step);
-
-          Tone.Transport.schedule((time) => {
-            const p = PATTERN[step];
-
-            let stringNum;
-            if (p === "BASS") stringNum = bassString;
-            else stringNum = p;
-
-            const note = getNoteForString(chordName, stringNum);
-            if (!note) return;
-
-            // Velocity shaping: bass mạnh hơn, nhấn nhẹ vào phách 1 & 3
-            const onStrongBeat = (step === 0 || step === 4);
-            const isBass = (p === "BASS");
-            const vel = isBass
-              ? (onStrongBeat ? 0.95 : 0.82)
-              : (onStrongBeat ? 0.70 : 0.60);
-
-            pluck.triggerAttackRelease(note, "16n", time, vel);
-          }, when);
-        }
-      }
-
-      scheduled = true;
-    }
-
-    function startUiTicker(chords) {
-      if (uiTimer) clearInterval(uiTimer);
-
-      uiTimer = setInterval(() => {
-        if (!isRunning) return;
-
-        // Tone.Transport.position: "bars:beats:sixteenths"
-        const pos = Tone.Transport.position.split(":").map(x => parseInt(x, 10));
-        if (pos.length < 3) return;
-        const [bar, beat, sixteenth] = pos;
-
-        const step = (beat * 2) + (sixteenth >= 2 ? 1 : 0);
-        const chordName = chords[bar % chords.length];
-
-        setActiveStep(step);
-
-        curChordEl.textContent = chordName;
-        curBarEl.textContent = String((bar % chords.length) + 1) + "/" + String(chords.length);
-        curCountEl.textContent = `${COUNTS[step]}  (step ${step + 1}/8)`;
-
-        const notes = getChordStringNotes(chordName);
-        stringNotesEl.textContent = `6:${notes[0]}  5:${notes[1]}  4:${notes[2]}  3:${notes[3]}  2:${notes[4]}  1:${notes[5]}`;
-      }, 60);
-    }
-
-    // -----------------------------
-    // 5) Controls
-    // -----------------------------
-    const startBtn = document.getElementById("start");
-    const stopBtn  = document.getElementById("stop");
-    const bpmEl    = document.getElementById("bpm");
-    const volEl    = document.getElementById("vol");
-    const progEl   = document.getElementById("prog");
-
-    function applySettings() {
-      const bpm = Number(bpmEl.value);
-      Tone.Transport.bpm.value = isFinite(bpm) ? bpm : 78;
-
-      const volDb = Number(volEl.value);
-      if (gain) gain.gain.value = Tone.dbToGain(isFinite(volDb) ? volDb : -10);
-    }
-
-    startBtn.addEventListener("click", async () => {
-      if (isRunning) return;
-
-      const { chords, unknown } = parseProgression(progEl.value);
-      if (!chords.length) {
-        setStatus("vui lòng nhập vòng hợp âm", "warn");
-        return;
-      }
-      if (unknown.length) {
-        setStatus(`hợp âm không hỗ trợ: ${unknown.join(", ")}`, "warn");
-        return;
-      }
-
-      // Khởi tạo audio context (bắt buộc có gesture)
+    try {
       await Tone.start();
 
-      if (!pluck) buildAudio();
-      applySettings();
-      scheduleProgression(chords);
-      startUiTicker(chords);
+      // Load guitar from tonejs-instruments
+      guitar = SampleLibrary.load({
+        instruments: "guitar-acoustic",
+        baseUrl: "https://nbrosowsky.github.io/tonejs-instruments/samples/",
+        minify: elMinify.checked
+      });
 
-      Tone.Transport.start("+0.05");
-      isRunning = true;
+      // Connect output
+      if (typeof guitar.toDestination === "function") guitar.toDestination();
+      else if (typeof guitar.toMaster === "function") guitar.toMaster();
 
-      startBtn.disabled = true;
-      stopBtn.disabled = false;
-      setStatus("đang chạy", "ok");
-    });
+      Tone.Transport.bpm.value = Number(elTempo.value);
 
-    stopBtn.addEventListener("click", () => {
-      if (!isRunning) return;
+      // schedule 8th-note ticks
+      Tone.Transport.cancel();
+      Tone.Transport.scheduleRepeat(scheduleTick, "8n");
 
-      clearSchedule();
-      isRunning = false;
+      // Wait until buffers loaded (tonejs-instruments README suggests Tone.Buffer.on('load', ...) )
+      Tone.Buffer.on("load", () => {
+        isReady = true;
+        btnPlay.disabled = false;
+        btnStop.disabled = false;
+        Object.values(chordBtnEls).forEach(b => b.disabled = false);
 
-      startBtn.disabled = false;
-      stopBtn.disabled = true;
-      setActiveStep(-1);
-      curChordEl.textContent = "—";
-      curBarEl.textContent = "—";
-      curCountEl.textContent = "—";
-      stringNotesEl.textContent = "—";
+        if (!currentChord) currentChord = "C";
+        updateHud();
 
-      setStatus("đã dừng", "warn");
-    });
+        btnInit.textContent = "Loaded";
+      });
 
-    bpmEl.addEventListener("change", () => {
-      if (!pluck) return;
-      applySettings();
-    });
+      // In case it is already loaded quickly:
+      // (Tone.Buffer.on('load') fires when all Tone.Buffer are loaded; keep as primary signal.)
+    } catch (e) {
+      console.error(e);
+      btnInit.disabled = false;
+      btnInit.textContent = "Start Audio + Load Guitar (retry)";
+      alert("Không load được audio. Mở Console để xem lỗi. Gợi ý: chạy trang qua http(s), không mở file://");
+    }
+  });
 
-    volEl.addEventListener("change", () => {
-      if (!pluck) return;
-      applySettings();
-    });
+  btnPlay.addEventListener("click", async () => {
+    if (!isReady) return;
+    stepIndex = 0;
+    barIndex = 0;
+    queuedChord = null;
+    updateHud();
+    await Tone.start();
+    Tone.Transport.start("+0.05");
+  });
 
-    document.getElementById("metro").addEventListener("change", () => {
-      // Nếu đang chạy thì reschedule để bật/tắt metro cho đúng
-      if (!isRunning) return;
-      const { chords } = parseProgression(progEl.value);
-      scheduleProgression(chords);
-    });
+  btnStop.addEventListener("click", () => {
+    Tone.Transport.stop();
+    highlightStep(-1);
+  });
 
-    progEl.addEventListener("change", () => {
-      if (!isRunning) return;
-      const { chords, unknown } = parseProgression(progEl.value);
-      if (!chords.length || unknown.length) return;
-      scheduleProgression(chords);
-      startUiTicker(chords);
-    });
-
-    setStatus("chưa chạy", "warn");
-  </script>
+  // Init HUD
+  updateHud();
+})();
+</script>
 </body>
 </html>
