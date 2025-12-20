@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Ballad 4/4 Picking Trainer (Bass–3231323)</title>
+  <style>
+    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    body { margin: 24px; line-height: 1.35; }
+    h1 { margin: 0 0 8px; font-size: 20px; }
+    .muted { color: #555; }
+    .panel { border: 1px solid #ddd; border-radius: 12px; padding: 14px; margin: 12px 0; }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    label { font-size: 13px; color: #222; }
+    input[type="text"], input[type="number"], select {
+      padding: 8px 10px; border: 1px solid #ccc; border-radius: 10px; min-width: 220px;
+    }
+    input[type="number"] { min-width: 110px; }
+    button {
+      padding: 10px 12px; border: 1px solid #222; background: #111; color: #fff;
+      border-radius: 10px; cursor: pointer;
+    }
+    button.secondary { background: #fff; color: #111; border-color: #ccc; }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(8, minmax(64px, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .cell {
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      padding: 10px;
+      text-align: center;
+      user-select: none;
+    }
+    .cell .top { font-size: 12px; color: #666; margin-bottom: 6px; }
+    .cell .mid { font-size: 16px; font-weight: 700; }
+    .cell .bot { font-size: 12px; color: #666; margin-top: 6px; }
+    .active { outline: 3px solid #111; }
+    .status { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+    .warn { color: #a00; }
+    .ok { color: #0a5; }
+    .small { font-size: 12px; }
+    .notes { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <h1>Ballad 4/4 – mẫu rải “Bass – 3 – 2 – 3 – 1 – 3 – 2 – 3”</h1>
+  <div class="muted small">
+    Trang này mô phỏng đúng <b>nhịp và thứ tự dây</b> như bài hướng dẫn. Âm thanh là synth (giả tiếng đàn) để bạn luyện nhịp/đổi hợp âm.
+    Trình duyệt cần thao tác người dùng để bật audio (nút Start).
+  </div>
+
+  <div class="panel">
+    <div class="row">
+      <div>
+        <label>Vòng hợp âm (mỗi hợp âm = 1 ô nhịp; cách nhau bằng dấu cách hoặc dấu phẩy)</label><br/>
+        <input id="prog" type="text" value="C Em Am Dm G" />
+        <div class="small muted">Hỗ trợ: C, Em, F (dạng dễ = Fmaj7), Am, Dm, G</div>
+      </div>
+
+      <div>
+        <label>Tempo (BPM)</label><br/>
+        <input id="bpm" type="number" min="40" max="220" value="78" />
+      </div>
+
+      <div>
+        <label>Âm lượng</label><br/>
+        <input id="vol" type="number" min="-36" max="0" value="-10" />
+      </div>
+
+      <div>
+        <label>Metronome</label><br/>
+        <select id="metro">
+          <option value="on" selected>Bật</option>
+          <option value="off">Tắt</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top: 12px;">
+      <button id="start">Start</button>
+      <button id="stop" class="secondary" disabled>Stop</button>
+      <span class="status" id="status">Trạng thái: <span class="warn">chưa chạy</span></span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div><b>1 ô nhịp 4/4 = 8 móc</b> (đếm: 1 &amp; 2 &amp; 3 &amp; 4 &amp;)</div>
+    <div class="grid" id="grid"></div>
+    <div class="small muted" style="margin-top: 10px;">
+      Quy ước dây: 6 (trầm nhất) → 1 (cao nhất). Mẫu này là “Bass rồi gảy dây 3-2-3-1-3-2-3”.
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="row">
+      <div>
+        <div><b>Hợp âm hiện tại</b></div>
+        <div class="status" id="curChord">—</div>
+      </div>
+      <div>
+        <div><b>Ô nhịp</b></div>
+        <div class="status" id="curBar">—</div>
+      </div>
+      <div>
+        <div><b>Đếm</b></div>
+        <div class="status" id="curCount">—</div>
+      </div>
+    </div>
+    <div style="margin-top: 10px;">
+      <div class="small muted">Nốt của từng dây theo hợp âm hiện tại (6→1):</div>
+      <div class="notes" id="stringNotes">—</div>
+    </div>
+  </div>
+
+  <!-- Tone.js via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/tone@14.8.49/build/Tone.js"></script>
+  <script>
+    // -----------------------------
+    // 1) Dữ liệu: tuning + chord shapes
+    // -----------------------------
+    // MIDI cho standard tuning (theo thứ tự dây 6→1): E2 A2 D3 G3 B3 E4
+    const TUNING_MIDI = [40, 45, 50, 55, 59, 64];
+
+    // Hợp âm dạng open (frets theo thứ tự dây 6→1)
+    // -1 = mute, 0 = open, n = fret n
+    // Lưu ý: "F dễ" theo mô tả video thực tế là xx3210 (Fmaj7) - rất hay cho người mới.
+    const CHORDS = {
+      "C":  [-1, 3, 2, 0, 1, 0],
+      "Em": [ 0, 2, 2, 0, 0, 0],
+      "Am": [-1, 0, 2, 2, 1, 0],
+      "Dm": [-1,-1, 0, 2, 3, 1],
+      "G":  [ 3, 2, 0, 0, 0, 3],
+      "F":  [-1,-1, 3, 2, 1, 0], // Fmaj7 (dạng dễ)
+    };
+
+    // Bass mặc định (theo thực hành phổ biến cho beginner)
+    const DEFAULT_BASS_STRING = {
+      "C": 5,
+      "Am": 5,
+      "Em": 6,
+      "Dm": 4,
+      "F": 4,
+      "G": 6,
+    };
+
+    // -----------------------------
+    // 2) Mẫu ballad 4/4: Bass – 3–2–3–1–3–2–3
+    // -----------------------------
+    const PATTERN = ["BASS", 3, 2, 3, 1, 3, 2, 3];
+    const COUNTS  = ["1", "&", "2", "&", "3", "&", "4", "&"];
+
+    // Tone position "bars:beats:sixteenths"
+    function stepToTransportTime(barIndex, stepIndex) {
+      // 8th-note grid => stepIndex 0..7
+      // beat = floor(step/2), sixteenth = (step%2)*2
+      const beat = Math.floor(stepIndex / 2);
+      const sixteenth = (stepIndex % 2) * 2;
+      return `${barIndex}:${beat}:${sixteenth}`;
+    }
+
+    function midiToNoteName(midi) {
+      return Tone.Frequency(midi, "midi").toNote();
+    }
+
+    function getNoteForString(chordName, stringNum) {
+      const shape = CHORDS[chordName];
+      if (!shape) return null;
+      const idx = 6 - stringNum; // string 6 -> idx 0, string 1 -> idx 5
+      const fret = shape[idx];
+      if (fret == null || fret < 0) return null;
+      return midiToNoteName(TUNING_MIDI[idx] + fret);
+    }
+
+    function getChordStringNotes(chordName) {
+      const notes = [];
+      for (let s = 6; s >= 1; s--) {
+        const n = getNoteForString(chordName, s);
+        notes.push(n ? n : "x");
+      }
+      return notes; // [string6..string1]
+    }
+
+    // -----------------------------
+    // 3) UI: render pattern grid
+    // -----------------------------
+    const gridEl = document.getElementById("grid");
+    const cells = [];
+
+    function renderGrid() {
+      gridEl.innerHTML = "";
+      cells.length = 0;
+      for (let i = 0; i < 8; i++) {
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        const top = document.createElement("div");
+        top.className = "top";
+        top.textContent = COUNTS[i];
+
+        const mid = document.createElement("div");
+        mid.className = "mid";
+        mid.textContent = (PATTERN[i] === "BASS") ? "Bass" : `Dây ${PATTERN[i]}`;
+
+        const bot = document.createElement("div");
+        bot.className = "bot";
+        bot.textContent = (PATTERN[i] === "BASS") ? "P (ngón cái)" : "i/m/a";
+
+        cell.appendChild(top);
+        cell.appendChild(mid);
+        cell.appendChild(bot);
+        gridEl.appendChild(cell);
+        cells.push(cell);
+      }
+    }
+    renderGrid();
+
+    function setActiveStep(stepIdx) {
+      cells.forEach((c, i) => c.classList.toggle("active", i === stepIdx));
+    }
+
+    // -----------------------------
+    // 4) Audio graph (Tone.js): pluck synth + optional metronome
+    // -----------------------------
+    let pluck, reverb, gain;
+    let metroSynth;
+    let isRunning = false;
+    let uiTimer = null;
+    let scheduled = false;
+
+    const statusEl = document.getElementById("status");
+    const curChordEl = document.getElementById("curChord");
+    const curBarEl = document.getElementById("curBar");
+    const curCountEl = document.getElementById("curCount");
+    const stringNotesEl = document.getElementById("stringNotes");
+
+    function setStatus(text, cls) {
+      statusEl.innerHTML = `Trạng thái: <span class="${cls}">${text}</span>`;
+    }
+
+    function parseProgression(raw) {
+      const cleaned = raw.replace(/\|/g, " ").replace(/,+/g, " ").trim();
+      if (!cleaned) return [];
+      const parts = cleaned.split(/\s+/).map(s => s.trim()).filter(Boolean);
+
+      // Chuẩn hoá tên hợp âm đơn giản
+      const normalized = parts.map(ch => {
+        // Cho phép nhập "Emin" "Amin" kiểu vui, vẫn map về Em/Am...
+        const t = ch
+          .replace(/min$/i, "m")
+          .replace(/maj7$/i, "maj7")
+          .replace(/\s+/g, "");
+        return t;
+      });
+
+      // Chỉ chấp nhận set trong CHORDS
+      const unknown = normalized.filter(ch => !CHORDS[ch]);
+      return { chords: normalized, unknown };
+    }
+
+    function buildAudio() {
+      gain = new Tone.Gain(Tone.dbToGain(-10)).toDestination();
+      reverb = new Tone.Reverb({ decay: 2.2, wet: 0.22 }).connect(gain);
+
+      pluck = new Tone.PluckSynth({
+        attackNoise: 1.0,
+        dampening: 3200,
+        resonance: 0.85,
+      }).connect(reverb);
+
+      metroSynth = new Tone.MembraneSynth({
+        pitchDecay: 0.01,
+        octaves: 2,
+        envelope: { attack: 0.001, decay: 0.08, sustain: 0.0, release: 0.01 }
+      }).connect(gain);
+    }
+
+    function clearSchedule() {
+      Tone.Transport.stop();
+      Tone.Transport.cancel(0);
+      scheduled = false;
+    }
+
+    function scheduleProgression(chords) {
+      clearSchedule();
+
+      // Loop theo số ô nhịp = chords.length
+      Tone.Transport.loop = true;
+      Tone.Transport.loopStart = "0:0:0";
+      Tone.Transport.loopEnd = `${chords.length}:0:0`;
+
+      // Metronome (quarter notes)
+      const metroMode = document.getElementById("metro").value;
+      if (metroMode === "on") {
+        for (let b = 0; b < chords.length; b++) {
+          for (let beat = 0; beat < 4; beat++) {
+            const t = `${b}:${beat}:0`;
+            Tone.Transport.schedule((time) => {
+              // Accent beat 1
+              const vel = (beat === 0) ? 0.9 : 0.55;
+              metroSynth.triggerAttackRelease("C2", "32n", time, vel);
+            }, t);
+          }
+        }
+      }
+
+      // Pattern events
+      for (let bar = 0; bar < chords.length; bar++) {
+        const chordName = chords[bar];
+        const bassString = DEFAULT_BASS_STRING[chordName] ?? 6;
+
+        for (let step = 0; step < 8; step++) {
+          const when = stepToTransportTime(bar, step);
+
+          Tone.Transport.schedule((time) => {
+            const p = PATTERN[step];
+
+            let stringNum;
+            if (p === "BASS") stringNum = bassString;
+            else stringNum = p;
+
+            const note = getNoteForString(chordName, stringNum);
+            if (!note) return;
+
+            // Velocity shaping: bass mạnh hơn, nhấn nhẹ vào phách 1 & 3
+            const onStrongBeat = (step === 0 || step === 4);
+            const isBass = (p === "BASS");
+            const vel = isBass
+              ? (onStrongBeat ? 0.95 : 0.82)
+              : (onStrongBeat ? 0.70 : 0.60);
+
+            pluck.triggerAttackRelease(note, "16n", time, vel);
+          }, when);
+        }
+      }
+
+      scheduled = true;
+    }
+
+    function startUiTicker(chords) {
+      if (uiTimer) clearInterval(uiTimer);
+
+      uiTimer = setInterval(() => {
+        if (!isRunning) return;
+
+        // Tone.Transport.position: "bars:beats:sixteenths"
+        const pos = Tone.Transport.position.split(":").map(x => parseInt(x, 10));
+        if (pos.length < 3) return;
+        const [bar, beat, sixteenth] = pos;
+
+        const step = (beat * 2) + (sixteenth >= 2 ? 1 : 0);
+        const chordName = chords[bar % chords.length];
+
+        setActiveStep(step);
+
+        curChordEl.textContent = chordName;
+        curBarEl.textContent = String((bar % chords.length) + 1) + "/" + String(chords.length);
+        curCountEl.textContent = `${COUNTS[step]}  (step ${step + 1}/8)`;
+
+        const notes = getChordStringNotes(chordName);
+        stringNotesEl.textContent = `6:${notes[0]}  5:${notes[1]}  4:${notes[2]}  3:${notes[3]}  2:${notes[4]}  1:${notes[5]}`;
+      }, 60);
+    }
+
+    // -----------------------------
+    // 5) Controls
+    // -----------------------------
+    const startBtn = document.getElementById("start");
+    const stopBtn  = document.getElementById("stop");
+    const bpmEl    = document.getElementById("bpm");
+    const volEl    = document.getElementById("vol");
+    const progEl   = document.getElementById("prog");
+
+    function applySettings() {
+      const bpm = Number(bpmEl.value);
+      Tone.Transport.bpm.value = isFinite(bpm) ? bpm : 78;
+
+      const volDb = Number(volEl.value);
+      if (gain) gain.gain.value = Tone.dbToGain(isFinite(volDb) ? volDb : -10);
+    }
+
+    startBtn.addEventListener("click", async () => {
+      if (isRunning) return;
+
+      const { chords, unknown } = parseProgression(progEl.value);
+      if (!chords.length) {
+        setStatus("vui lòng nhập vòng hợp âm", "warn");
+        return;
+      }
+      if (unknown.length) {
+        setStatus(`hợp âm không hỗ trợ: ${unknown.join(", ")}`, "warn");
+        return;
+      }
+
+      // Khởi tạo audio context (bắt buộc có gesture)
+      await Tone.start();
+
+      if (!pluck) buildAudio();
+      applySettings();
+      scheduleProgression(chords);
+      startUiTicker(chords);
+
+      Tone.Transport.start("+0.05");
+      isRunning = true;
+
+      startBtn.disabled = true;
+      stopBtn.disabled = false;
+      setStatus("đang chạy", "ok");
+    });
+
+    stopBtn.addEventListener("click", () => {
+      if (!isRunning) return;
+
+      clearSchedule();
+      isRunning = false;
+
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+      setActiveStep(-1);
+      curChordEl.textContent = "—";
+      curBarEl.textContent = "—";
+      curCountEl.textContent = "—";
+      stringNotesEl.textContent = "—";
+
+      setStatus("đã dừng", "warn");
+    });
+
+    bpmEl.addEventListener("change", () => {
+      if (!pluck) return;
+      applySettings();
+    });
+
+    volEl.addEventListener("change", () => {
+      if (!pluck) return;
+      applySettings();
+    });
+
+    document.getElementById("metro").addEventListener("change", () => {
+      // Nếu đang chạy thì reschedule để bật/tắt metro cho đúng
+      if (!isRunning) return;
+      const { chords } = parseProgression(progEl.value);
+      scheduleProgression(chords);
+    });
+
+    progEl.addEventListener("change", () => {
+      if (!isRunning) return;
+      const { chords, unknown } = parseProgression(progEl.value);
+      if (!chords.length || unknown.length) return;
+      scheduleProgression(chords);
+      startUiTicker(chords);
+    });
+
+    setStatus("chưa chạy", "warn");
+  </script>
+</body>
+</html>
