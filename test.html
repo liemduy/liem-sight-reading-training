@@ -1,135 +1,167 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <title>Thực hành Tay Phải: Gõ Cửa Trái Tim</title>
-    <style>
-        :root { --gold: #f1c40f; --bg: #121212; }
-        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        .player { background: #222; padding: 30px; border-radius: 20px; width: 95%; max-width: 900px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); border: 1px solid #333; }
-        
-        .lyrics-area { height: 150px; text-align: center; margin-bottom: 20px; overflow: hidden; }
-        .line { font-size: 1.6rem; transition: 0.3s; opacity: 0.2; margin: 10px 0; }
-        .line.active { opacity: 1; color: var(--gold); transform: scale(1.1); }
-
-        .control-panel { display: flex; justify-content: space-around; background: #333; padding: 20px; border-radius: 15px; margin-top: 20px; }
-        .option-card { text-align: center; flex: 1; padding: 10px; border: 2px solid transparent; cursor: pointer; border-radius: 10px; transition: 0.3s; }
-        .option-card:hover { background: #444; }
-        .option-card.selected { border-color: var(--gold); background: #444; }
-        
-        .guitar-strings { height: 100px; display: flex; flex-direction: column; justify-content: space-between; margin: 20px 0; position: relative; }
-        .string { height: 2px; background: #666; width: 100%; position: relative; }
-        .active-string { background: var(--gold) !important; box-shadow: 0 0 10px var(--gold); }
-
-        .main-btn { background: #e67e22; color: white; border: none; padding: 15px 50px; font-size: 1.2rem; border-radius: 50px; cursor: pointer; margin: 20px auto; display: block; }
-        .status-badge { text-align: center; color: var(--gold); font-weight: bold; margin-top: 10px; }
-    </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Guitar Bàn Nhậu Pro - Sampler Edition</title>
+  <style>
+    :root { font-family: 'Segoe UI', sans-serif; }
+    body { margin: 0; background: #0b0f14; color: #e7edf5; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+    .container { width: 100%; max-width: 900px; display: grid; grid-template-columns: 1fr 300px; gap: 20px; }
+    .card { background: #121924; border: 1px solid #223047; border-radius: 15px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    h2 { color: #f1c40f; margin-top: 0; text-align: center; }
+    .controls { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; justify-content: center; }
+    button { background: #1f2b3e; color: #fff; border: 1px solid #2d3f5c; padding: 10px 15px; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+    button.active { background: #2a4a7a; border-color: #72a7ff; box-shadow: 0 0 10px #72a7ff; }
+    .play-btn { background: #27ae60 !important; width: 100%; font-weight: bold; font-size: 1.1em; }
+    .stop-btn { background: #c0392b !important; width: 100%; font-weight: bold; }
+    .chord-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .visualizer { display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; margin-top: 15px; }
+    .beat-dot { height: 40px; background: #0f1520; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 10px; border: 1px solid #2d3f5c; }
+    .beat-dot.active { background: #72a7ff; color: #000; font-weight: bold; }
+    .status-bar { margin-top: 15px; font-family: monospace; font-size: 12px; color: #5cffb3; text-align: center; }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.18/Tone.js"></script>
 </head>
 <body>
 
-<div class="player">
-    <h2 style="text-align:center">🎸 Ứng dụng Tay Phải: Gõ Cửa Trái Tim</h2>
+<div class="container">
+  <div class="card">
+    <h2>🎸 GUITAR BÀN NHẬU PRO</h2>
     
-    <div class="lyrics-area">
-        <div id="l1" class="line">Gõ cửa trái [Dm] tim van em được [Dm] vào...</div>
-        <div id="l2" class="line">Ôi cửa tim em [Bb] bằng vàng...</div>
+    <div class="controls">
+        <button id="btnInit" style="background: #e67e22;">1. KÍCH HOẠT GUITAR</button>
+        <button id="btnToggle" class="play-btn" disabled>2. PHÁT (START)</button>
     </div>
 
-    <div class="guitar-strings" id="neck">
-        <div class="string" id="s6"></div><div class="string" id="s5"></div>
-        <div class="string" id="s4"></div><div class="string" id="s3"></div>
-        <div class="string" id="s2"></div><div class="string" id="s1"></div>
+    <div class="controls">
+        <label>Điệu: </label>
+        <button class="btn-style active" onclick="setStyle('bolero')">Bolero</button>
+        <button class="btn-style" onclick="setStyle('ballad')">Ballad</button>
+        <button class="btn-style" onclick="setStyle('disco')">Disco</button>
     </div>
 
-    <div class="control-panel">
-        <div class="option-card selected" id="optRai" onclick="setMode('rai')">
-            <h3>OPTION 1: RẢI</h3>
-            <p>(Bass - 3 - 2 - 1)</p>
-            <small>Dùng cho Lời 1 & 2</small>
-        </div>
-        <div class="option-card" id="optQuat" onclick="setMode('quat')">
-            <h3>OPTION 2: QUẠT</h3>
-            <p>(Xuống - Chát - Lên - Lên)</p>
-            <small>Dùng cho ĐIỆP KHÚC</small>
-        </div>
+    <div class="visualizer" id="viz"></div>
+    <div class="status-bar" id="status">Sẵn sàng nhập tiệc!</div>
+    
+    <div style="margin-top:20px;">
+        <label>Tốc độ (BPM): <span id="bpmVal">75</span></label>
+        <input type="range" id="bpmRange" min="60" max="150" value="75" style="width:100%">
     </div>
+  </div>
 
-    <button class="main-btn" id="startBtn">BẮT ĐẦU ĐỆM NHẠC</button>
-    <div id="status" class="status-badge">Chế độ hiện tại: RẢI (Tình cảm)</div>
+  <div class="card">
+    <h3>CHỌN HỢP ÂM</h3>
+    <div class="chord-grid" id="chordGrid"></div>
+    <div style="margin-top: 20px; font-size: 0.8em; color: #a9b6c8;">
+        * Hợp âm sẽ đổi chính xác vào đầu mỗi ô nhịp.
+    </div>
+  </div>
 </div>
 
 <script>
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    let mode = 'rai';
-    let isPlaying = false;
+  const $ = (id) => document.getElementById(id);
+  let guitar, reverb, isPlaying = false;
+  let currentStyle = 'bolero';
+  let currentChord = 'Am';
+  let nextChord = 'Am';
+  let stepIndex = 0;
 
-    function setMode(m) {
-        mode = m;
-        document.getElementById('optRai').classList.toggle('selected', m === 'rai');
-        document.getElementById('optQuat').classList.toggle('selected', m === 'quat');
-        document.getElementById('status').innerText = "Chế độ hiện tại: " + (m === 'rai' ? "RẢI (Tình cảm)" : "QUẠT (Mạnh mẽ)");
+  const CHORDS = {
+    "Am": [-1, 0, 2, 2, 1, 0], "Dm": [-1, -1, 0, 2, 3, 1], "E7": [0, 2, 0, 1, 0, 0],
+    "C": [-1, 3, 2, 0, 1, 0], "G": [3, 2, 0, 0, 0, 3], "F": [-1, -1, 3, 2, 1, 0]
+  };
+
+  const STYLES = {
+    bolero: [ {s: 'B', v: 1}, {s: 3, v: 0.4}, {s: 2, v: 0.4}, {s: 1, v: 0.4}, {s: 'C', v: 0.8}, {s: 'B', v: 0.6}, {s: 'C', v: 0.7}, {s: 'B', v: 0.5} ],
+    ballad: [ {s: 'B', v: 1}, {s: 3, v: 0.5}, {s: 2, v: 0.5}, {s: 3, v: 0.5}, {s: 1, v: 0.6}, {s: 3, v: 0.5}, {s: 2, v: 0.5}, {s: 3, v: 0.5} ],
+    disco:  [ {s: 'B', v: 1}, {s: 'C', v: 0.8}, {s: 'S', v: 0.6}, {s: 'C', v: 0.8}, {s: 'B', v: 0.9}, {s: 'C', v: 0.8}, {s: 'S', v: 0.6}, {s: 'C', v: 0.8} ]
+  };
+
+  // Render UI
+  const viz = $('viz');
+  for(let i=0; i<8; i++) viz.innerHTML += `<div class="beat-dot" id="step-${i}">${i+1}</div>`;
+
+  const grid = $('chordGrid');
+  Object.keys(CHORDS).forEach(c => {
+    grid.innerHTML += `<button class="btn-chord ${c=='Am'?'active':''}" onclick="setChord('${c}')">${c}</button>`;
+  });
+
+  function setStyle(s) {
+    currentStyle = s;
+    document.querySelectorAll('.btn-style').forEach(b => b.classList.toggle('active', b.innerText.toLowerCase() == s));
+  }
+
+  function setChord(c) {
+    nextChord = c;
+    document.querySelectorAll('.btn-chord').forEach(b => b.classList.toggle('active', b.innerText == c));
+  }
+
+  async function initGuitar() {
+    $('btnInit').innerText = "Đang tải...";
+    await Tone.start();
+    guitar = new Tone.Sampler({
+      urls: { E2: "E2.ogg", A2: "A2.ogg", D3: "D3.ogg", G3: "G3.ogg", B3: "B3.ogg", E4: "E4.ogg" },
+      baseUrl: "https://cdn.jsdelivr.net/npm/tonejs-instrument-guitar-acoustic-ogg@1.1.0/"
+    }).toDestination();
+    reverb = new Tone.Reverb({ decay: 1.5, wet: 0.1 }).toDestination();
+    guitar.connect(reverb);
+    await Tone.loaded();
+    $('btnInit').innerText = "Đã tải xong";
+    $('btnToggle').disabled = false;
+    $('status').innerText = "Guitar đã sẵn sàng!";
+  }
+
+  function playNote(stringNum, time, vol) {
+    const frets = CHORDS[currentChord];
+    const stringIdx = 6 - stringNum;
+    const midi = [40, 45, 50, 55, 59, 64][stringIdx] + frets[stringIdx];
+    if (frets[stringIdx] >= 0) guitar.triggerAttackRelease(Tone.Frequency(midi, "midi").toNote(), "2n", time, vol);
+  }
+
+  function tick(time) {
+    let idx = stepIndex % 8;
+    if (idx === 0) currentChord = nextChord;
+
+    // Visual
+    Tone.Draw.schedule(() => {
+        document.querySelectorAll('.beat-dot').forEach(d => d.classList.remove('active'));
+        $('step-' + idx).classList.add('active');
+        $('status').innerText = `Nhịp: ${idx + 1} | Điệu: ${currentStyle.toUpperCase()} | Hợp âm: ${currentChord}`;
+    }, time);
+
+    const pattern = STYLES[currentStyle][idx];
+    if (pattern.s === 'B') { // Bass
+        let bStr = (currentChord === 'Dm' || currentChord === 'F') ? 4 : (currentChord === 'G' || currentChord === 'E7') ? 6 : 5;
+        playNote(bStr, time, pattern.v);
+    } else if (pattern.s === 'C') { // Chát (Quạt nhẹ dây dưới)
+        [1, 2, 3].forEach(s => playNote(s, time, pattern.v));
+    } else if (typeof pattern.s === 'number') { // Rải dây đơn
+        playNote(pattern.s, time, pattern.v);
     }
+    stepIndex++;
+  }
 
-    function playNote(freq, time, dur) {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(freq, time);
-        gain.gain.setValueAtTime(0.3, time);
-        gain.gain.exponentialRampToValueAtTime(0.01, time + dur);
-        osc.connect(gain); gain.connect(audioCtx.destination);
-        osc.start(time); osc.stop(time + dur);
+  $('btnInit').onclick = initGuitar;
+  $('btnToggle').onclick = () => {
+    if (!isPlaying) {
+      Tone.Transport.scheduleRepeat(tick, "8n");
+      Tone.Transport.start();
+      $('btnToggle').innerText = "DỪNG (STOP)";
+      $('btnToggle').className = "stop-btn";
+    } else {
+      Tone.Transport.stop();
+      Tone.Transport.cancel();
+      $('btnToggle').innerText = "PHÁT (START)";
+      $('btnToggle').className = "play-btn";
     }
+    isPlaying = !isPlaying;
+  };
 
-    function animateString(s) {
-        const el = document.getElementById('s' + s);
-        el.classList.add('active-string');
-        setTimeout(() => el.classList.remove('active-string'), 200);
-    }
-
-    function playLoop(chord, startTime) {
-        const t = startTime;
-        const bassFreq = chord === 'Dm' ? 146 : 110; // Dây 4 hoặc dây 5
-        const bassString = chord === 'Dm' ? 4 : 5;
-
-        if (mode === 'rai') {
-            // Bass - 3 - 2 - 1
-            playNote(bassFreq, t, 1); animateString(bassString);
-            playNote(196, t + 0.3, 0.5); setTimeout(() => animateString(3), 300);
-            playNote(246, t + 0.6, 0.5); setTimeout(() => animateString(2), 600);
-            playNote(293, t + 0.9, 0.5); setTimeout(() => animateString(1), 900);
-        } else {
-            // Quạt: Bass - Xuống - Chát - Lên
-            playNote(bassFreq, t, 1); animateString(bassString);
-            // Giả lập tiếng quạt bằng cách phát nhanh nhiều nốt
-            [200, 250, 300].forEach((f, i) => {
-                playNote(f, t + 0.4 + (i*0.02), 0.2);
-                setTimeout(() => animateString(3-i), 400);
-            });
-        }
-    }
-
-    document.getElementById('startBtn').onclick = function() {
-        if (isPlaying) return;
-        isPlaying = true;
-        this.disabled = true;
-        this.innerText = "ĐANG CHƠI...";
-
-        let now = audioCtx.currentTime;
-        
-        // Vòng lặp mô phỏng
-        for(let i=0; i<20; i++) {
-            let chord = i < 8 ? 'Dm' : 'Bb';
-            let line = i < 8 ? 'l1' : 'l2';
-            
-            setTimeout(() => {
-                document.querySelectorAll('.line').forEach(l => l.classList.remove('active'));
-                document.getElementById(line).classList.add('active');
-            }, i * 1500);
-
-            playLoop(chord, now + (i * 1.5));
-        }
-    };
+  $('bpmRange').oninput = (e) => {
+    Tone.Transport.bpm.value = e.target.value;
+    $('bpmVal').innerText = e.target.value;
+  };
 </script>
 </body>
 </html>
