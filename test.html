@@ -2,240 +2,101 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thực hành Guitar Bolero & Các Điệu Khác</title>
+    <title>Guitar Pro Nhậu: Tra cứu & Thực hành</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f4f9; display: flex; justify-content: center; padding: 20px; }
-        .container { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 900px; }
-        h2 { text-align: center; color: #2c3e50; margin-bottom: 30px; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 20px; }
-        .section { border: 1px solid #ddd; padding: 15px; border-radius: 10px; background: #fafafa; }
-        h3 { margin-top: 0; font-size: 1.1em; color: #e67e22; border-bottom: 2px solid #e67e22; padding-bottom: 5px; margin-bottom: 15px; }
-        label { display: block; margin: 10px 0; cursor: pointer; padding: 8px; border-radius: 5px; transition: background 0.3s; }
-        label:hover { background: #eee; }
-        input[type="radio"] { margin-right: 10px; transform: scale(1.2); }
-        .controls { margin-top: 30px; text-align: center; border-top: 2px solid #eee; padding-top: 20px; }
-        button { background: #27ae60; color: white; border: none; padding: 12px 30px; font-size: 1.1em; border-radius: 25px; cursor: pointer; transition: 0.3s; }
-        button:hover { background: #219150; transform: scale(1.05); }
-        button:disabled { background: #bdc3c7; cursor: not-allowed; }
-        .status { margin-top: 15px; font-weight: bold; color: #7f8c8d; min-height: 20px; }
-        
-        .guitar-board { margin-top: 30px; text-align: center; position: relative; width: 100%; max-width: 500px; margin-left: auto; margin-right: auto; }
-        .strings { background-color: #f0d9b5; border: 2px solid #a07d5b; border-radius: 5px; height: 150px; position: relative; display: flex; flex-direction: column; justify-content: space-around; padding: 10px 0; }
-        .string { height: 2px; background-color: #555; width: 100%; position: relative; }
-        .fret { position: absolute; top: 0; bottom: 0; width: 2px; background-color: #888; }
-        .fret:nth-child(1) { left: 15%; }
-        .fret:nth-child(2) { left: 30%; }
-        .fret:nth-child(3) { left: 45%; }
-        .fret:nth-child(4) { left: 60%; }
-        .fret:nth-child(5) { left: 75%; }
-        .nut { position: absolute; left: 0; top: 0; bottom: 0; width: 8px; background-color: #333; z-index: 1; }
-        
-        .fretting-dot { 
-            position: absolute; 
-            width: 20px; 
-            height: 20px; 
-            background-color: #e74c3c; 
-            border-radius: 50%; 
-            transform: translate(-50%, -50%); 
-            z-index: 2;
-            box-shadow: 0 0 5px rgba(0,0,0,0.5);
-            transition: opacity 0.1s;
-        }
-        .fretting-dot.open { background-color: #3498db; width: 10px; height: 10px; border: 2px solid #3498db; background-color: transparent; }
-        .fretting-dot.mute { background-color: #95a5a6; width: 10px; height: 10px; transform: translate(-50%, -50%) scale(0.7); border-radius: 0; }
+        :root { --primary: #e67e22; --dark: #2c3e50; }
+        body { font-family: sans-serif; background: #ecf0f1; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .box { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); width: 100%; max-width: 800px; }
+        .flex { display: flex; gap: 20px; }
+        .col { flex: 1; }
+        h3 { color: var(--primary); border-bottom: 2px solid var(--primary); padding-bottom: 5px; }
+        .chord-btn { display: block; width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 5px; cursor: pointer; text-align: left; }
+        .chord-btn:hover { background: #f9f9f9; }
+        .active { background: var(--primary) !important; color: white; border-color: var(--primary); }
+        .guitar-neck { margin-top: 30px; background: #f3e5ab; height: 160px; border: 2px solid #8d6e63; position: relative; display: flex; flex-direction: column; justify-content: space-around; }
+        .string { height: 2px; background: #555; width: 100%; z-index: 1; }
+        .fret { position: absolute; top: 0; bottom: 0; width: 2px; background: #bcbcbc; }
+        .bass-marker { position: absolute; width: 24px; height: 24px; background: #e74c3c; border-radius: 50%; color: white; font-size: 10px; display: flex; align-items: center; justify-content: center; transform: translate(-50%, -50%); z-index: 5; font-weight: bold; }
+        .instruction { margin-top: 20px; padding: 15px; background: #fff3e0; border-left: 5px solid #e67e22; font-style: italic; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>Thực hành Guitar Bolero & Các Điệu Khác</h2>
+<div class="box">
+    <h2 style="text-align:center">🎸 Guitar Bàn Nhậu v2.0</h2>
     
-    <div class="grid">
-        <div class="section">
-            <h3>1. Chọn Cách Đệm</h3>
-            <label>
-                <input type="radio" name="rhythm" value="bolero" checked> 
-                <strong>Bolero (Cơ bản)</strong><br>
-                <small>(Bass - 3 - 2 - 1 - 3 - 2 - 3 - 1 - 2 - 3)</small>
-            </label>
-            <label>
-                <input type="radio" name="rhythm" value="slowrock"> 
-                <strong>Slow Rock</strong><br>
-                <small>(Bass - 3 - 2 - 1 - 2 - 3)</small>
-            </label>
-            <label>
-                <input type="radio" name="rhythm" value="disco"> 
-                <strong>Disco / Bebop</strong><br>
-                <small>(Quạt chả nhanh, dồn dập)</small>
-            </label>
+    <div class="flex">
+        <div class="col">
+            <h3>1. Chọn Điệu (Trên Hopamviet)</h3>
+            <select id="rhythmSelect" style="width:100%; padding:10px;">
+                <option value="bolero">Bolero (Trữ tình)</option>
+                <option value="slowrock">Slow Rock (Dập dìu)</option>
+                <option value="ballad">Ballad / Slow Surf (Nhạc trẻ)</option>
+                <option value="disco">Disco / Fox (Sôi động)</option>
+            </select>
+            
+            <div id="patternText" class="instruction">
+                Công thức: Bass - 3 - 2 - 1 - Chát - Bass - Chát
+            </div>
         </div>
 
-        <div class="section">
-            <h3>2. Chọn Hợp Âm</h3>
-            <label><input type="radio" name="chord" value="Am" checked> <b>La Thứ (Am)</b> - Trầm buồn</label>
-            <label><input type="radio" name="chord" value="Dm"> <b>Rê Thứ (Dm)</b> - Da diết</label>
-            <label><input type="radio" name="chord" value="E7"> <b>Mi Bảy (E7)</b> - Hồi hộp, chuyển tiếp</label>
-            <label><input type="radio" name="chord" value="C"> <b>Đô Trưởng (C)</b> - Vui tươi, sáng sủa</label>
-            <label><input type="radio" name="chord" value="G"> <b>Son Trưởng (G)</b> - Mạnh mẽ, hào hùng</label>
+        <div class="col">
+            <h3>2. Chọn Hợp Âm (Chữ trên lời)</h3>
+            <div id="chordGrid">
+                <button class="chord-btn active" onclick="selectChord('Am', 5)">La Thứ (Am) - Bass dây 5</button>
+                <button class="chord-btn" onclick="selectChord('Dm', 4)">Rê Thứ (Dm) - Bass dây 4</button>
+                <button class="chord-btn" onclick="selectChord('E7', 6)">Mi Bảy (E7) - Bass dây 6</button>
+                <button class="chord-btn" onclick="selectChord('C', 5)">Đô Trưởng (C) - Bass dây 5</button>
+                <button class="chord-btn" onclick="selectChord('G', 6)">Son Trưởng (G) - Bass dây 6</button>
+            </div>
         </div>
     </div>
 
-    <div class="controls">
-        <button id="playBtn">PHÁT THỬ (PLAY)</button>
-        <div class="status" id="statusText">Sẵn sàng thực hành!</div>
+    <div class="guitar-neck">
+        <div class="string"></div><div class="string"></div><div class="string"></div>
+        <div class="string"></div><div class="string"></div><div class="string"></div>
+        <div id="bassPoint" class="bass-marker">BASS</div>
+        <div class="fret" style="left: 20%"></div>
+        <div class="fret" style="left: 40%"></div>
+        <div class="fret" style="left: 60%"></div>
+        <div class="fret" style="left: 80%"></div>
     </div>
 
-    <div class="guitar-board">
-        <h3>Hệ dây Guitar minh họa</h3>
-        <p>Chọn hợp âm để xem vị trí tay bấm.</p>
-        <div class="strings">
-            <div class="nut"></div>
-            <div class="fret"></div>
-            <div class="fret"></div>
-            <div class="fret"></div>
-            <div class="fret"></div>
-            <div class="fret"></div>
-            <div class="string s6" data-string="E" data-open="82.41"></div>
-            <div class="string s5" data-string="A" data-open="110"></div>
-            <div class="string s4" data-string="D" data-open="146.83"></div>
-            <div class="string s3" data-string="G" data-open="196"></div>
-            <div class="string s2" data-string="B" data-open="246.94"></div>
-            <div class="string s1" data-string="E" data-open="329.63"></div>
-        </div>
-    </div>
+    <p style="text-align:center; color: #7f8c8d; font-size: 0.9em;">Chấm đỏ chỉ vị trí dây Bass bạn cần đánh vào mỗi đầu nhịp!</p>
 </div>
 
 <script>
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    let isPlaying = false;
-    let currentOscillators = [];
-
-    // Tần số nốt nhạc trên các phím (từ phím 0 - dây buông)
-    // Các tần số cơ bản của dây buông (EADGBe)
-    const openStringFrequencies = [82.41, 110, 146.83, 196, 246.94, 329.63]; 
-    // Mapped như sau: string 6 (E thấp) -> 0, string 5 (A) -> 1, ..., string 1 (E cao) -> 5
-    
-    // Tần số của các nốt nhạc trên cần đàn (tính từ dây buông)
-    function getNoteFrequency(stringIndex, fret) {
-        if (fret === 'X') return 0; // X là dây câm
-        if (fret === 0) return openStringFrequencies[stringIndex];
-        return openStringFrequencies[stringIndex] * Math.pow(2, fret / 12);
-    }
-
-    // Định nghĩa hợp âm: [Dây 6, Dây 5, Dây 4, Dây 3, Dây 2, Dây 1]
-    // X = câm, 0 = dây buông, số = phím bấm
-    const chordFrettings = {
-        'Am': [null, 0, 2, 2, 1, 0], // E-A-C-E-G-E -> Dây 6 có thể không bấm hoặc bấm E
-        'Dm': [null, null, 0, 2, 3, 1], // X-X-D-A-D-F
-        'E7': [0, 2, 2, 1, 3, 0], // E-B-D-G#-B-E
-        'C': [null, 3, 2, 0, 1, 0], // X-C-E-G-C-E
-        'G': [3, 2, 0, 0, 0, 3]  // G-B-D-G-B-G
+    const patterns = {
+        bolero: "Công thức: Bass - 3 - (21) - Chát - Bass - Chát (Đánh nẩy, ngắt nhịp)",
+        slowrock: "Công thức: Bass - 3 - 2 - 1 - 2 - 3 (Đếm: 1-2-3-4-5-6)",
+        ballad: "Công thức: Bass - 3 - 2 - 3 - 1 - 3 - 2 - 3 (Nhẹ nhàng, tình cảm)",
+        disco: "Công thức: Quạt (Xuống - Lên - Chát - Lên) - Nhanh, mạnh!"
     };
 
-    // Hàm phát âm thanh giống guitar hơn
-    function playGuitarNote(freq, duration, volume = 0.5) {
-        if (freq === 0) return; // Dây câm thì không phát tiếng
+    const rhythmSelect = document.getElementById('rhythmSelect');
+    const patternText = document.getElementById('patternText');
+    const bassPoint = document.getElementById('bassPoint');
 
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
+    rhythmSelect.onchange = () => {
+        patternText.innerText = patterns[rhythmSelect.value];
+    };
 
-        osc.type = 'triangle'; // Sóng tam giác nghe mềm mại hơn sóng vuông
-        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+    function selectChord(name, string) {
+        // Update UI
+        document.querySelectorAll('.chord-btn').forEach(b => b.classList.remove('active'));
+        event.target.classList.add('active');
 
-        // Tạo hiệu ứng tấn công (attack) nhanh và giảm dần (decay)
-        gain.gain.setValueAtTime(0, ctx.currentTime);
-        gain.gain.linearRampToValueAtTime(volume, ctx.currentTime + 0.01); // Attack nhanh
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration); // Decay
-
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-
-        osc.start(ctx.currentTime);
-        osc.stop(ctx.currentTime + duration + 0.1); // Dừng sau khi decay hết
-
-        currentOscillators.push({osc, gain, stopTime: ctx.currentTime + duration + 0.1});
-        // Clear old oscillators
-        currentOscillators = currentOscillators.filter(o => o.stopTime > ctx.currentTime);
+        // Di chuyển điểm Bass (Dây 1 ở dưới cùng, Dây 6 ở trên cùng)
+        // Tính toán vị trí Y: dây 6 -> ~10%, dây 1 -> ~90%
+        const yPos = (6 - string) * 16.6 + 8; 
+        bassPoint.style.top = yPos + '%';
+        bassPoint.style.left = '10%';
+        bassPoint.innerText = 'BASS ' + string;
     }
+    
+    // Khởi tạo mặc định cho Am
+    selectChord('Am', 5);
+</script>
 
-    // Hiển thị vị trí bấm hợp âm trên cần đàn
-    function updateFrettingDots() {
-        const chordKey = document.querySelector('input[name="chord"]:checked').value;
-        const fretting = chordFrettings[chordKey];
-        const guitarBoard = document.querySelector('.guitar-board');
-        
-        // Xóa các chấm cũ
-        guitarBoard.querySelectorAll('.fretting-dot').forEach(dot => dot.remove());
-
-        if (!fretting) return;
-
-        // Add dots for 6 strings
-        fretting.forEach((fret, index) => {
-            const stringIndex = 5 - index; // Dây 6 là index 0 -> stringIndex 5
-            const stringElement = document.querySelector(`.s${stringIndex + 1}`); // s1 đến s6
-
-            if (stringElement) {
-                const dot = document.createElement('div');
-                dot.classList.add('fretting-dot');
-
-                let topPosition;
-                // Tính toán vị trí top cho mỗi dây
-                const numStrings = 6;
-                const stringHeight = stringElement.offsetHeight; // Chiều cao 1 dây
-                const stringsContainerHeight = document.querySelector('.strings').offsetHeight;
-                
-                // Vị trí y dựa vào khoảng cách giữa các dây
-                topPosition = (stringsContainerHeight / numStrings) * (stringIndex + 0.5);
-
-                dot.style.top = `${topPosition}px`; // Centered vertically on the string
-
-                if (fret === null) { // Dây câm
-                    dot.classList.add('mute');
-                    dot.style.left = '10px'; // Gần đầu cần đàn
-                } else if (fret === 0) { // Dây buông
-                    dot.classList.add('open');
-                    dot.style.left = '10px'; // Gần đầu cần đàn
-                } else { // Phím bấm
-                    // Tính vị trí left dựa trên phím bấm (ví dụ 15% mỗi phím)
-                    // Offset để chấm nằm giữa phím
-                    const fretWidthPercentage = 15; // Width of each fret visual
-                    const nutWidth = 8; // Width of the nut
-
-                    dot.style.left = `calc(${nutWidth}px + ${(fret - 0.5) * fretWidthPercentage}% + ${fretWidthPercentage / 2}%)`; 
-                }
-                guitarBoard.appendChild(dot);
-            }
-        });
-    }
-
-
-    async function playSequence() {
-        if (isPlaying) return;
-        isPlaying = true;
-        document.getElementById('playBtn').disabled = true;
-        
-        const rhythm = document.querySelector('input[name="rhythm"]:checked').value;
-        const chordKey = document.querySelector('input[name="chord"]:checked').value;
-        const fretting = chordFrettings[chordKey];
-        const status = document.getElementById('statusText');
-
-        // Tạo ra các tần số cho hợp âm hiện tại
-        const chordFrequencies = fretting.map((fret, index) => getNoteFrequency(index, fret));
-
-        // Dừng tất cả âm thanh đang phát trước đó
-        currentOscillators.forEach(o => {
-            if (o.gain) o.gain.gain.cancelScheduledValues(ctx.currentTime);
-            if (o.osc) o.osc.stop(ctx.currentTime);
-        });
-        currentOscillators = [];
-
-        if (rhythm === 'bolero') {
-            status.innerText = "Đang chơi: Bolero (Cơ bản)...";
-            // Pattern: Bass - 3 - 2 - 1 - 3 - 2 - 3 - 1 - 2 - 3
-            // Bass: Dây 6 hoặc Dây 5 tùy hợp âm
-            const bassStringIndex = (chordKey === 'Am' || chordKey === 'C' || chordKey === 'G' || chordKey === 'E7') ? 1 : 2; // Dây 5 (A) hoặc Dây 4 (D)
-            if(chordKey === 'G' || chordKey === 'E7') bassStringIndex = 0; // Dây 6
-
-            const delay = 180; // ms
-            const noteDuration = 0
+</body>
+</html>
