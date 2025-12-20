@@ -3,16 +3,16 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Đệm hát – Bolero mượt (CDN Guitar)</title>
+  <title>Đệm hát – Pattern tay phải (CDN Guitar)</title>
 
-  <!-- CDN: soundfont-player (needs internet) -->
+  <!-- CDN: soundfont-player (cần internet) -->
   <script src="https://cdn.jsdelivr.net/npm/soundfont-player@0.12.0/dist/soundfont-player.min.js"></script>
 
   <style>
     :root{
       --bg:#0b0f14; --panel:#121a24; --panel2:#0f1620;
       --text:#e8eef7; --muted:#9fb0c7; --accent:#6aa9ff;
-      --danger:#ff6a6a; --good:#52d18f;
+      --danger:#ff6a6a; --good:#52d18f; --line:rgba(255,255,255,.10);
     }
     *{box-sizing:border-box}
     body{
@@ -28,12 +28,12 @@
       padding:12px 14px;
       display:flex; align-items:center; justify-content:space-between; gap:10px;
     }
-    .title{font-weight:900}
-    .status{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px}
+    .title{font-weight:950}
+    .status{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
     .dot{width:10px;height:10px;border-radius:999px;background:var(--danger);box-shadow:0 0 0 3px rgba(255,106,106,.14)}
     .dot.on{background:var(--good);box-shadow:0 0 0 3px rgba(82,209,143,.16)}
     main{padding:14px}
-    .grid{max-width:980px;margin:0 auto;display:grid;gap:12px}
+    .grid{max-width:1040px;margin:0 auto;display:grid;gap:12px}
     .card{
       background:rgba(18,26,36,.88);
       border:1px solid rgba(255,255,255,.08);
@@ -44,7 +44,7 @@
       padding:10px 12px;
       background:rgba(15,22,32,.92);
       border-bottom:1px solid rgba(255,255,255,.08);
-      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
     }
     .bd{padding:12px}
     .big{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
@@ -54,7 +54,7 @@
     .controls{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:10px}
     button, select{
       appearance:none;
-      border:1px solid rgba(255,255,255,.10);
+      border:1px solid var(--line);
       background:rgba(255,255,255,.06);
       color:var(--text);
       padding:12px 10px; border-radius:12px;
@@ -65,6 +65,7 @@
     button:active{transform:scale(.98)}
     button.primary{background:rgba(106,169,255,.18);border-color:rgba(106,169,255,.35)}
     button.danger{background:rgba(255,106,106,.14);border-color:rgba(255,106,106,.30)}
+    button.good{background:rgba(82,209,143,.14);border-color:rgba(82,209,143,.30)}
     .lyrics{font-size:18px;line-height:1.75;white-space:pre-wrap}
     .ch{
       display:inline-block;
@@ -88,20 +89,20 @@
       padding:10px 14px;
     }
     .footer .row{
-      max-width:980px;margin:0 auto;
+      max-width:1040px;margin:0 auto;
       display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:10px
     }
     .pill{
       font-size:12px;color:var(--muted);
       padding:6px 10px;border-radius:999px;
-      border:1px solid rgba(255,255,255,.10);
+      border:1px solid var(--line);
       background:rgba(255,255,255,.04);
       display:inline-flex;gap:8px;align-items:center;justify-content:center;
       white-space:nowrap;
     }
     .pill b{color:var(--text)}
     .split{display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap}
-    input[type="range"]{width:170px}
+    input[type="range"]{width:180px}
     .kbd{
       font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
       font-size:12px;padding:2px 6px;border-radius:6px;
@@ -109,7 +110,57 @@
       background:rgba(255,255,255,.05);
     }
 
-    /* Tap-to-enable overlay (Safari) */
+    .beats{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .beat{
+      width:34px;height:34px;border-radius:10px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.04);
+      display:flex;align-items:center;justify-content:center;
+      color:var(--muted);font-weight:950;
+    }
+    .beat.on{
+      background:rgba(82,209,143,.16);
+      border-color:rgba(82,209,143,.35);
+      color:var(--text);
+      box-shadow:0 0 0 3px rgba(82,209,143,.14);
+    }
+
+    .pat{
+      overflow:auto;
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:12px;
+      background:rgba(0,0,0,.16);
+      padding:10px;
+    }
+    .patgrid{
+      display:grid;
+      grid-auto-flow:column;
+      grid-auto-columns:minmax(34px, 1fr);
+      gap:6px;
+      align-items:stretch;
+    }
+    .cell{
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:10px;
+      background:rgba(255,255,255,.04);
+      min-height:48px;
+      display:flex;align-items:center;justify-content:center;
+      font-weight:950;
+      color:#cfe2ff;
+      user-select:none;
+    }
+    .cell.dim{color:rgba(207,226,255,.45)}
+    .cell.bass{background:rgba(106,169,255,.12);border-color:rgba(106,169,255,.26)}
+    .cell.chop{background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.08);color:rgba(232,238,247,.8)}
+    .cell.hit{background:rgba(82,209,143,.12);border-color:rgba(82,209,143,.26)}
+    .cell.play{box-shadow:0 0 0 3px rgba(106,169,255,.16)}
+    .legend{display:flex;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:13px}
+    .tag{display:inline-flex;gap:6px;align-items:center}
+    .sw{width:12px;height:12px;border-radius:4px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04)}
+    .sw.bass{background:rgba(106,169,255,.12);border-color:rgba(106,169,255,.26)}
+    .sw.hit{background:rgba(82,209,143,.12);border-color:rgba(82,209,143,.26)}
+    .sw.chop{background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.08)}
+
     #gate{
       position:fixed; inset:0; z-index:9999;
       background:rgba(0,0,0,.72);
@@ -117,7 +168,7 @@
       padding:24px;
     }
     #gate .box{
-      width:min(620px,100%);
+      width:min(680px,100%);
       border-radius:16px;
       border:1px solid rgba(255,255,255,.14);
       background:rgba(18,26,36,.92);
@@ -135,19 +186,21 @@
     <div class="box">
       <h2>Bật âm thanh + tải tiếng guitar (CDN)</h2>
       <p>
-        Chạm nút dưới để Safari cho phép audio. Sau đó app sẽ tải tiếng guitar từ soundfont (cần internet).
-        Khi hát: bạn chỉ bấm <span class="kbd">NEXT</span>. App sẽ “đệm bolero” chạy liên tục và đổi hợp âm mượt.
+        File này dùng <span class="kbd">soundfont-player</span> từ CDN nên cần internet.
+        Chạm nút dưới để Safari cho phép audio. Sau đó bạn chỉ bấm <span class="kbd">NEXT</span> để đổi hợp âm,
+        còn “pattern tay phải” chạy liên tục để bạn bám nhịp mà hát.
       </p>
       <button class="primary" id="gateBtn">Tap to Enable Audio</button>
-      <p style="margin-top:10px">
-        Nếu bạn đang mở trong Zalo/Facebook/Files preview: hãy chọn “Open in Safari”.
-      </p>
+      <p style="margin-top:10px">Nếu mở trong Zalo/Facebook/Files preview: hãy “Open in Safari”.</p>
     </div>
   </div>
 
   <header>
-    <div class="title">Đệm hát bolero mượt (CDN guitar)</div>
-    <div class="status"><span class="dot" id="audDot"></span><span id="audText">Audio: chưa bật</span></div>
+    <div class="title">Đệm hát – Pattern tay phải (CDN guitar)</div>
+    <div class="status">
+      <span class="dot" id="audDot"></span><span id="audText">Audio: chưa bật</span>
+      <span class="pill">Beat: <b id="beatText">—</b></span>
+    </div>
   </header>
 
   <main>
@@ -161,11 +214,10 @@
               <div class="next" id="nextChord">Next: —</div>
             </div>
             <div class="hint">
-              <b>Quan trọng:</b> Tap chỉ để <b>đổi hợp âm</b>. Còn tiếng đệm chạy liên tục theo tempo.
-              Bấm NEXT sớm/muộn chút vẫn mượt vì app “chốt phách” (quantize).
+              Tap để đổi hợp âm. Nếu bạn thấy “không kiểm soát nhịp để hát”, hãy bật <b>Click</b> + <b>Count-in</b>, và để <b>Quantize = Beat</b>.
             </div>
           </div>
-          <small id="idxInfo" style="color:var(--muted)">0 / 0</small>
+          <div class="beats" id="beats"></div>
         </div>
 
         <div class="bd">
@@ -173,48 +225,80 @@
             <button class="primary" id="btnEnable">Bật âm thanh</button>
             <button id="btnPrev">Prev</button>
             <button class="primary" id="btnNext">Next</button>
-            <button id="btnReplay">Chát / Replay</button>
+            <button id="btnReplay">Hit / Chát</button>
             <button class="danger" id="btnReset">Reset</button>
             <button id="btnMute">Mute</button>
           </div>
 
-          <div style="margin-top:12px" class="hint">
-            Instrument (CDN):
-          </div>
-          <div style="margin-top:8px">
-            <select id="instSel">
-              <option value="acoustic_guitar_nylon" selected>acoustic_guitar_nylon (hợp bolero)</option>
-              <option value="acoustic_guitar_steel">acoustic_guitar_steel</option>
-              <option value="electric_guitar_clean">electric_guitar_clean</option>
-            </select>
+          <div style="margin-top:12px" class="split">
+            <div style="min-width:260px;flex:1">
+              <div class="hint" style="margin-bottom:8px">Instrument:</div>
+              <select id="instSel">
+                <option value="acoustic_guitar_nylon" selected>acoustic_guitar_nylon (bolero hợp)</option>
+                <option value="acoustic_guitar_steel">acoustic_guitar_steel</option>
+                <option value="electric_guitar_clean">electric_guitar_clean</option>
+              </select>
+            </div>
+            <div style="min-width:320px;flex:1">
+              <div class="hint" style="margin-bottom:8px">Pattern tay phải:</div>
+              <select id="patternSel"></select>
+            </div>
           </div>
 
           <div style="margin-top:12px" class="split">
             <div class="pill"><span>Tempo</span> <b id="tempoVal">72</b></div>
-            <input id="tempo" type="range" min="56" max="110" value="72" />
+            <input id="tempo" type="range" min="50" max="130" value="72" />
             <div class="pill"><span>Vol</span> <b id="volVal">75%</b></div>
             <input id="vol" type="range" min="10" max="100" value="75" />
           </div>
 
           <div style="margin-top:10px" class="split">
-            <div class="pill"><span>Strum</span> <b id="strumVal">110ms</b></div>
-            <input id="strum" type="range" min="70" max="180" value="110" />
-            <div class="pill"><span>Feel</span> <b id="feelVal">Vừa</b></div>
-            <input id="feel" type="range" min="0" max="2" value="1" />
+            <div class="pill"><span>Strum</span> <b id="strumVal">120ms</b></div>
+            <input id="strum" type="range" min="70" max="200" value="120" />
+            <div class="pill"><span>Humanize</span> <b id="humVal">10%</b></div>
+            <input id="humanize" type="range" min="0" max="25" value="10" />
           </div>
 
           <div style="margin-top:10px" class="split">
-            <button id="btnGroove" class="primary">Groove: ON</button>
-            <button id="btnQuant" class="primary">Quantize: ON</button>
+            <button id="btnGroove" class="good">Groove: ON</button>
+            <button id="btnClick" class="primary">Click: ON</button>
+            <button id="btnCount" class="primary">Count-in: ON</button>
+            <select id="quantSel" style="min-width:220px">
+              <option value="beat" selected>Quantize: Beat (mượt)</option>
+              <option value="bar">Quantize: Bar (rất chắc)</option>
+              <option value="off">Quantize: OFF (đổi ngay)</option>
+            </select>
           </div>
 
-          <div class="hint" style="margin-top:10px" id="loadInfo">Instrument: chưa load</div>
+          <div class="hint" style="margin-top:10px" id="patDesc">—</div>
+          <div class="hint" style="margin-top:6px" id="loadInfo">Instrument: chưa load</div>
+
+          <div style="margin-top:12px" class="legend">
+            <span class="tag"><span class="sw bass"></span> B = bass</span>
+            <span class="tag"><span class="sw hit"></span> D/U = quạt</span>
+            <span class="tag"><span class="sw chop"></span> X = chát/mute</span>
+          </div>
+          <div style="margin-top:8px" class="pat">
+            <div class="patgrid" id="patGrid"></div>
+          </div>
         </div>
       </section>
 
       <section class="card">
         <div class="hd"><div><b>Lời + hợp âm</b></div><small style="color:var(--muted)">hợp âm trong [ ] là nút</small></div>
         <div class="bd"><div class="lyrics" id="lyrics"></div></div>
+      </section>
+
+      <section class="card">
+        <div class="hd"><div><b>Gợi ý để “hát không bị trôi nhịp”</b></div><small style="color:var(--muted)">thực chiến</small></div>
+        <div class="bd">
+          <div class="hint">
+            1) Bật <b>Click</b> + <b>Count-in</b> (đếm 1 ô nhịp trước khi vào).<br>
+            2) Dùng pattern thưa trước (Bolero B-X-B-X hoặc Ballad) rồi mới đổi sang pattern dày.<br>
+            3) Để <b>Quantize = Beat</b>: bạn bấm hơi sớm/muộn vẫn “khớp phách” nên ca sĩ dễ bám.<br>
+            4) Tempo nên cố định; đừng vừa hát vừa kéo tempo.
+          </div>
+        </div>
       </section>
 
     </div>
@@ -224,14 +308,12 @@
     <div class="row">
       <button id="tapPrev">◀︎ Prev</button>
       <button class="primary" id="tapNext" style="padding:14px 10px;font-size:18px">NEXT</button>
-      <button id="tapReplay">⟲ Chát</button>
+      <button id="tapReplay">⟲ Hit</button>
     </div>
   </div>
 
 <script>
-/* =========================
-   1) INPUT
-   ========================= */
+/* 1) INPUT */
 const RAW = `1. Tuổi đời chân đơn [Am] côi gót mòn đại lộ [F] buồn
 Đèn [G] đêm bóng mờ nhạt [C] nhòa
 [A7] Hồn lắng tâm [Dm] tư, đi vào dĩ [Am] vãng
@@ -253,9 +335,7 @@ Bờ [G] môi tắt hẳn nụ [C] cười
 [A7] Giây phút bên [Dm] nhau nay còn đâu [Am] nữa
 Người về trong thương [E7] nhớ người đi nhớ thương [Am] người.`;
 
-/* =========================
-   2) PARSE + RENDER
-   ========================= */
+/* 2) PARSE + RENDER */
 function normalizeChordName(ch){ return ch.trim(); }
 
 const chordEvents = [];
@@ -275,9 +355,47 @@ const lyricsEl = document.getElementById('lyrics');
   }));
 })();
 
-/* =========================
-   3) AUDIO (Soundfont CDN)
-   ========================= */
+/* 3) PATTERNS */
+const PATTERNS = [
+  { id:"bolero_basic", name:"Bolero (B-X-B-X) – thưa, dễ hát", sig:{beats:4, sub:2},
+    desc:"Bolero cơ bản: phách 1 bass, phách 2 chát, phách 3 bass, phách 4 chát. Dễ giữ nhịp nhất.",
+    steps:["B",".","X",".","B",".","X","."] },
+  { id:"bolero_plus", name:"Bolero (B-XU-B-XU) – mượt hơn", sig:{beats:4, sub:2},
+    desc:"Bolero mượt: thêm upstroke nhẹ sau chát để có chuyển động liên tục.",
+    steps:["B",".","X","U","B",".","X","U"] },
+  { id:"ballad_8", name:"Ballad (D X U) – backbeat rõ", sig:{beats:4, sub:2},
+    desc:"Ballad/slow rock: nhấn 2–4 (chát/mute), ca sĩ rất dễ bám phách.",
+    steps:["D",".","X","U","D",".","X","U"] },
+  { id:"pop_8", name:"Pop 8th (D D U D D U) – phổ biến", sig:{beats:4, sub:2},
+    desc:"Pop 8th: nền đều, không quá dày. Nếu đang trôi nhịp thì dùng cái này.",
+    steps:["D",".","D","U","D",".","D","U"] },
+  { id:"rumba_basic", name:"Rumba (D D U _ U D U) – lắc lư", sig:{beats:4, sub:2},
+    desc:"Rumba cơ bản: có nhịp lệch tạo cảm giác “đi”.",
+    steps:["D",".","D","U",".","U","D","U"] },
+  { id:"reggae_chop", name:"Reggae chop (offbeat X) – rất chắc phách", sig:{beats:4, sub:2},
+    desc:"Reggae: chủ yếu chát ở offbeat (&). Nghe phách rõ và nhẹ cho ca sĩ.",
+    steps:[".","X",".","X",".","X",".","X"] },
+  { id:"waltz_3", name:"Waltz 3/4 (B X X) – nhạc 3 phách", sig:{beats:3, sub:2},
+    desc:"3/4: phách 1 bass, phách 2–3 chát/chord nhẹ.",
+    steps:["B",".","X",".","X","."] },
+  { id:"pop_16_light", name:"Pop 16th nhẹ – dày vừa", sig:{beats:4, sub:4},
+    desc:"Pop 16th nhẹ: thêm chuyển động 16th nhưng vẫn có chỗ thở.",
+    steps:["D",".","U",".","D",".","U",".","D",".","U",".","D",".","U","."] },
+  { id:"funk_16", name:"Funk 16th (có X) – rất dày", sig:{beats:4, sub:4},
+    desc:"Funk/disco 16th: rất dày, nên giảm tempo nếu thấy khó hát.",
+    steps:["D","U","D","U","X","U","D","U","D","U","X","U","D","U","D","U"] },
+];
+
+const patternSel = document.getElementById('patternSel');
+for(const p of PATTERNS){
+  const opt = document.createElement('option');
+  opt.value = p.id;
+  opt.textContent = p.name;
+  patternSel.appendChild(opt);
+}
+patternSel.value = "bolero_basic";
+
+/* 4) AUDIO */
 let audioCtx = null;
 let instrument = null;
 let isMuted = false;
@@ -285,12 +403,13 @@ let isMuted = false;
 const audDot = document.getElementById('audDot');
 const audText = document.getElementById('audText');
 const loadInfo = document.getElementById('loadInfo');
+const patDesc = document.getElementById('patDesc');
+const beatText = document.getElementById('beatText');
 
 function setAudioUI(on){
   audDot.classList.toggle('on', !!on);
   audText.textContent = on ? "Audio: đã bật" : "Audio: chưa bật";
 }
-
 function ensureAudio(){
   if(audioCtx) return true;
   audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -298,10 +417,8 @@ function ensureAudio(){
   return true;
 }
 
-// Use mp3 soundfont for Safari
 const SOUNDFONT_BASE = "https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/";
 function nameToUrl(name, soundfont, format){
-  // soundfont-player expects this pattern
   return `${SOUNDFONT_BASE}${name}-${format}.js`;
 }
 
@@ -324,27 +441,10 @@ async function enableAudioFlow(){
   if(audioCtx.state === "suspended") await audioCtx.resume();
   document.getElementById('gate').style.display = 'none';
   await loadInstrument(document.getElementById('instSel').value);
+  updatePatternUI();
 }
 
-/* =========================
-   4) MUSIC LOGIC: bolero groove
-   - Tap chỉ đổi hợp âm
-   - Groove chạy liên tục
-   ========================= */
-let grooveOn = true;
-let quantizeOn = true;
-
-let tempoBpm = 72;
-let currentChordName = null;
-let queuedChordName = null;
-
-let transportStart = 0;
-let nextBeatTime = 0;
-let schedTimer = null;
-
-function beatDur(){ return 60 / tempoBpm; }
-function now(){ return audioCtx.currentTime; }
-
+/* 5) VOICINGS */
 const VOICE = {
   "Am": ["A2","E3","A3","C4","E4"],
   "A7": ["A2","E3","G3","C#4","E4"],
@@ -354,122 +454,236 @@ const VOICE = {
   "G":  ["G2","D3","G3","B3","D4","G4"],
   "C":  ["C3","G3","C4","E4","G4"],
 };
-
-const BASS = {
-  "Am":"A2","A7":"A2","Dm":"D3","E7":"E2","F":"F2","G":"G2","C":"C3"
-};
+const BASS = {"Am":"A2","A7":"A2","Dm":"D3","E7":"E2","F":"F2","G":"G2","C":"C3"};
 
 function getVol(){ return (+document.getElementById('vol').value)/100; }
 function getStrumMs(){ return +document.getElementById('strum').value; }
-function getFeel(){ return +document.getElementById('feel').value; } // 0..2
+function getHumanize(){ return (+document.getElementById('humanize').value)/100; }
 
-function stopAllSound(){
-  // soundfont-player returns nodes with stop(). Keep it simple: suspend/resume trick is too aggressive on iOS.
-  // We'll just let notes decay naturally; for Mute we stop scheduling and set isMuted true.
-}
-
-function playShortChord(ch, t, baseGain=0.55, dur=0.35){
+function playNote(note, t, gain=0.70, dur=0.25){
   if(!instrument || !audioCtx || isMuted) return;
-  const notes = VOICE[ch];
-  if(!notes) return;
+  instrument.play(note, t, { gain: Math.max(0.06, gain*getVol()), duration: dur });
+}
+function playStrum(ch, t, stroke="D", baseGain=0.55, dur=0.35){
+  if(!instrument || !audioCtx || isMuted) return;
+  const notes0 = VOICE[ch];
+  if(!notes0) return;
 
+  const notes = (stroke === "U") ? [...notes0].reverse() : notes0;
   const strumMs = getStrumMs();
-  const vol = getVol();
+  const hum = getHumanize();
 
-  notes.forEach((note,i) => {
-    const jitter = (Math.random()*0.18 - 0.09);  // humanize
-    const tt = t + i*(strumMs/1000)*(1+jitter);
-    const g = Math.max(0.08, vol*(baseGain*(0.95 - i*0.08)));
+  notes.forEach((note, i) => {
+    const jitter = (Math.random()*2 - 1) * hum;
+    const tt = t + i*(strumMs/1000)*(1 + jitter);
+    const g = Math.max(0.06, getVol()*(baseGain*(0.95 - i*0.08)));
     instrument.play(note, tt, { gain: g, duration: dur });
   });
 }
-
-function playBass(ch, t, gain=0.70, dur=0.25){
-  if(!instrument || !audioCtx || isMuted) return;
-  const bass = BASS[ch];
-  if(!bass) return;
-  instrument.play(bass, t, { gain: Math.max(0.08, getVol()*gain), duration: dur });
+function playChop(ch, t){
+  playStrum(ch, t, "D", 0.32, 0.10);
 }
 
-// Scheduler: schedule ahead a bit
+/* Metronome click */
+let clickOn = true;
+function click(t, strong=false){
+  if(!audioCtx || isMuted || !clickOn) return;
+  const osc = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  osc.type = "square";
+  osc.frequency.setValueAtTime(strong ? 1200 : 900, t);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(strong ? 0.06 : 0.045, t + 0.005);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.06);
+  osc.connect(g);
+  g.connect(audioCtx.destination);
+  osc.start(t);
+  osc.stop(t + 0.07);
+}
+
+/* 6) TRANSPORT */
+let grooveOn = true;
+let countInOn = true;
+let tempoBpm = 72;
+
+let currentChordName = null;
+let queuedChordName = null;
+
+let phase = "idle";
+let transportStart = 0;
+let nextStepTime = 0;
+let stepIndex = 0;
+let schedTimer = null;
+
+function now(){ return audioCtx.currentTime; }
+function beatDur(){ return 60 / tempoBpm; }
+
+function getPattern(){
+  const id = patternSel.value;
+  return PATTERNS.find(p => p.id === id) || PATTERNS[0];
+}
+function stepDur(){
+  const p = getPattern();
+  return beatDur() / p.sig.sub;
+}
+function stepsPerBar(){
+  const p = getPattern();
+  return p.sig.beats * p.sig.sub;
+}
+function currentBeatNumber(){
+  const p = getPattern();
+  return Math.floor(stepIndex / p.sig.sub) + 1;
+}
+function shouldApplyQueued(){
+  const mode = document.getElementById('quantSel').value;
+  const p = getPattern();
+  if(mode === "off") return true;
+  if(mode === "beat") return (stepIndex % p.sig.sub) === 0;
+  if(mode === "bar") return (stepIndex % stepsPerBar()) === 0;
+  return false;
+}
+
+function startTransport(){
+  if(!audioCtx || !instrument) return;
+  if(schedTimer) return;
+
+  const t0 = now() + 0.06;
+  transportStart = t0;
+  nextStepTime = t0;
+  stepIndex = 0;
+
+  phase = (countInOn ? "countin" : "play");
+  schedTimer = setInterval(scheduler, 25);
+}
+function stopTransport(){
+  if(schedTimer) clearInterval(schedTimer);
+  schedTimer = null;
+  phase = "idle";
+  beatText.textContent = "—";
+  updateBeatLights(0, getPattern().sig.beats);
+  paintPatternPlayhead(-1);
+}
 function scheduler(){
-  if(!grooveOn || !instrument || !audioCtx || isMuted) return;
+  if(!audioCtx || isMuted || !grooveOn || !instrument) return;
 
-  const lookAhead = 0.22; // seconds
-  while(nextBeatTime < now() + lookAhead){
-    const b = beatDur();
-    const t = nextBeatTime;
+  const lookAhead = 0.22;
+  const p = getPattern();
+  const sd = stepDur();
+  const spb = stepsPerBar();
 
-    // Apply queued chord on beat boundary if quantize
-    if(queuedChordName && quantizeOn){
+  while(nextStepTime < now() + lookAhead){
+    const t = nextStepTime;
+
+    if((stepIndex % p.sig.sub) === 0){
+      const beat = currentBeatNumber();
+      click(t, beat === 1);
+    }
+
+    if(phase === "countin"){
+      if(stepIndex >= spb){
+        phase = "play";
+        stepIndex = 0;
+      }
+    }
+
+    if(queuedChordName && phase === "play" && shouldApplyQueued()){
       currentChordName = queuedChordName;
       queuedChordName = null;
     }
 
-    const ch = currentChordName;
-    if(ch){
-      const beatIndex = Math.round((t - transportStart)/b) % 4; // 0..3
-
-      // Bolero base: 1 bass, 2 chord, 3 bass, 4 chord
-      if(beatIndex === 0 || beatIndex === 2){
-        playBass(ch, t, 0.75, 0.24);
-      } else if(beatIndex === 1 || beatIndex === 3){
-        playShortChord(ch, t, 0.55, 0.34);
-      }
-
-      // Feel: add offbeat nhẹ cho “mượt”
-      const feel = getFeel();
-      if(feel >= 1){
-        // offbeat after beat 2 and 4 (very light)
-        if(beatIndex === 1 || beatIndex === 3){
-          playShortChord(ch, t + b*0.5, 0.28, 0.22);
-        }
-      }
-      if(feel >= 2){
-        // extra ghost-ish chord right before next beat (tiny push)
-        playShortChord(ch, t + b*0.82, 0.20, 0.18);
+    if(phase === "play" && currentChordName){
+      const token = p.steps[stepIndex % spb] ?? ".";
+      if(token === "B"){
+        const bass = BASS[currentChordName];
+        if(bass) playNote(bass, t, 0.78, 0.24);
+      }else if(token === "D"){
+        playStrum(currentChordName, t, "D", 0.58, 0.34);
+      }else if(token === "U"){
+        playStrum(currentChordName, t, "U", 0.42, 0.26);
+      }else if(token === "X"){
+        playChop(currentChordName, t);
       }
     }
 
-    nextBeatTime += b;
+    nextStepTime += sd;
+    stepIndex = (stepIndex + 1) % spb;
   }
 }
 
-function startGroove(){
-  if(!audioCtx || !instrument) return;
-  if(schedTimer) return;
-  transportStart = now() + 0.02;
-  nextBeatTime = transportStart;
-  schedTimer = setInterval(scheduler, 25);
-}
+/* 7) BEAT LIGHTS + PATTERN GRID */
+const beatsEl = document.getElementById('beats');
 
-function stopGroove(){
-  if(schedTimer) clearInterval(schedTimer);
-  schedTimer = null;
-}
-
-function setChordSmooth(chordName){
-  // Tap chỉ đổi chord: hoặc đổi ngay, hoặc queue tới phách kế tiếp
-  if(!currentChordName){
-    currentChordName = chordName;
-    startGroove();
-    // Give immediate feedback (a light "chát")
-    playShortChord(currentChordName, now()+0.02, 0.55, 0.35);
-    return;
-  }
-  if(quantizeOn){
-    queuedChordName = chordName;
-    // tiny preview so you hear "đổi" (very subtle)
-    playShortChord(chordName, now()+0.02, 0.18, 0.20);
-  } else {
-    currentChordName = chordName;
-    playShortChord(currentChordName, now()+0.02, 0.55, 0.35);
+function renderBeatLights(n){
+  beatsEl.innerHTML = "";
+  for(let i=1;i<=n;i++){
+    const d = document.createElement('div');
+    d.className = "beat";
+    d.textContent = String(i);
+    beatsEl.appendChild(d);
   }
 }
+function updateBeatLights(beat, total){
+  const cells = [...beatsEl.querySelectorAll('.beat')];
+  if(cells.length !== total) renderBeatLights(total);
+  [...beatsEl.querySelectorAll('.beat')].forEach((c, i) => c.classList.toggle('on', (i+1) === beat));
+}
+function paintPatternPlayhead(idx){
+  const cells = [...document.querySelectorAll('#patGrid .cell')];
+  cells.forEach((c, i) => c.classList.toggle('play', i === idx));
+}
+function updatePatternUI(){
+  const p = getPattern();
+  patDesc.textContent = p.desc + `  | Nhịp: ${p.sig.beats}/4  | Lưới: ${p.sig.sub===2 ? "8th" : "16th"}`;
+  beatText.textContent = `${p.sig.beats}/4`;
+  renderBeatLights(p.sig.beats);
+  renderPatternGrid();
+}
+function renderPatternGrid(){
+  const p = getPattern();
+  const grid = document.getElementById('patGrid');
+  grid.innerHTML = "";
+  const spb = stepsPerBar();
+  for(let i=0;i<spb;i++){
+    const tok = p.steps[i] ?? ".";
+    const d = document.createElement('div');
+    d.className = "cell";
+    if(tok === "."){ d.classList.add('dim'); d.textContent = "·"; }
+    else{
+      d.textContent = tok;
+      if(tok === "B") d.classList.add('bass');
+      else if(tok === "X") d.classList.add('chop');
+      else d.classList.add('hit');
+    }
+    grid.appendChild(d);
+  }
+}
+updatePatternUI();
 
-/* =========================
-   5) TIMELINE UI (Prev/Next)
-   ========================= */
+patternSel.addEventListener('change', () => {
+  updatePatternUI();
+  if(schedTimer){
+    stopTransport();
+    if(currentChordName && grooveOn && audioCtx && instrument && !isMuted) startTransport();
+  }
+});
+
+function raf(){
+  try{
+    const p = getPattern();
+    if(audioCtx && schedTimer && !isMuted && grooveOn){
+      const sd = stepDur();
+      const elapsed = Math.max(0, now() - transportStart);
+      const curStep = Math.floor(elapsed / sd) % stepsPerBar();
+      const beat = Math.floor(curStep / p.sig.sub) + 1;
+      updateBeatLights(beat, p.sig.beats);
+      paintPatternPlayhead(curStep);
+    }
+  }catch(e){}
+  requestAnimationFrame(raf);
+}
+requestAnimationFrame(raf);
+
+/* 8) CHORD TIMELINE */
 let curIdx = 0;
 const curChordEl = document.getElementById('curChord');
 const nextChordEl = document.getElementById('nextChord');
@@ -490,23 +704,37 @@ function setActive(i, doPlay=false){
   idxInfoEl.textContent = `${curIdx+1} / ${chordEvents.length}`;
 
   ev.span.scrollIntoView({behavior:"smooth", block:"center", inline:"nearest"});
-
-  if(doPlay){
-    setChordSmooth(ev.chord);
-  }
+  if(doPlay) requestChord(ev.chord);
 }
-
 if(chordEvents.length) setActive(0,false);
 
+function requestChord(ch){
+  const mode = document.getElementById('quantSel').value;
+
+  if(!currentChordName){
+    currentChordName = ch;
+    playStrum(currentChordName, now()+0.02, "D", 0.55, 0.40);
+    if(grooveOn) startTransport();
+    return;
+  }
+
+  if(mode === "off"){
+    currentChordName = ch;
+    playStrum(currentChordName, now()+0.02, "D", 0.40, 0.22);
+    return;
+  }
+
+  queuedChordName = ch;
+  playStrum(ch, now()+0.02, "D", 0.16, 0.16);
+}
 function next(){ setActive(curIdx+1, true); }
 function prev(){ setActive(curIdx-1, true); }
-function replay(){
+function hit(){
   if(!audioCtx || !instrument || !chordEvents.length) return;
-  // "Chát" hiện tại (không cắt groove)
-  playShortChord(chordEvents[curIdx].chord, now()+0.02, 0.62, 0.40);
+  playChop(chordEvents[curIdx].chord, now()+0.02);
 }
 function resetAll(){
-  stopGroove();
+  stopTransport();
   currentChordName = null;
   queuedChordName = null;
   isMuted = false;
@@ -515,32 +743,22 @@ function resetAll(){
   if(chordEvents.length) setActive(0,false);
 }
 
-/* =========================
-   6) UI WIRING
-   ========================= */
+/* 9) UI WIRING */
 document.getElementById('gateBtn').addEventListener('click', async () => {
-  try{
-    await enableAudioFlow();
-  }catch(e){
-    alert(String(e));
-  }
+  try{ await enableAudioFlow(); } catch(e){ alert(String(e)); }
 });
 document.getElementById('btnEnable').addEventListener('click', async () => {
-  try{
-    await enableAudioFlow();
-  }catch(e){
-    alert(String(e));
-  }
+  try{ await enableAudioFlow(); } catch(e){ alert(String(e)); }
 });
 
 document.getElementById('btnNext').addEventListener('click', () => { if(audioCtx && instrument) next(); });
 document.getElementById('btnPrev').addEventListener('click', () => { if(audioCtx && instrument) prev(); });
-document.getElementById('btnReplay').addEventListener('click', () => { if(audioCtx && instrument) replay(); });
+document.getElementById('btnReplay').addEventListener('click', () => { if(audioCtx && instrument) hit(); });
 document.getElementById('btnReset').addEventListener('click', resetAll);
 
 document.getElementById('tapNext').addEventListener('click', () => { if(audioCtx && instrument) next(); });
 document.getElementById('tapPrev').addEventListener('click', () => { if(audioCtx && instrument) prev(); });
-document.getElementById('tapReplay').addEventListener('click', () => { if(audioCtx && instrument) replay(); });
+document.getElementById('tapReplay').addEventListener('click', () => { if(audioCtx && instrument) hit(); });
 
 document.getElementById('btnMute').addEventListener('click', (e) => {
   isMuted = !isMuted;
@@ -551,29 +769,26 @@ document.getElementById('btnMute').addEventListener('click', (e) => {
 document.getElementById('btnGroove').addEventListener('click', (e) => {
   grooveOn = !grooveOn;
   e.target.textContent = grooveOn ? "Groove: ON" : "Groove: OFF";
-  e.target.classList.toggle('primary', grooveOn);
-  if(!grooveOn) stopGroove();
-  else if(currentChordName && instrument && audioCtx && !schedTimer) startGroove();
+  e.target.classList.toggle('good', grooveOn);
+  if(!grooveOn) stopTransport();
+  else if(currentChordName && audioCtx && instrument && !isMuted) startTransport();
 });
 
-document.getElementById('btnQuant').addEventListener('click', (e) => {
-  quantizeOn = !quantizeOn;
-  e.target.textContent = quantizeOn ? "Quantize: ON" : "Quantize: OFF";
-  e.target.classList.toggle('primary', quantizeOn);
-  // if turning off quantize, apply any queued chord immediately
-  if(!quantizeOn && queuedChordName){
-    currentChordName = queuedChordName;
-    queuedChordName = null;
-  }
+document.getElementById('btnClick').addEventListener('click', (e) => {
+  clickOn = !clickOn;
+  e.target.textContent = clickOn ? "Click: ON" : "Click: OFF";
+  e.target.classList.toggle('primary', clickOn);
+});
+
+document.getElementById('btnCount').addEventListener('click', (e) => {
+  countInOn = !countInOn;
+  e.target.textContent = countInOn ? "Count-in: ON" : "Count-in: OFF";
+  e.target.classList.toggle('primary', countInOn);
 });
 
 document.getElementById('instSel').addEventListener('change', async (e) => {
   if(!audioCtx) return;
-  try{
-    await loadInstrument(e.target.value);
-  }catch(err){
-    alert(String(err));
-  }
+  try{ await loadInstrument(e.target.value); } catch(err){ alert(String(err)); }
 });
 
 lyricsEl.addEventListener('click', (e) => {
@@ -583,7 +798,6 @@ lyricsEl.addEventListener('click', (e) => {
   setActive(+t.dataset.idx, true);
 });
 
-/* Sliders + labels */
 function hookSlider(id, outId, fmt, onChange){
   const s = document.getElementById(id);
   const out = document.getElementById(outId);
@@ -598,14 +812,13 @@ function hookSlider(id, outId, fmt, onChange){
 hookSlider('tempo','tempoVal', v => `${v}`, v => tempoBpm = v);
 hookSlider('vol','volVal', v => `${v}%`);
 hookSlider('strum','strumVal', v => `${v}ms`);
-hookSlider('feel','feelVal', v => (v===0 ? "Thưa" : v===1 ? "Vừa" : "Dày"));
+hookSlider('humanize','humVal', v => `${v}%`);
 
-/* Keyboard (Mac) */
 window.addEventListener('keydown', (e) => {
   if(!(audioCtx && instrument)) return;
   if(e.code === 'ArrowRight' || e.code === 'Space'){ e.preventDefault(); next(); }
   if(e.code === 'ArrowLeft'){ e.preventDefault(); prev(); }
-  if(e.key.toLowerCase() === 'r'){ replay(); }
+  if(e.key.toLowerCase() === 'r'){ hit(); }
 });
 </script>
 </body>
