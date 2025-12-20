@@ -3,767 +3,460 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>liemnhau — TayĐệm demo</title>
+  <title>Đệm hát – bấm tới đâu, đàn tới đó</title>
   <style>
     :root{
-      --bg:#0b0f14;
-      --panel:#111824;
-      --panel2:#0f1620;
-      --text:#e6edf3;
-      --muted:#9fb0c0;
-      --accent:#67e8f9;
-      --accent2:#a78bfa;
-      --danger:#fb7185;
-      --ok:#34d399;
-      --border:rgba(255,255,255,0.08);
-      --shadow: 0 10px 25px rgba(0,0,0,0.35);
-      --r:14px;
-      --btn:#1f2a3a;
-      --btn2:#182233;
+      --bg:#0b0f14; --panel:#121a24; --panel2:#0f1620;
+      --text:#e8eef7; --muted:#9fb0c7; --accent:#6aa9ff; --danger:#ff6a6a;
+      --good:#52d18f;
     }
-    *{ box-sizing:border-box; }
-    html,body{ height:100%; margin:0; background:var(--bg); color:var(--text); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; }
-    a{ color:var(--accent); }
-    .app{
-      height:100%;
-      display:flex;
-      flex-direction:column;
-      padding:14px;
-      gap:12px;
+    *{box-sizing:border-box}
+    body{
+      margin:0; background:linear-gradient(180deg,#070a0f 0%, #0b0f14 35%, #080b10 100%);
+      color:var(--text); font:16px/1.35 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+      padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom) 0;
     }
-    .topbar{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
+    header{
+      position:sticky; top:0; z-index:10;
+      backdrop-filter: blur(10px);
+      background:rgba(11,15,20,.75);
+      border-bottom:1px solid rgba(255,255,255,.08);
+      padding:12px 14px;
+      display:flex; gap:10px; align-items:center; justify-content:space-between;
+    }
+    .title{font-weight:700; letter-spacing:.2px}
+    .status{font-size:12px; color:var(--muted); display:flex; gap:8px; align-items:center;}
+    .dot{width:10px; height:10px; border-radius:999px; background:var(--danger); box-shadow:0 0 0 3px rgba(255,106,106,.15);}
+    .dot.on{background:var(--good); box-shadow:0 0 0 3px rgba(82,209,143,.18);}
+    main{padding:14px}
+    .grid{display:grid; grid-template-columns:1fr; gap:12px; max-width:980px; margin:0 auto;}
+    .card{
+      background:rgba(18,26,36,.88);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:14px; overflow:hidden;
+      box-shadow:0 10px 30px rgba(0,0,0,.25);
+    }
+    .card .hd{
       padding:10px 12px;
-      border:1px solid var(--border);
-      border-radius:var(--r);
-      background:linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
-      box-shadow: var(--shadow);
+      background:rgba(15,22,32,.9);
+      border-bottom:1px solid rgba(255,255,255,.08);
+      display:flex; justify-content:space-between; align-items:center; gap:10px;
     }
-    .title{
-      display:flex; flex-direction:column; gap:2px;
+    .card .hd small{color:var(--muted)}
+    .card .bd{padding:12px}
+    .bigchord{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;}
+    .bigchord .cur{font-size:42px; font-weight:800; letter-spacing:.5px; color:var(--accent);}
+    .bigchord .next{font-size:14px; color:var(--muted);}
+    .controls{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-top:10px;}
+    button{
+      appearance:none; border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.06);
+      color:var(--text); padding:12px 10px; border-radius:12px;
+      font-weight:700; cursor:pointer;
+      transition:transform .05s ease, background .15s ease, border-color .15s ease;
+      user-select:none; -webkit-tap-highlight-color: transparent;
     }
-    .title h1{
-      margin:0;
-      font-size:16px;
-      letter-spacing:0.2px;
-      font-weight:700;
+    button:active{transform:scale(.98)}
+    button.primary{background:rgba(106,169,255,.18); border-color:rgba(106,169,255,.35);}
+    button.danger{background:rgba(255,106,106,.14); border-color:rgba(255,106,106,.30);}
+    .hint{color:var(--muted); font-size:13px;}
+    .lyrics{font-size:18px; line-height:1.75; white-space:pre-wrap;}
+    .ch{
+      display:inline-block;
+      padding:.08em .38em; margin:0 .10em;
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.05);
+      color:#cfe2ff; font-weight:800; cursor:pointer;
     }
-    .title .sub{
-      margin:0;
-      font-size:12px;
-      color:var(--muted);
+    .ch.active{
+      background:rgba(106,169,255,.25);
+      border-color:rgba(106,169,255,.55);
+      box-shadow:0 0 0 3px rgba(106,169,255,.18);
     }
-    .status{
-      display:flex; gap:10px; align-items:center; flex-wrap:wrap;
-      font-size:12px; color:var(--muted);
+    .footerbar{
+      position:sticky; bottom:0; z-index:20;
+      background:rgba(11,15,20,.85);
+      backdrop-filter: blur(10px);
+      border-top:1px solid rgba(255,255,255,.08);
+      padding:10px 14px;
     }
+    .footerbar .row{
+      max-width:980px; margin:0 auto;
+      display:grid; grid-template-columns:1fr 1.3fr 1fr;
+      gap:10px; align-items:center;
+    }
+    .pad{padding-bottom:24px}
     .pill{
-      padding:4px 8px;
-      border:1px solid var(--border);
-      border-radius:999px;
-      background:rgba(255,255,255,0.03);
-      color:var(--muted);
+      font-size:12px; color:var(--muted);
+      padding:6px 10px; border-radius:999px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.04);
+      display:inline-flex; gap:8px; align-items:center; justify-content:center;
       white-space:nowrap;
     }
-    .pill strong{ color:var(--text); font-weight:700; }
-    .warn{
-      color:#fbbf24;
-      border-color:rgba(251,191,36,0.25);
-      background:rgba(251,191,36,0.08);
-    }
-
-    .main{
-      flex:1;
-      min-height:0;
-      display:grid;
-      grid-template-columns: 380px 1fr;
-      gap:12px;
-    }
-    @media (max-width: 960px){
-      .main{ grid-template-columns: 1fr; }
-    }
-    .panel{
-      border:1px solid var(--border);
-      border-radius:var(--r);
-      background:var(--panel);
-      box-shadow: var(--shadow);
-      overflow:hidden;
-      min-height:0;
-    }
-    .panel .hdr{
-      padding:10px 12px;
-      border-bottom:1px solid var(--border);
-      background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-    }
-    .panel .hdr .h{
-      font-weight:700;
-      font-size:13px;
-      color:var(--text);
-    }
-    .panel .body{
-      padding:12px;
-      overflow:auto;
-      min-height:0;
-    }
-    .grid{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:10px;
-    }
-    .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-    label{ font-size:12px; color:var(--muted); display:block; margin-bottom:4px; }
-    select, input[type="text"], input[type="number"], textarea{
-      width:100%;
-      padding:10px 10px;
-      border-radius:12px;
-      border:1px solid var(--border);
-      background:var(--panel2);
-      color:var(--text);
-      outline:none;
-    }
-    textarea{ min-height: 170px; resize:vertical; line-height:1.3; }
-    .btn{
-      appearance:none;
-      border:none;
-      border-radius:12px;
-      padding:10px 12px;
-      background:var(--btn);
-      color:var(--text);
-      cursor:pointer;
-      font-weight:700;
-      font-size:13px;
-      border:1px solid var(--border);
-      transition: transform 0.03s ease, background 0.15s ease;
-      user-select:none;
-    }
-    .btn:active{ transform: translateY(1px); }
-    .btn.primary{ background:rgba(103,232,249,0.12); border-color:rgba(103,232,249,0.28); }
-    .btn.ok{ background:rgba(52,211,153,0.12); border-color:rgba(52,211,153,0.25); }
-    .btn.danger{ background:rgba(251,113,133,0.10); border-color:rgba(251,113,133,0.25); }
-    .btn.ghost{ background:var(--btn2); }
-    .btn.small{ padding:8px 10px; font-size:12px; border-radius:10px; }
-    .btnGroup{ display:flex; gap:8px; flex-wrap:wrap; }
-    .sep{ height:1px; background:var(--border); margin:12px 0; }
-    .kpi{
-      font-size:12px; color:var(--muted);
-      display:flex; gap:10px; flex-wrap:wrap;
-    }
-    .kpi span{ white-space:nowrap; }
-    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
-
-    /* Lyric/chord rendering */
-    .lyricWrap{
-      display:flex;
-      flex-direction:column;
-      gap:10px;
-      min-height:0;
-      height:100%;
-    }
-    .lyricView{
-      flex:1;
-      min-height:0;
-      overflow:auto;
-      padding:10px 10px;
-      border:1px solid var(--border);
-      border-radius:var(--r);
-      background:rgba(255,255,255,0.02);
-      line-height:1.45;
-    }
-    .line{
-      padding:8px 6px;
-      border-radius:12px;
-      border:1px solid transparent;
-    }
-    .line:hover{ border-color:rgba(255,255,255,0.06); background:rgba(255,255,255,0.02); }
-    .txt{ color:var(--text); }
-    .chordBtn{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      padding:3px 8px;
-      margin:0 2px;
-      border-radius:999px;
-      border:1px solid rgba(255,255,255,0.14);
-      background:rgba(167,139,250,0.14);
-      color:var(--text);
-      font-weight:800;
-      font-size:12px;
-      cursor:pointer;
-      user-select:none;
-      vertical-align:baseline;
-    }
-    .chordBtn.next{
-      outline:2px solid rgba(103,232,249,0.55);
-      background:rgba(103,232,249,0.18);
-      border-color:rgba(103,232,249,0.28);
-    }
-    .chordBtn.active{
-      outline:2px solid rgba(52,211,153,0.55);
-      background:rgba(52,211,153,0.16);
-      border-color:rgba(52,211,153,0.30);
-    }
-    .chordBtn:active{ transform: translateY(1px); }
-    .hint{
-      font-size:12px;
-      color:var(--muted);
-      margin-top:6px;
-    }
-    .banner{
-      border:1px solid rgba(251,191,36,0.25);
-      background:rgba(251,191,36,0.10);
-      color:#fcd34d;
-      border-radius:12px;
-      padding:10px 12px;
-      font-size:12px;
-      line-height:1.35;
-    }
-    .err{
-      border:1px solid rgba(251,113,133,0.30);
-      background:rgba(251,113,133,0.10);
-      color:#fecdd3;
-      border-radius:12px;
-      padding:10px 12px;
-      font-size:12px;
-      line-height:1.35;
-      display:none;
+    .pill b{color:var(--text)}
+    .split{display:flex; gap:10px; justify-content:center; align-items:center; flex-wrap:wrap;}
+    input[type="range"]{width:140px}
+    .kbd{
+      font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+      font-size:12px; padding:2px 6px; border-radius:6px;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(255,255,255,.05); color:var(--text);
     }
   </style>
-
-  <!-- Dependency: WebAudioFont player (required by taydem.audio.js) -->
-  <script src="https://surikov.github.io/webaudiofont/npm/dist/WebAudioFontPlayer.js"></script>
-
-  <!-- Your 3 JS files (same folder as this HTML) -->
-  <script src="taydem.data.js"></script>
-  <script src="taydem.audio.js"></script>
-  <script src="taydem.engine.js"></script>
 </head>
-
 <body>
-  <div class="app">
-    <div class="topbar">
-      <div class="title">
-        <h1>Liêmnhậu — TayĐệm (demo)</h1>
-        <p class="sub">Lyric là bàn phím: ca sĩ hát tới đâu, bấm hợp âm ngay chữ đó.</p>
-      </div>
-      <div class="status" id="statusBar">
-        <span class="pill warn">Lưu ý: nên mở qua HTTP server (không mở trực tiếp file://) để WebAudioFont load preset ổn.</span>
-      </div>
+  <header>
+    <div class="title">Đệm hát (bấm hợp âm theo ca sĩ)</div>
+    <div class="status">
+      <span class="dot" id="audDot"></span>
+      <span id="audText">Audio: chưa bật</span>
     </div>
+  </header>
 
-    <div class="main">
-      <!-- LEFT: Controls -->
-      <div class="panel">
-        <div class="hdr">
-          <div class="h">Điều khiển (nhạc trưởng)</div>
-          <div class="kpi mono" id="kpi">—</div>
+  <main>
+    <div class="grid">
+
+      <section class="card">
+        <div class="hd">
+          <div>
+            <div class="bigchord">
+              <div class="cur" id="curChord">—</div>
+              <div class="next" id="nextChord">Next: —</div>
+            </div>
+            <div class="hint">
+              Chạm vào hợp âm trong lời để nghe thử. Khi hát/đệm: bấm <span class="kbd">NEXT</span> đúng lúc đổi hợp âm.
+            </div>
+          </div>
+          <small id="idxInfo">0 / 0</small>
         </div>
-        <div class="body">
-          <div class="err" id="errBox"></div>
 
-          <div class="btnGroup">
-            <button class="btn primary" id="btnEnable">Bật âm thanh</button>
-            <button class="btn ok" id="btnHold">Start Hold</button>
-            <button class="btn danger" id="btnStop">Stop</button>
-            <button class="btn ghost" id="btnOneShot">One‑shot</button>
+        <div class="bd">
+          <div class="controls">
+            <button class="primary" id="btnEnable">Bật âm thanh</button>
+            <button id="btnPrev">Prev</button>
+            <button class="primary" id="btnNext">Next</button>
+            <button id="btnReplay">Replay chord</button>
+            <button class="danger" id="btnReset">Reset</button>
+            <button id="btnMute">Mute</button>
           </div>
 
-          <div class="sep"></div>
-
-          <div class="grid">
-            <div>
-              <label>Chord hiện tại</label>
-              <div class="row">
-                <input id="inpChord" type="text" value="Dm" placeholder="Dm, Gm, A7..." class="mono"/>
-                <button class="btn small" id="btnSetChord">Set</button>
-                <button class="btn small" id="btnBackChord" title="Quay lại hợp âm trước đó (UI-level undo)">Back</button>
-              </div>
-              <div class="hint">Mẹo: bấm trực tiếp hợp âm trên lyric (bên phải) để đổi hợp âm theo chữ.</div>
-            </div>
-
-            <div>
-              <label>BPM</label>
-              <div class="row">
-                <input id="inpBpm" type="number" min="40" max="220" value="84" />
-                <button class="btn small" id="btnSetBpm">Set</button>
-                <button class="btn small" id="btnBpmMinus">-2</button>
-                <button class="btn small" id="btnBpmPlus">+2</button>
-              </div>
-            </div>
-
-            <div>
-              <label>Style</label>
-              <select id="selStyle"></select>
-            </div>
-
-            <div>
-              <label>Groove preset</label>
-              <select id="selGroove">
-                <option value="nhau">nhậu</option>
-                <option value="phongtra">phòng trà</option>
-                <option value="tiktok">tiktok</option>
-              </select>
-            </div>
-
-            <div>
-              <label>Instrument</label>
-              <select id="selMode">
-                <option value="guitar">guitar</option>
-                <option value="piano">piano</option>
-                <option value="band">band</option>
-              </select>
-            </div>
-
-            <div>
-              <label>Output</label>
-              <select id="selOutput">
-                <option value="phone">phone</option>
-                <option value="external">external</option>
-              </select>
-            </div>
-
-            <div>
-              <label>Part</label>
-              <select id="selPart">
-                <option value="verse">verse</option>
-                <option value="chorus">chorus</option>
-              </select>
-            </div>
-
-            <div>
-              <label>Right-hand</label>
-              <select id="selRH">
-                <option value="auto">auto</option>
-                <option value="down">down</option>
-                <option value="up">up</option>
-              </select>
-            </div>
-
-            <div>
-              <label>Energy</label>
-              <select id="selEnergy">
-                <option value="low">low</option>
-                <option value="normal" selected>normal</option>
-                <option value="high">high</option>
-              </select>
-            </div>
-
-            <div>
-              <label>Humanize</label>
-              <div class="row">
-                <button class="btn small" id="btnHumanLow">Mềm</button>
-                <button class="btn small" id="btnHumanMid">Vừa</button>
-                <button class="btn small" id="btnHumanHigh">Đậm</button>
-              </div>
-            </div>
+          <div style="margin-top:10px" class="split">
+            <div class="pill"><span>Strum</span> <b id="strumVal">45ms</b></div>
+            <input id="strum" type="range" min="20" max="90" value="45" />
+            <div class="pill"><span>Bright</span> <b id="brightVal">55%</b></div>
+            <input id="bright" type="range" min="15" max="85" value="55" />
+            <div class="pill"><span>Vol</span> <b id="volVal">70%</b></div>
+            <input id="vol" type="range" min="10" max="100" value="70" />
           </div>
 
-          <div class="sep"></div>
-
-          <div class="grid">
-            <div>
-              <label>Fill</label>
-              <div class="btnGroup">
-                <button class="btn small" id="btnFillSoft">Fill soft</button>
-                <button class="btn small" id="btnFillHard">Fill hard</button>
-              </div>
-            </div>
-            <div>
-              <label>Kết</label>
-              <div class="btnGroup">
-                <button class="btn small" id="btnEndShort">End short</button>
-                <button class="btn small" id="btnEndLong">End long</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="sep"></div>
-
-          <div class="banner">
-            Nếu mở trực tiếp bằng <span class="mono">file://</span> có thể bị chặn tải preset. Cách nhanh: chạy server trong thư mục này:
-            <div class="mono" style="margin-top:6px;">python -m http.server 8000</div>
-            Sau đó mở: <span class="mono">http://localhost:8000/liemnhau.html</span>
+          <div class="hint pad" style="margin-top:8px">
+            Safari: lần đầu phải bấm <b>Bật âm thanh</b>. Sau đó chỉ việc <b>Next</b> theo ca sĩ.
           </div>
         </div>
-      </div>
+      </section>
 
-      <!-- RIGHT: Lyric + chords -->
-      <div class="panel">
-        <div class="hdr">
-          <div class="h">Lyric (touchable chords)</div>
-          <div class="btnGroup">
-            <button class="btn small" id="btnRender">Render</button>
-            <button class="btn small" id="btnClearActive">Clear highlight</button>
-          </div>
+      <section class="card">
+        <div class="hd">
+          <div><b>Lời + hợp âm</b></div>
+          <small>Hợp âm trong ngoặc vuông biến thành “nút”</small>
         </div>
-        <div class="body">
-          <div class="lyricWrap">
-            <textarea id="inpLyric" spellcheck="false" class="mono"></textarea>
-            <div class="lyricView" id="lyricView"></div>
-          </div>
+        <div class="bd">
+          <div class="lyrics" id="lyrics"></div>
         </div>
-      </div>
+      </section>
+
+      <section class="card">
+        <div class="hd">
+          <div><b>Kịch bản sử dụng</b></div>
+          <small>Manual tap, không auto-tempo</small>
+        </div>
+        <div class="bd">
+          <ol style="margin:0; padding-left:18px; line-height:1.65">
+            <li>Mở file bằng Safari.</li>
+            <li>Bấm <b>Bật âm thanh</b> (đèn xanh).</li>
+            <li><b>Reset</b> về đầu bài.</li>
+            <li>Ca sĩ tới chỗ đổi hợp âm → bấm <b>NEXT</b>.</li>
+            <li>Lỡ bấm sai → <b>Prev</b>. Muốn nghe lại → <b>Replay</b>. Cần im ngay → <b>Mute</b>.</li>
+          </ol>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <div class="footerbar">
+    <div class="row">
+      <button id="tapLeft">◀︎ Prev</button>
+      <button class="primary" id="tapNext" style="padding:14px 10px; font-size:18px">NEXT (tap theo ca sĩ)</button>
+      <button id="tapReplay">⟲ Replay</button>
     </div>
   </div>
 
 <script>
-(function(){
-  "use strict";
+/* ========= 1) INPUT ========= */
+const RAW = `1. Tuổi đời chân đơn [Am] côi gót mòn đại lộ [F] buồn
+Đèn [G] đêm bóng mờ nhạt [C] nhòa
+[A7] Hồn lắng tâm [Dm] tư, đi vào dĩ [Am] vãng
+Đường tình không chung [E7] lối mang nuối tiếc cho [F] nhau [E7]
 
-  const $ = (id)=>document.getElementById(id);
+2. Ngày nào tay trong [Am] tay lối về cùng hẹn [F] hò
+Dìu [G] em giấc mộng vừa [C] tròn
+[A7] Tình thắm môi [Dm] hồng, đêm dài lưu [Am] luyến,
+Nghẹn ngào trong thương [E7] nhớ vì mai bước theo [Am] chồng. [Dm] [Am]
 
-  const errBox = $("errBox");
-  function showErr(msg){
-    errBox.style.display = "block";
-    errBox.textContent = msg;
-  }
-  function clearErr(){
-    errBox.style.display = "none";
-    errBox.textContent = "";
-  }
+ĐK:
+Em sang ngang [F] rồi chôn kỷ [G] niệm vào thương [C] nhớ
+Hôn lên tóc [Am] mềm lệ [A7] sầu thắm ướt đôi [Dm] mi
+Xin em một [G] lần cho ước nguyện tình yêu [E7] cuối
+Thương yêu không [G] thành thôi giã [E7] từ đi em [Am] ơi.
 
-  // Quick sanity check
-  if (!window.TayDemData || !window.TayDemAudio || !window.TayDemEngine){
-    showErr("Thiếu dependency: chưa load được TayDemData/TayDemAudio/TayDemEngine. Kiểm tra 3 file JS nằm cùng thư mục và load thành công.");
-    return;
-  }
-  if (!window.WebAudioFontPlayer){
-    showErr("Thiếu dependency: WebAudioFontPlayer chưa load được. Kiểm tra kết nối mạng hoặc URL script.");
-    return;
-  }
+3. Người về lên xe [Am] hoa, kỷ niệm buồn vào [F] hồn
+Bờ [G] môi tắt hẳn nụ [C] cười
+[A7] Giây phút bên [Dm] nhau nay còn đâu [Am] nữa
+Người về trong thương [E7] nhớ người đi nhớ thương [Am] người.`;
 
-  const data = window.TayDemData;
-  const audio = window.TayDemAudio.create({ outputMode: data.defaults.outputMode || "phone" });
-  const engine = window.TayDemEngine.create({
-    data,
-    now: ()=>audio.now(),
-    schedule: (evt)=>audio.schedule(evt),
-    onState: (s)=>{ updateKpi(s); }
+function normalizeChordName(ch){ return ch.trim(); }
+
+/* ========= 2) PARSE + RENDER ========= */
+const chordEvents = []; // {chord, span}
+const lyricsEl = document.getElementById('lyrics');
+
+function renderLyrics(raw){
+  const re = /\[([^\]]+)\]/g;
+  let idx = 0;
+  const html = raw.replace(re, (_, chordText) => {
+    const chord = normalizeChordName(chordText);
+    return `<span class="ch" data-idx="${idx}" data-ch="${encodeURIComponent(chord)}">${chord}</span>`;
+  , idx++);
+  lyricsEl.innerHTML = html;
+  [...lyricsEl.querySelectorAll('.ch')].forEach((sp, i) => {
+    chordEvents.push({ chord: decodeURIComponent(sp.dataset.ch), span: sp });
   });
+}
+renderLyrics(RAW);
 
-  // Expose for console debugging
-  window.taydem = { data, audio, engine };
+/* ========= 3) AUDIO (Karplus-Strong) ========= */
+let audioCtx = null;
+let masterGain = null;
+let isMuted = false;
 
-  // Populate style select
-  const selStyle = $("selStyle");
-  Object.keys(data.styles || {}).forEach((sid)=>{
-    const opt=document.createElement("option");
-    opt.value=sid;
-    opt.textContent = sid + " — " + (data.styles[sid].name || "");
-    selStyle.appendChild(opt);
-  });
-  selStyle.value = data.defaults.styleId || "bolero";
+const audDot = document.getElementById('audDot');
+const audText = document.getElementById('audText');
 
-  // Defaults UI
-  $("inpChord").value = data.defaults.chord || "Dm";
-  $("inpBpm").value = data.defaults.bpm || 84;
-  $("selGroove").value = data.defaults.groovePreset || "nhau";
-  $("selMode").value = data.defaults.instrumentMode || "guitar";
-  $("selOutput").value = data.defaults.outputMode || "phone";
-  $("selEnergy").value = data.defaults.energy || "normal";
-  $("selPart").value = data.defaults.part || "verse";
-  $("selRH").value = data.defaults.rightHand || "auto";
+function midiToFreq(m){ return 440 * Math.pow(2, (m - 69) / 12); }
 
-  // Sample lyric text (you can paste your own)
-  $("inpLyric").value =
-`Song-name: Gõ cửa trái tim
-Artist: Vinh Sử
-tone-defaut: Dm
-style-defaut: bolero
+function makeNoiseBuffer(ctx, duration = 0.03){
+  const sr = ctx.sampleRate;
+  const len = Math.max(1, Math.floor(sr * duration));
+  const buf = ctx.createBuffer(1, len, sr);
+  const data = buf.getChannelData(0);
+  for(let i=0;i<len;i++) data[i] = (Math.random()*2 - 1) * (0.6 + 0.4*Math.random());
+  return buf;
+}
 
-1. Gõ cửa trái [Dm] tim [Gm] van em được [Dm] vào
-[F7] Dù tình xót [Bb] xa [C7] chung thân huyệt [F] đào
-Ngủ [A7] vùi với chiêm [Dm] bao, nỗi [D7] niềm mắt xanh [Gm] xao
-Nhưng anh vẫn [F] ngóng tim em mở [A7] cửa
+function pluck(ctx, freq, when, dur, bright=0.55, level=0.25, pan=0.0){
+  const delayTime = 1 / freq;
 
-2. Gõ cửa trái [Dm] tim [Gm] sao em hững [Dm] hờ
-[F7] Ngõ hồn tái [Bb] tê [C7] năm canh thẫn [F] thờ
-Nhện [A7] lòng mắc giăng [Dm] tơ, để [D7] một mối bơ [Gm] vơ
-Khi không em [A7] nhốt anh trong đợi [Dm] chờ [Gm][Dm]
+  const noise = ctx.createBufferSource();
+  noise.buffer = makeNoiseBuffer(ctx, 0.02 + 0.01*(1-bright));
 
-ĐK: [Bb] Ôi cửa tim em bằng [Dm] vàng
-[D7] Nên tiếng [Gm] kêu nghe [Dm] bẽ bàng
-Để anh gõ [Dm] cửa miên man
-[Bb] Mà em không [F] chút hỏi han
-[C] Anh [A7] buồn lang [Dm] thang [Gm][Dm]`;
+  const noiseGain = ctx.createGain();
+  noiseGain.gain.setValueAtTime(level, when);
+  noiseGain.gain.exponentialRampToValueAtTime(0.0008, when + 0.03);
 
-  // Simple UI-level chord undo stack (not in engine)
-  let chordStack = [];
-  let activeChordEl = null;
-  let chordEls = []; // in order
-  let nextIndex = -1;
+  const delay = ctx.createDelay(1.0);
+  delay.delayTime.setValueAtTime(delayTime, when);
 
-  function setChordFromUI(chord, fromLyric=false){
-    clearErr();
-    const sym = window.TayDemEngine.normalizeChordSymbol(chord || "");
-    if (!sym) return;
-    $("inpChord").value = sym;
+  const feedback = ctx.createGain();
+  const fb = 0.86 - (freq/1600)*0.12;
+  feedback.gain.setValueAtTime(Math.max(0.72, Math.min(0.90, fb)), when);
 
-    const st = engine.getState();
-    if (st && st.currentChord) chordStack.push(st.currentChord);
+  const damp = ctx.createBiquadFilter();
+  damp.type = "lowpass";
+  damp.frequency.setValueAtTime(1200 + bright*5200, when);
+  damp.Q.setValueAtTime(0.35, when);
 
-    engine.setChord(sym); // oneShot if not running; pendingChord if running+hold
-    markActiveChord(sym, fromLyric);
-  }
+  const body = ctx.createBiquadFilter();
+  body.type = "peaking";
+  body.frequency.setValueAtTime(180 + bright*70, when);
+  body.Q.setValueAtTime(0.9, when);
+  body.gain.setValueAtTime(6.0, when);
 
-  function markActiveChord(sym, autoScroll){
-    chordEls.forEach(el=>{
-      el.classList.remove("active");
-      el.classList.remove("next");
-    });
+  const body2 = ctx.createBiquadFilter();
+  body2.type = "peaking";
+  body2.frequency.setValueAtTime(420 + bright*120, when);
+  body2.Q.setValueAtTime(1.2, when);
+  body2.gain.setValueAtTime(4.0, when);
 
-    // mark first matching as active
-    const idx = chordEls.findIndex(el => (el.dataset.chord||"")===sym);
-    if (idx >= 0){
-      chordEls[idx].classList.add("active");
-      activeChordEl = chordEls[idx];
+  const outGain = ctx.createGain();
+  outGain.gain.setValueAtTime(level, when);
+  outGain.gain.exponentialRampToValueAtTime(0.00012, when + dur);
 
-      // next suggestion is next chord in linear order
-      nextIndex = Math.min(idx+1, chordEls.length-1);
-      if (nextIndex >= 0 && chordEls[nextIndex] && nextIndex !== idx){
-        chordEls[nextIndex].classList.add("next");
-      }
+  const panner = (ctx.createStereoPanner ? ctx.createStereoPanner() : null);
+  if(panner) panner.pan.setValueAtTime(pan, when);
 
-      if (autoScroll){
-        chordEls[idx].scrollIntoView({ block:"center", behavior:"smooth" });
-      }
-    }
-  }
+  noise.connect(noiseGain);
+  noiseGain.connect(delay);
+  delay.connect(damp);
+  damp.connect(feedback);
+  feedback.connect(delay);
 
-  function clearHighlight(){
-    chordEls.forEach(el=>{
-      el.classList.remove("active");
-      el.classList.remove("next");
-    });
-    activeChordEl = null;
-    nextIndex = -1;
-  }
+  delay.connect(body);
+  body.connect(body2);
+  body2.connect(outGain);
 
-  // Render lyric into clickable chord pills
-  function renderLyric(){
-    const src = $("inpLyric").value || "";
-    const view = $("lyricView");
-    view.innerHTML = "";
-    chordEls = [];
+  if(panner){ outGain.connect(panner); panner.connect(masterGain); }
+  else{ outGain.connect(masterGain); }
 
-    const lines = src.split(/\r?\n/);
-    const chordRe = /\[([^\]]+)\]/g;
+  noise.start(when);
+  noise.stop(when + 0.05);
 
-    lines.forEach((line)=>{
-      const div = document.createElement("div");
-      div.className = "line";
-
-      // If metadata line, show muted
-      const isMeta = /^\s*(Song-name|Artist|tone-defaut|style-defaut)\s*:/i.test(line);
-      if (isMeta) div.style.opacity = "0.85";
-
-      let last = 0;
-      let m;
-      while ((m = chordRe.exec(line)) !== null){
-        const before = line.slice(last, m.index);
-        if (before){
-          const span = document.createElement("span");
-          span.className = "txt";
-          span.textContent = before;
-          div.appendChild(span);
-        }
-
-        const rawChord = m[1];
-        const chord = window.TayDemEngine.normalizeChordSymbol(rawChord);
-
-        const btn = document.createElement("span");
-        btn.className = "chordBtn mono";
-        btn.textContent = chord || rawChord;
-        btn.dataset.chord = chord || rawChord;
-
-        // Large hitbox: click chord itself
-        btn.addEventListener("click", (ev)=>{
-          ev.preventDefault();
-          setChordFromUI(btn.dataset.chord, true);
-        });
-
-        div.appendChild(btn);
-        chordEls.push(btn);
-        last = m.index + m[0].length;
-      }
-
-      const rest = line.slice(last);
-      if (rest){
-        const span = document.createElement("span");
-        span.className = "txt";
-        span.textContent = rest;
-        div.appendChild(span);
-      }
-
-      view.appendChild(div);
-    });
-
-    // Auto-mark current chord if possible
-    const cur = engine.getState().currentChord || $("inpChord").value;
-    if (cur) markActiveChord(cur, false);
-  }
-
-  // KPI / status display
-  function updateKpi(lastEvent){
-    const st = engine.getState();
-    const a = audio.getState();
-    const parts = [
-      `Engine:${st.version}`,
-      `Audio:${a.version}`,
-      `running=${st.running ? "1":"0"}`,
-      `hold=${st.holdOn ? "1":"0"}`,
-      `chord=${st.currentChord}`,
-      `bpm=${Math.round(st.tempoCurrent)}`,
-      `style=${st.styleId}`,
-      `groove=${st.groovePresetId}`,
-      `mode=${st.instrumentMode}`,
-      `out=${st.outputMode}`,
-      `energy=${st.energy}`,
-      `part=${st.part}`,
-      `RH=${st.rightHand}`,
-      `mud=${st.mudGuardLevel}`
-    ];
-    $("kpi").textContent = parts.join("  •  ");
-
-    // mirror to top status (lightweight)
-    const statusBar = $("statusBar");
-    statusBar.innerHTML = "";
-    const mk = (label, val)=>{
-      const s = document.createElement("span");
-      s.className = "pill";
-      s.innerHTML = `<strong>${label}</strong> ${val}`;
-      statusBar.appendChild(s);
-    };
-    mk("Chord", st.currentChord || "—");
-    mk("BPM", Math.round(st.tempoCurrent || 0));
-    mk("Style", st.styleId || "—");
-    mk("Mode", st.instrumentMode || "—");
-    mk("Output", st.outputMode || "—");
-
-    if (lastEvent && (lastEvent.type==="stylePending" || lastEvent.type==="groovePresetPending" || lastEvent.type==="energyPending" || lastEvent.type==="rightHandPending" || lastEvent.type==="partPending")){
-      const w=document.createElement("span");
-      w.className="pill warn";
-      w.textContent="Có thay đổi pending (sẽ áp dụng ở đầu ô nhịp kế).";
-      statusBar.appendChild(w);
-    }
-
-    // keep active highlight roughly aligned with current chord
-    if (st.currentChord) markActiveChord(st.currentChord, false);
-  }
-
-  // Wiring controls
-  $("btnEnable").addEventListener("click", async ()=>{
-    clearErr();
+  setTimeout(() => {
     try{
-      await audio.enable();
-      updateKpi({type:"audioEnabled"});
-    }catch(e){
-      showErr("Không bật được audio: " + (e && e.message ? e.message : String(e)));
-    }
+      noise.disconnect(); noiseGain.disconnect(); delay.disconnect(); feedback.disconnect();
+      damp.disconnect(); body.disconnect(); body2.disconnect(); outGain.disconnect();
+      if(panner) panner.disconnect();
+    }catch(e){}
+  }, Math.max(50, (dur+0.2)*1000));
+}
+
+// Voicings (MIDI) – đủ dùng cho bài này
+const VOICINGS = {
+  "Am":[45,52,57,60,64],
+  "A7":[45,52,55,61,64],
+  "Dm":[50,57,62,65],
+  "E7":[40,47,50,56,59,64],
+  "F":[41,48,53,57,60,65],
+  "G":[43,50,55,59,62,67],
+  "C":[48,55,60,64,67],
+};
+
+const NOTE_INDEX = {C:0,"C#":1,Db:1,D:2,"D#":3,Eb:3,E:4,F:5,"F#":6,Gb:6,G:7,"G#":8,Ab:8,A:9,"A#":10,Bb:10,B:11};
+function parseChord(ch){
+  const m = ch.match(/^([A-G])([b#]?)(.*)$/);
+  if(!m) return null;
+  const root = m[1] + (m[2]||"");
+  const rest = (m[3]||"").toLowerCase();
+  const isMinor = rest.startsWith("m") && !rest.startsWith("maj");
+  const isDom7 = rest.includes("7") && !rest.includes("maj7");
+  const rootPc = NOTE_INDEX[root];
+  if(rootPc === undefined) return null;
+  return {rootPc,isMinor,isDom7};
+}
+function buildFallbackVoicing(ch){
+  const info = parseChord(ch);
+  if(!info) return [52,55,59];
+  const baseMidi = 45 + ((info.rootPc - 9 + 12) % 12);
+  const third = info.isMinor ? 3 : 4;
+  const notes = [baseMidi, baseMidi+7, baseMidi+12, baseMidi+12+third, baseMidi+12+7];
+  if(info.isDom7) notes.push(baseMidi+12+10);
+  return notes.sort((a,b)=>a-b);
+}
+
+function ensureAudio(){
+  if(audioCtx) return true;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  masterGain = audioCtx.createGain();
+  masterGain.gain.value = 0.7;
+  masterGain.connect(audioCtx.destination);
+  audDot.classList.add('on');
+  audText.textContent = "Audio: đã bật";
+  return true;
+}
+
+function playChord(chordName){
+  ensureAudio();
+  if(audioCtx.state === 'suspended') audioCtx.resume();
+  if(isMuted) return;
+
+  const strumMs = +document.getElementById('strum').value;
+  const bright = (+document.getElementById('bright').value)/100;
+  const vol = (+document.getElementById('vol').value)/100;
+  masterGain.gain.setValueAtTime(vol, audioCtx.currentTime);
+
+  const when0 = audioCtx.currentTime + 0.01;
+  const voicing = VOICINGS[chordName] || buildFallbackVoicing(chordName);
+
+  voicing.forEach((midi, i) => {
+    const freq = midiToFreq(midi);
+    const when = when0 + i*(strumMs/1000);
+    const dur = 2.4 - i*0.12;
+    const level = 0.22 - i*0.015;
+    const pan = (i - (voicing.length-1)/2) * 0.10 + (Math.random()*0.04-0.02);
+    pluck(audioCtx, freq, when, Math.max(1.1, dur), bright, Math.max(0.08, level), pan);
   });
+}
 
-  $("btnHold").addEventListener("click", ()=>{
-    clearErr();
-    const c = $("inpChord").value || "Dm";
-    try{
-      engine.setStyle(selStyle.value);
-      engine.setGroovePreset($("selGroove").value);
-      engine.setInstrumentMode($("selMode").value);
-      engine.setOutputMode($("selOutput").value);
-      audio.setOutputMode($("selOutput").value);
-      engine.setEnergy($("selEnergy").value);
-      engine.setPresetPart($("selPart").value);
-      engine.setRightHandVariant($("selRH").value);
-      engine.setTempo(Number($("inpBpm").value || 84));
-      engine.startHold(c);
-      updateKpi({type:"hold"});
-    }catch(e){
-      showErr("StartHold lỗi: " + (e && e.message ? e.message : String(e)));
-    }
-  });
+/* ========= 4) TIMELINE (Prev/Next/Replay/Reset) ========= */
+let curIdx = 0;
+const curChordEl = document.getElementById('curChord');
+const nextChordEl = document.getElementById('nextChord');
+const idxInfoEl = document.getElementById('idxInfo');
 
-  $("btnStop").addEventListener("click", ()=>{
-    clearErr();
-    try{
-      engine.stop();
-      audio.stop();
-      updateKpi({type:"stop"});
-    }catch(e){
-      showErr("Stop lỗi: " + (e && e.message ? e.message : String(e)));
-    }
-  });
+function clampIdx(i){ return Math.max(0, Math.min(chordEvents.length-1, i)); }
 
-  $("btnOneShot").addEventListener("click", ()=>{
-    clearErr();
-    const c = $("inpChord").value || "Dm";
-    try{
-      engine.oneShot(c);
-      markActiveChord(window.TayDemEngine.normalizeChordSymbol(c), true);
-    }catch(e){
-      showErr("OneShot lỗi: " + (e && e.message ? e.message : String(e)));
-    }
-  });
+function setActive(i, play=false){
+  if(!chordEvents.length) return;
+  curIdx = clampIdx(i);
 
-  $("btnSetChord").addEventListener("click", ()=> setChordFromUI($("inpChord").value, true));
+  chordEvents.forEach(ev => ev.span.classList.remove('active'));
+  const ev = chordEvents[curIdx];
+  ev.span.classList.add('active');
 
-  $("btnBackChord").addEventListener("click", ()=>{
-    if (!chordStack.length) return;
-    const prev = chordStack.pop();
-    if (prev) setChordFromUI(prev, true);
-  });
+  curChordEl.textContent = ev.chord;
+  nextChordEl.textContent = "Next: " + (chordEvents[curIdx+1]?.chord ?? "—");
+  idxInfoEl.textContent = `${curIdx+1} / ${chordEvents.length}`;
 
-  $("btnSetBpm").addEventListener("click", ()=>{
-    clearErr();
-    const bpm = Number($("inpBpm").value || 84);
-    engine.setTempo(bpm);
-    updateKpi({type:"bpm"});
-  });
-  $("btnBpmMinus").addEventListener("click", ()=>{
-    const bpm = Number($("inpBpm").value || 84) - 2;
-    $("inpBpm").value = bpm;
-    engine.setTempo(bpm);
-  });
-  $("btnBpmPlus").addEventListener("click", ()=>{
-    const bpm = Number($("inpBpm").value || 84) + 2;
-    $("inpBpm").value = bpm;
-    engine.setTempo(bpm);
-  });
+  ev.span.scrollIntoView({behavior:"smooth", block:"center", inline:"nearest"});
+  if(play) playChord(ev.chord);
+}
 
-  selStyle.addEventListener("change", ()=> engine.setStyle(selStyle.value));
-  $("selGroove").addEventListener("change", ()=> engine.setGroovePreset($("selGroove").value));
-  $("selMode").addEventListener("change", ()=> engine.setInstrumentMode($("selMode").value));
-  $("selOutput").addEventListener("change", ()=>{
-    const v = $("selOutput").value;
-    engine.setOutputMode(v);
-    audio.setOutputMode(v);
-  });
-  $("selEnergy").addEventListener("change", ()=> engine.setEnergy($("selEnergy").value));
-  $("selPart").addEventListener("change", ()=> engine.setPresetPart($("selPart").value));
-  $("selRH").addEventListener("change", ()=> engine.setRightHandVariant($("selRH").value));
+if(chordEvents.length) setActive(0,false);
 
-  $("btnFillSoft").addEventListener("click", ()=> engine.triggerFill("soft"));
-  $("btnFillHard").addEventListener("click", ()=> engine.triggerFill("hard"));
-  $("btnEndShort").addEventListener("click", ()=> engine.triggerEnd("short"));
-  $("btnEndLong").addEventListener("click", ()=> engine.triggerEnd("long"));
+function next(){ setActive(curIdx + 1, true); }
+function prev(){ setActive(curIdx - 1, true); }
+function replay(){ if(chordEvents.length) playChord(chordEvents[curIdx].chord); }
+function reset(){ if(chordEvents.length) setActive(0,false); }
 
-  $("btnHumanLow").addEventListener("click", ()=> engine.setHumanize({loi:0.75, human:0.55}));
-  $("btnHumanMid").addEventListener("click", ()=> engine.setHumanize({loi:0.60, human:0.45}));
-  $("btnHumanHigh").addEventListener("click", ()=> engine.setHumanize({loi:0.40, human:0.25}));
+document.getElementById('btnEnable').addEventListener('click', () => { ensureAudio(); replay(); });
+document.getElementById('btnNext').addEventListener('click', next);
+document.getElementById('btnPrev').addEventListener('click', prev);
+document.getElementById('btnReplay').addEventListener('click', replay);
+document.getElementById('btnReset').addEventListener('click', reset);
 
-  $("btnRender").addEventListener("click", renderLyric);
-  $("btnClearActive").addEventListener("click", clearHighlight);
+document.getElementById('tapNext').addEventListener('click', next);
+document.getElementById('tapLeft').addEventListener('click', prev);
+document.getElementById('tapReplay').addEventListener('click', replay);
 
-  // Initial render
-  renderLyric();
-  updateKpi({type:"init"});
+document.getElementById('btnMute').addEventListener('click', (e) => {
+  isMuted = !isMuted;
+  e.target.textContent = isMuted ? "Unmute" : "Mute";
+  e.target.classList.toggle('danger', isMuted);
+});
 
-})();
+lyricsEl.addEventListener('click', (e) => {
+  const t = e.target.closest('.ch');
+  if(!t) return;
+  setActive(+t.dataset.idx, true);
+});
+
+function hookSlider(id, outId, fmt){
+  const s = document.getElementById(id);
+  const out = document.getElementById(outId);
+  const upd = () => out.textContent = fmt(+s.value);
+  s.addEventListener('input', upd); upd();
+}
+hookSlider('strum','strumVal', v => `${v}ms`);
+hookSlider('bright','brightVal', v => `${v}%`);
+hookSlider('vol','volVal', v => `${v}%`);
+
+window.addEventListener('keydown', (e) => {
+  if(e.code === 'ArrowRight' || e.code === 'Space'){ e.preventDefault(); next(); }
+  if(e.code === 'ArrowLeft'){ prev(); }
+  if(e.key.toLowerCase() === 'r'){ replay(); }
+});
 </script>
 </body>
 </html>
