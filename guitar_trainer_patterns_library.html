@@ -1,0 +1,868 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Guitar Đệm Hát – Pattern Library (Ballad/Bolero/Waltz/6-8/Strum)</title>
+
+  <style>
+    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    body { margin: 18px; line-height: 1.35; background: #0b0f14; color: #e7edf5; }
+    h2 { margin: 0 0 10px; font-size: 18px; }
+    .muted { color: #a9b6c8; font-size: 13px; }
+    .wrap { display: grid; grid-template-columns: 1.25fr 0.75fr; gap: 14px; margin-top: 12px; }
+    .card { background: #121924; border: 1px solid #223047; border-radius: 12px; padding: 14px; }
+    .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 10px; }
+    button {
+      background: #1f2b3e; color: #e7edf5; border: 1px solid #2d3f5c;
+      padding: 9px 11px; border-radius: 10px; cursor: pointer;
+    }
+    button.primary { background: #2a4a7a; border-color: #3a66a8; }
+    button.danger { background: #5a1f2c; border-color: #7a2a3c; }
+    button:disabled { opacity: .55; cursor: not-allowed; }
+    label { font-size: 13px; color: #cfe0f7; display: inline-flex; gap: 6px; align-items: center; }
+    input[type="range"] { width: 180px; }
+    select, input[type="text"] {
+      background: #0f1520; color: #e7edf5; border: 1px solid #2d3f5c;
+      border-radius: 10px; padding: 8px 10px;
+    }
+    .pattern { display: grid; gap: 8px; margin-top: 10px; }
+    .step {
+      border: 1px solid #2d3f5c; border-radius: 10px; padding: 10px 8px; background: #0f1520;
+      text-align: center; user-select: none;
+    }
+    .step .count { font-weight: 700; font-size: 13px; }
+    .step .act { font-size: 13px; margin-top: 4px; }
+    .step .finger { font-size: 12px; color: #a9b6c8; margin-top: 3px; }
+    .step.active { outline: 2px solid #72a7ff; background: #13233a; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .chip { padding: 6px 10px; border-radius: 999px; border: 1px solid #2d3f5c; background: #0f1520; font-size: 13px; color: #cfe0f7; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+    .chords { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px; }
+    .chords button.active { outline: 2px solid #72a7ff; }
+    .statusLine { margin-top: 10px; padding: 10px; border-radius: 10px; border: 1px solid #2d3f5c; background: #0f1520; }
+    .ok { color: #5cffb3; }
+    .warn { color: #ffb86b; }
+    .err { color: #ff6b6b; }
+    .footer { margin-top: 10px; font-size: 12px; color: #a9b6c8; }
+    a { color: #72a7ff; }
+    .twoCols { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .small { font-size: 12px; }
+  </style>
+
+  <!-- Tone.js pinned -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.18/Tone.js"></script>
+</head>
+
+<body>
+  <h2>Guitar đệm hát – Thư viện cách đánh tay phải (Ballad / Bolero / Waltz / 6-8 / Strum)</h2>
+  <div class="muted">
+    Chọn <b>thể loại</b> → chọn <b>cách đánh tay phải</b> → bấm <b>hợp âm</b> để nghe so sánh.
+    Âm thanh dùng <b>guitar samples</b> (Sampler) để nghe gần thực tế hơn.
+  </div>
+
+  <div class="wrap">
+    <!-- LEFT -->
+    <div class="card">
+      <div class="twoCols">
+        <div>
+          <label>Thể loại</label><br/>
+          <select id="genre"></select>
+        </div>
+        <div>
+          <label>Cách đánh tay phải</label><br/>
+          <select id="pattern"></select>
+        </div>
+      </div>
+
+      <div class="chips">
+        <div class="chip">Nhịp: <span id="meter" class="mono">—</span></div>
+        <div class="chip">Đếm: <span id="counting" class="mono">—</span></div>
+        <div class="chip">Gợi ý feel: <span id="feel" class="mono">—</span></div>
+      </div>
+
+      <div class="controls">
+        <button id="btnInit" class="primary">1) Bật âm + Load guitar</button>
+        <button id="btnPlay" class="primary" disabled>2) Play</button>
+        <button id="btnStop" class="danger" disabled>Stop</button>
+
+        <label>
+          Tempo: <span id="tempoLabel" class="mono">78</span> BPM
+          <input id="tempo" type="range" min="50" max="160" value="78" />
+        </label>
+
+        <label title="Đổi hợp âm ở đầu ô nhịp giống cách tập thật hơn">
+          Đổi hợp âm:
+          <select id="changeMode">
+            <option value="nextBar" selected>Đầu ô nhịp kế tiếp</option>
+            <option value="immediate">Đổi ngay</option>
+          </select>
+        </label>
+
+        <label title="Auto chọn bass theo hợp âm; hoặc ép bass để luyện">
+          Bass:
+          <select id="bassMode">
+            <option value="auto" selected>Auto</option>
+            <option value="6">Dây 6</option>
+            <option value="5">Dây 5</option>
+            <option value="4">Dây 4</option>
+          </select>
+        </label>
+
+        <label title="Metronome click theo nhịp (giúp so sánh feel)">
+          Metronome:
+          <select id="metro">
+            <option value="off" selected>Tắt</option>
+            <option value="on">Bật</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="chips">
+        <div class="chip">Hợp âm hiện tại: <span id="curChord" class="mono">—</span></div>
+        <div class="chip">Hợp âm kế tiếp: <span id="nextChord" class="mono">—</span></div>
+        <div class="chip">Ô nhịp: <span id="barCount" class="mono">0</span></div>
+        <div class="chip">Note đang đánh: <span id="lastNote" class="mono">—</span></div>
+      </div>
+
+      <div id="patternGrid" class="pattern"></div>
+
+      <div class="statusLine mono" id="status">Trạng thái: <span class="warn">chưa load</span></div>
+
+      <div class="footer">
+        Lưu ý: “Bolero / Ballad / Strum…” có rất nhiều biến thể theo bài. Thư viện này cung cấp các mẫu <b>cốt lõi, dễ học</b> để bạn so sánh nhịp/feel.
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="card">
+      <div class="twoCols">
+        <div>
+          <label>Bộ hợp âm</label><br/>
+          <select id="chordSet"></select>
+        </div>
+        <div>
+          <label>Tìm hợp âm</label><br/>
+          <input id="chordSearch" type="text" placeholder="VD: Am, D7, Cmaj7..." />
+        </div>
+      </div>
+
+      <div class="muted small" style="margin-top:8px;">
+        Bấm nút hợp âm để đổi. Voicing dùng <b>tuning + shape</b> (giống guitar thật).
+      </div>
+
+      <div class="chords" id="chordButtons"></div>
+
+      <div class="chips" style="margin-top:10px;">
+        <div class="chip">Voicing 6→1: <span id="voicing" class="mono">—</span></div>
+      </div>
+
+      <div class="footer">
+        Nếu bạn muốn thêm hợp âm/barre/đảo bass theo đúng bài bạn đang học, gửi vòng hợp âm hoặc list hợp âm — tôi sẽ bổ sung.
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+
+  // ======================
+  // 1) Guitar model (tuning + chord shapes)
+  // ======================
+  // Standard tuning MIDI for strings 6->1: E2 A2 D3 G3 B3 E4
+  const TUNING_MIDI = [40, 45, 50, 55, 59, 64];
+
+  // Shapes: frets for strings 6->1, -1 = mute
+  // Open chords
+  const CHORD_DB = {
+    // Basic
+    "C":      { tags:["basic"], frets:[-1,3,2,0,1,0], bass:5 },
+    "G":      { tags:["basic"], frets:[ 3,2,0,0,0,3], bass:6 },
+    "D":      { tags:["basic"], frets:[-1,-1,0,2,3,2], bass:4 },
+    "A":      { tags:["basic"], frets:[-1,0,2,2,2,0], bass:5 },
+    "E":      { tags:["basic"], frets:[ 0,2,2,1,0,0], bass:6 },
+    "Am":     { tags:["basic"], frets:[-1,0,2,2,1,0], bass:5 },
+    "Em":     { tags:["basic"], frets:[ 0,2,2,0,0,0], bass:6 },
+    "Dm":     { tags:["basic"], frets:[-1,-1,0,2,3,1], bass:4 },
+    "F":      { tags:["basic"], frets:[-1,-1,3,2,1,0], bass:4, note:"F dễ (xx3210 ~ Fmaj7)" },
+
+    // Common 7th (Bolero/pop)
+    "A7":     { tags:["seventh","bolero"], frets:[-1,0,2,0,2,0], bass:5 },
+    "D7":     { tags:["seventh","bolero"], frets:[-1,-1,0,2,1,2], bass:4 },
+    "E7":     { tags:["seventh","bolero"], frets:[ 0,2,0,1,0,0], bass:6 },
+    "G7":     { tags:["seventh","bolero"], frets:[ 3,2,0,0,0,1], bass:6 },
+    "C7":     { tags:["seventh","bolero"], frets:[-1,3,2,3,1,0], bass:5 },
+    "Am7":    { tags:["seventh"], frets:[-1,0,2,0,1,0], bass:5 },
+    "Dm7":    { tags:["seventh"], frets:[-1,-1,0,2,1,1], bass:4 },
+    "Cmaj7":  { tags:["color"], frets:[-1,3,2,0,0,0], bass:5 },
+    "Dsus2":  { tags:["color"], frets:[-1,-1,0,2,3,0], bass:4 },
+    "Asus2":  { tags:["color"], frets:[-1,0,2,2,0,0], bass:5 },
+    "Esus4":  { tags:["color"], frets:[ 0,2,2,2,0,0], bass:6 },
+
+    // A few barre (optional)
+    "Bm":     { tags:["barre"], frets:[-1,2,4,4,3,2], bass:5 },
+    "F#m":    { tags:["barre"], frets:[ 2,4,4,2,2,2], bass:6 },
+    "Bb":     { tags:["barre"], frets:[-1,1,3,3,3,1], bass:5 },
+    "Cm":     { tags:["barre"], frets:[-1,3,5,5,4,3], bass:5 },
+    "Gm":     { tags:["barre"], frets:[ 3,5,5,3,3,3], bass:6 },
+  };
+
+  function midiToNoteName(midi) {
+    return Tone.Frequency(midi, "midi").toNote();
+  }
+  function getNoteForString(chordName, stringNum) {
+    const entry = CHORD_DB[chordName];
+    if (!entry) return null;
+    const idx = 6 - stringNum;
+    const fret = entry.frets[idx];
+    if (fret == null || fret < 0) return null;
+    return midiToNoteName(TUNING_MIDI[idx] + fret);
+  }
+  function getVoicing(chordName) {
+    const parts = [];
+    for (let s = 6; s >= 1; s--) parts.push(getNoteForString(chordName, s) ?? "x");
+    return parts.join(" ");
+  }
+  function activeStrings(chordName) {
+    const arr = [];
+    for (let s = 6; s >= 1; s--) {
+      if (getNoteForString(chordName, s)) arr.push(s);
+    }
+    return arr; // sorted 6->1
+  }
+
+  // ======================
+  // 2) Pattern Library (by genre)
+  // ======================
+  // Each step is on 8th-note grid.
+  // step.type:
+  //  - 'pluck' (string number)
+  //  - 'bass'  (root/alt/explicit)
+  //  - 'strumDown' / 'strumUp' (use sounding strings)
+  //  - 'rest'
+  const GENRES = [
+    {
+      id: "ballad",
+      name: "Ballad",
+      meter: "4/4",
+      feel: "thẳng, mềm",
+      counting: "1 & 2 & 3 & 4 &",
+      patterns: [
+        {
+          id: "ballad_1",
+          name: "Ballad rải 1 (video): Bass–3–2–3–1–3–2–3",
+          steps: [
+            {type:"bass", which:"root", label:"Bass", finger:"P"},
+            {type:"pluck", string:3, label:"3", finger:"i"},
+            {type:"pluck", string:2, label:"2", finger:"m"},
+            {type:"pluck", string:3, label:"3", finger:"i"},
+            {type:"pluck", string:1, label:"1", finger:"a"},
+            {type:"pluck", string:3, label:"3", finger:"i"},
+            {type:"pluck", string:2, label:"2", finger:"m"},
+            {type:"pluck", string:3, label:"3", finger:"i"},
+          ],
+        },
+        {
+          id: "ballad_2",
+          name: "Ballad rải 2 (phổ biến): Bass–3–2–1–2–3–2–1",
+          steps: [
+            {type:"bass", which:"root", label:"Bass", finger:"P"},
+            {type:"pluck", string:3, label:"3", finger:"i"},
+            {type:"pluck", string:2, label:"2", finger:"m"},
+            {type:"pluck", string:1, label:"1", finger:"a"},
+            {type:"pluck", string:2, label:"2", finger:"m"},
+            {type:"pluck", string:3, label:"3", finger:"i"},
+            {type:"pluck", string:2, label:"2", finger:"m"},
+            {type:"pluck", string:1, label:"1", finger:"a"},
+          ],
+        },
+        {
+          id: "ballad_3",
+          name: "Ballad boom–boom (đổi bass phách 3): Bass–3–2–3–Bass(alt)–2–1–2",
+          steps: [
+            {type:"bass", which:"root", label:"Bass", finger:"P"},
+            {type:"pluck", string:3, label:"3", finger:"i"},
+            {type:"pluck", string:2, label:"2", finger:"m"},
+            {type:"pluck", string:3, label:"3", finger:"i"},
+            {type:"bass", which:"alt", label:"Bass2", finger:"P"},
+            {type:"pluck", string:2, label:"2", finger:"m"},
+            {type:"pluck", string:1, label:"1", finger:"a"},
+            {type:"pluck", string:2, label:"2", finger:"m"},
+          ],
+        },
+      ],
+    },
+    {
+      id: "bolero",
+      name: "Bolero",
+      meter: "4/4 (cảm giác 2/4)",
+      feel: "nhấn 2 & 4 nhẹ, bass chắc",
+      counting: "1 & 2 & 3 & 4 &",
+      patterns: [
+        {
+          id: "bolero_1",
+          name: "Bolero rải 1: Bass–3–2–1–2–3–2–1",
+          steps: [
+            {type:"bass", which:"root", label:"Bass", finger:"P"},
+            {type:"pluck", string:3, label:"3", finger:"i"},
+            {type:"pluck", string:2, label:"2", finger:"m"},
+            {type:"pluck", string:1, label:"1", finger:"a"},
+            {type:"pluck", string:2, label:"2", finger:"m"},
+            {type:"pluck", string:3, label:"3", finger:"i"},
+            {type:"pluck", string:2, label:"2", finger:"m"},
+            {type:"pluck", string:1, label:"1", finger:"a"},
+          ],
+        },
+        {
+          id: "bolero_2",
+          name: "Bolero bass + chùm (đệm hát): Bass–(1-2-3)–2–1–Bass(alt)–(1-2-3)–2–1",
+          steps: [
+            {type:"bass", which:"root", label:"Bass", finger:"P"},
+            {type:"strumDown", label:"Chùm", finger:"p+i+m+a"},
+            {type:"pluck", string:2, label:"2", finger:"m"},
+            {type:"pluck", string:1, label:"1", finger:"a"},
+            {type:"bass", which:"alt", label:"Bass2", finger:"P"},
+            {type:"strumDown", label:"Chùm", finger:"p+i+m+a"},
+            {type:"pluck", string:2, label:"2", finger:"m"},
+            {type:"pluck", string:1, label:"1", finger:"a"},
+          ],
+        },
+        {
+          id: "bolero_3",
+          name: "Bolero 'bát–chát' nhẹ: Bass–3–(chùm)–3–Bass(alt)–3–(chùm)–3",
+          steps: [
+            {type:"bass", which:"root", label:"Bass", finger:"P"},
+            {type:"pluck", string:3, label:"3", finger:"i"},
+            {type:"strumDown", label:"Chùm", finger:"p+i+m+a"},
+            {type:"pluck", string:3, label:"3", finger:"i"},
+            {type:"bass", which:"alt", label:"Bass2", finger:"P"},
+            {type:"pluck", string:3, label:"3", finger:"i"},
+            {type:"strumDown", label:"Chùm", finger:"p+i+m+a"},
+            {type:"pluck", string:3, label:"3", finger:"i"},
+          ],
+        },
+      ],
+    },
+    {
+      id: "waltz",
+      name: "Waltz (Valse)",
+      meter: "3/4",
+      feel: "1 mạnh, 2-3 nhẹ",
+      counting: "1 & 2 & 3 &",
+      patterns: [
+        {
+          id: "waltz_1",
+          name: "Waltz rải 1: Bass–3–2–1–2–3",
+          steps: [
+            {type:"bass", which:"root", label:"Bass", finger:"P"},
+            {type:"pluck", string:3, label:"3", finger:"i"},
+            {type:"pluck", string:2, label:"2", finger:"m"},
+            {type:"pluck", string:1, label:"1", finger:"a"},
+            {type:"pluck", string:2, label:"2", finger:"m"},
+            {type:"pluck", string:3, label:"3", finger:"i"},
+          ],
+        },
+        {
+          id: "waltz_2",
+          name: "Waltz 'oom-pah-pah' (guitar): Bass–chùm–chùm–Bass–chùm–chùm",
+          steps: [
+            {type:"bass", which:"root", label:"Bass", finger:"P"},
+            {type:"strumDown", label:"Chùm", finger:"p+i+m+a"},
+            {type:"strumDown", label:"Chùm", finger:"p+i+m+a"},
+            {type:"bass", which:"root", label:"Bass", finger:"P"},
+            {type:"strumDown", label:"Chùm", finger:"p+i+m+a"},
+            {type:"strumDown", label:"Chùm", finger:"p+i+m+a"},
+          ],
+        },
+      ],
+    },
+    {
+      id: "six_eight",
+      name: "Ballad 6/8",
+      meter: "6/8",
+      feel: "2 nhịp lớn (1… 2…)",
+      counting: "1 la li 2 la li",
+      patterns: [
+        {
+          id: "six8_1",
+          name: "6/8 rải 1: Bass–3–2–Bass(alt)–2–1",
+          steps: [
+            {type:"bass", which:"root", label:"Bass", finger:"P"},
+            {type:"pluck", string:3, label:"3", finger:"i"},
+            {type:"pluck", string:2, label:"2", finger:"m"},
+            {type:"bass", which:"alt", label:"Bass2", finger:"P"},
+            {type:"pluck", string:2, label:"2", finger:"m"},
+            {type:"pluck", string:1, label:"1", finger:"a"},
+          ],
+        },
+        {
+          id: "six8_2",
+          name: "6/8 rải 2: Bass–3–2–3–2–1",
+          steps: [
+            {type:"bass", which:"root", label:"Bass", finger:"P"},
+            {type:"pluck", string:3, label:"3", finger:"i"},
+            {type:"pluck", string:2, label:"2", finger:"m"},
+            {type:"pluck", string:3, label:"3", finger:"i"},
+            {type:"pluck", string:2, label:"2", finger:"m"},
+            {type:"pluck", string:1, label:"1", finger:"a"},
+          ],
+        },
+      ],
+    },
+    {
+      id: "strum",
+      name: "Pop / Slow Rock (quạt)",
+      meter: "4/4",
+      feel: "groove rõ, dễ vào chorus",
+      counting: "1 & 2 & 3 & 4 &",
+      patterns: [
+        {
+          id: "strum_1",
+          name: "Strum 1 (cơ bản): D – D – U U – D U",
+          steps: [
+            {type:"strumDown", label:"D", finger:"↓"},
+            {type:"rest", label:"·", finger:""},
+            {type:"strumDown", label:"D", finger:"↓"},
+            {type:"rest", label:"·", finger:""},
+            {type:"strumUp", label:"U", finger:"↑"},
+            {type:"strumUp", label:"U", finger:"↑"},
+            {type:"strumDown", label:"D", finger:"↓"},
+            {type:"strumUp", label:"U", finger:"↑"},
+          ],
+        },
+        {
+          id: "strum_2",
+          name: "Strum 2 (ballad chorus): D – (·) – D U – U D –",
+          steps: [
+            {type:"strumDown", label:"D", finger:"↓"},
+            {type:"rest", label:"·", finger:""},
+            {type:"rest", label:"·", finger:""},
+            {type:"strumDown", label:"D", finger:"↓"},
+            {type:"strumUp", label:"U", finger:"↑"},
+            {type:"rest", label:"·", finger:""},
+            {type:"strumUp", label:"U", finger:"↑"},
+            {type:"strumDown", label:"D", finger:"↓"},
+          ],
+        },
+      ],
+    },
+  ];
+
+  // Count labels by step length
+  function countLabelsFor(len, countingStr) {
+    // Provide best-effort labels matching the counting string.
+    // For 4/4 (8 steps): 1 & 2 & 3 & 4 &
+    // For 3/4 (6 steps): 1 & 2 & 3 &
+    // For 6/8 (6 steps): 1 la li 2 la li
+    const parts = countingStr.split(/\s+/).filter(Boolean);
+    if (parts.length === len) return parts;
+    // If pattern length mismatches, fall back to generic indexing
+    return Array.from({length: len}, (_, i) => String(i+1));
+  }
+
+  // ======================
+  // 3) UI elements
+  // ======================
+  const elGenre = $("genre");
+  const elPattern = $("pattern");
+  const elMeter = $("meter");
+  const elCounting = $("counting");
+  const elFeel = $("feel");
+  const elPatternGrid = $("patternGrid");
+
+  const elTempo = $("tempo");
+  const elTempoLabel = $("tempoLabel");
+  const elChangeMode = $("changeMode");
+  const elBassMode = $("bassMode");
+  const elMetro = $("metro");
+  const elStatus = $("status");
+
+  const elCurChord = $("curChord");
+  const elNextChord = $("nextChord");
+  const elBarCount = $("barCount");
+  const elLastNote = $("lastNote");
+  const elVoicing = $("voicing");
+
+  const elChordSet = $("chordSet");
+  const elChordSearch = $("chordSearch");
+  const elChordButtons = $("chordButtons");
+
+  const btnInit = $("btnInit");
+  const btnPlay = $("btnPlay");
+  const btnStop = $("btnStop");
+
+  function setStatus(html) { elStatus.innerHTML = "Trạng thái: " + html; }
+
+  // Populate genre dropdown
+  function buildGenreOptions() {
+    elGenre.innerHTML = "";
+    GENRES.forEach(g => {
+      const opt = document.createElement("option");
+      opt.value = g.id;
+      opt.textContent = g.name;
+      elGenre.appendChild(opt);
+    });
+  }
+
+  function getGenreById(id) { return GENRES.find(g => g.id === id) || GENRES[0]; }
+
+  let currentGenre = GENRES[0];
+  let currentPattern = currentGenre.patterns[0];
+
+  // Pattern grid rendering
+  let stepEls = [];
+  function renderPatternGrid() {
+    elPatternGrid.innerHTML = "";
+    const labels = countLabelsFor(currentPattern.steps.length, currentGenre.counting);
+    elMeter.textContent = currentGenre.meter;
+    elCounting.textContent = currentGenre.counting;
+    elFeel.textContent = currentGenre.feel;
+
+    elPatternGrid.style.gridTemplateColumns = `repeat(${currentPattern.steps.length}, minmax(0, 1fr))`;
+
+    stepEls = currentPattern.steps.map((st, i) => {
+      const cell = document.createElement("div");
+      cell.className = "step";
+      const count = labels[i] ?? "";
+      cell.innerHTML = `
+        <div class="count">${count}</div>
+        <div class="act">${st.label ?? st.type}</div>
+        <div class="finger">${st.finger ?? ""}</div>
+      `;
+      elPatternGrid.appendChild(cell);
+      return cell;
+    });
+  }
+
+  function highlightStep(i) {
+    stepEls.forEach((el, idx) => el.classList.toggle("active", idx === i));
+  }
+
+  function rebuildPatternOptions() {
+    elPattern.innerHTML = "";
+    currentGenre.patterns.forEach(p => {
+      const opt = document.createElement("option");
+      opt.value = p.id;
+      opt.textContent = p.name;
+      elPattern.appendChild(opt);
+    });
+    // default
+    currentPattern = currentGenre.patterns[0];
+    elPattern.value = currentPattern.id;
+    renderPatternGrid();
+  }
+
+  // Chord set options
+  const CHORD_SETS = [
+    { id:"basic", name:"Cơ bản (open)", filter:(name, e)=> e.tags.includes("basic") },
+    { id:"bolero", name:"Bolero / 7th", filter:(name, e)=> e.tags.includes("bolero") || e.tags.includes("seventh") },
+    { id:"color", name:"Màu (sus/maj7)", filter:(name, e)=> e.tags.includes("color") },
+    { id:"barre", name:"Barre (nâng cao)", filter:(name, e)=> e.tags.includes("barre") },
+    { id:"all", name:"Tất cả", filter:(name, e)=> true },
+  ];
+
+  function buildChordSetOptions() {
+    elChordSet.innerHTML = "";
+    CHORD_SETS.forEach(s => {
+      const opt = document.createElement("option");
+      opt.value = s.id;
+      opt.textContent = s.name;
+      elChordSet.appendChild(opt);
+    });
+    elChordSet.value = "basic";
+  }
+
+  // Build chord buttons
+  const chordBtnEls = {};
+  function renderChordButtons() {
+    elChordButtons.innerHTML = "";
+    Object.keys(chordBtnEls).forEach(k => delete chordBtnEls[k]);
+
+    const set = CHORD_SETS.find(s => s.id === elChordSet.value) || CHORD_SETS[0];
+    const q = (elChordSearch.value || "").trim().toLowerCase();
+
+    // Filter + sort (basic-first within set)
+    const names = Object.keys(CHORD_DB)
+      .filter(name => set.filter(name, CHORD_DB[name]))
+      .filter(name => q ? name.toLowerCase().includes(q) : true)
+      .sort((a,b) => a.localeCompare(b));
+
+    names.forEach(name => {
+      const b = document.createElement("button");
+      b.textContent = name;
+      b.disabled = !isReady; // enable after load
+      b.addEventListener("click", () => onChordPressed(name));
+      elChordButtons.appendChild(b);
+      chordBtnEls[name] = b;
+    });
+
+    // If currentChord not in list, keep; UI highlight will handle
+    setChordUI(currentChord);
+  }
+
+  function setChordUI(activeName) {
+    Object.entries(chordBtnEls).forEach(([name, el]) => el.classList.toggle("active", name === activeName));
+  }
+
+  // ======================
+  // 4) Playback state
+  // ======================
+  let isReady = false;
+  let guitar = null;
+  let reverb = null;
+  let limiter = null;
+  let metroSynth = null;
+
+  let currentChord = "C";
+  let queuedChord = null;
+  let stepIndex = 0;
+  let barIndex = 0;
+
+  function updateHud() {
+    elCurChord.textContent = currentChord ?? "—";
+    elNextChord.textContent = queuedChord ?? "—";
+    elBarCount.textContent = String(barIndex);
+    elVoicing.textContent = currentChord ? getVoicing(currentChord) : "—";
+    setChordUI(currentChord);
+  }
+
+  function pickBassString(chordName, which) {
+    const entry = CHORD_DB[chordName];
+    const root = entry?.bass ?? 6;
+    if (elBassMode.value !== "auto") return Number(elBassMode.value);
+
+    if (which === "root") return root;
+
+    // alt: if root on 6/5 -> 4; if root on 4 -> 5 (best-effort)
+    if (root === 4) return 5;
+    return 4;
+  }
+
+  function onChordPressed(name) {
+    const mode = elChangeMode.value;
+    if (mode === "immediate") {
+      currentChord = name;
+      queuedChord = null;
+    } else {
+      queuedChord = name;
+    }
+    updateHud();
+  }
+
+  // ======================
+  // 5) Audio engine
+  // ======================
+  function safeTrigger(note, duration, time, vel) {
+    if (!note) return;
+    // Let notes ring a bit (more guitar-like)
+    guitar.triggerAttackRelease(note, duration, time, vel);
+    elLastNote.textContent = note;
+  }
+
+  function doStrum(direction, time, velBase) {
+    // Use sounding strings; down: low->high; up: high->low
+    const strings = activeStrings(currentChord);
+    const ordered = (direction === "down") ? strings : [...strings].reverse();
+
+    const delay = 0.012; // strum spread
+    ordered.forEach((s, idx) => {
+      const n = getNoteForString(currentChord, s);
+      if (!n) return;
+      safeTrigger(n, "2n", time + idx * delay, velBase);
+    });
+  }
+
+  function maybeMetronome(stepInBar, time) {
+    if (elMetro.value !== "on" || !metroSynth) return;
+
+    // accent on bar start
+    const accent = (stepInBar === 0);
+
+    // quarter-note beats for 4/4 and 3/4:
+    // step boundaries: every 2 steps (8th grid)
+    const isBeat = (stepInBar % 2 === 0);
+
+    // For 6/8: accent step 0 and step 3 (two dotted-quarter pulses)
+    const isSixEight = (currentGenre.id === "six_eight");
+    const isPulse = isSixEight ? (stepInBar === 0 || stepInBar === 3) : isBeat;
+
+    if (!isPulse) return;
+
+    const vel = accent ? 0.85 : 0.55;
+    metroSynth.triggerAttackRelease("C2", "32n", time, vel);
+  }
+
+  function scheduleTick(time) {
+    const len = currentPattern.steps.length;
+    const stepInBar = stepIndex % len;
+
+    // bar boundary
+    if (stepInBar === 0) {
+      if (stepIndex > 0) barIndex += 1;
+      if (queuedChord) {
+        currentChord = queuedChord;
+        queuedChord = null;
+      }
+      updateHud();
+    }
+
+    highlightStep(stepInBar);
+    maybeMetronome(stepInBar, time);
+
+    const st = currentPattern.steps[stepInBar];
+
+    // Resolve action
+    if (!currentChord || !guitar) {
+      stepIndex += 1;
+      return;
+    }
+
+    // Velocity shaping: bass a bit louder
+    const baseVel = 0.70;
+    const bassVel = 0.95;
+
+    if (st.type === "rest") {
+      // do nothing
+    } else if (st.type === "pluck") {
+      const note = getNoteForString(currentChord, st.string);
+      safeTrigger(note, "2n", time, baseVel);
+    } else if (st.type === "bass") {
+      const s = (typeof st.string === "number") ? st.string : pickBassString(currentChord, st.which || "root");
+      const note = getNoteForString(currentChord, s);
+      safeTrigger(note, "2n", time, bassVel);
+    } else if (st.type === "strumDown") {
+      doStrum("down", time, baseVel);
+    } else if (st.type === "strumUp") {
+      doStrum("up", time, baseVel);
+    }
+
+    stepIndex += 1;
+  }
+
+  // ======================
+  // 6) Init + controls
+  // ======================
+  function resetTransportState() {
+    // Stop and reschedule for new pattern length without glitches
+    Tone.Transport.stop();
+    Tone.Transport.cancel(0);
+    stepIndex = 0;
+    barIndex = 0;
+    highlightStep(-1);
+    elLastNote.textContent = "—";
+    updateHud();
+    Tone.Transport.scheduleRepeat(scheduleTick, "8n");
+  }
+
+  elTempo.addEventListener("input", () => {
+    elTempoLabel.textContent = elTempo.value;
+    Tone.Transport.bpm.value = Number(elTempo.value);
+  });
+
+  elGenre.addEventListener("change", () => {
+    currentGenre = getGenreById(elGenre.value);
+    rebuildPatternOptions();
+    resetTransportState();
+  });
+
+  elPattern.addEventListener("change", () => {
+    const p = currentGenre.patterns.find(x => x.id === elPattern.value);
+    if (p) currentPattern = p;
+    renderPatternGrid();
+    resetTransportState();
+  });
+
+  elChordSet.addEventListener("change", renderChordButtons);
+  elChordSearch.addEventListener("input", renderChordButtons);
+
+  btnInit.addEventListener("click", async () => {
+    btnInit.disabled = true;
+    btnInit.textContent = "Loading…";
+    setStatus('<span class="warn">đang tải sample…</span>');
+
+    try {
+      await Tone.start();
+
+      // CDN sample pack (CORS-friendly)
+      const baseUrl = "https://cdn.jsdelivr.net/npm/tonejs-instrument-guitar-acoustic-ogg@1.1.0/";
+
+      guitar = new Tone.Sampler({
+        urls: {
+          E2: "E2.ogg", F2:"F2.ogg", G2: "G2.ogg", A2: "A2.ogg", B2: "B2.ogg",
+          C3: "C3.ogg", D3: "D3.ogg", E3: "E3.ogg", F3: "F3.ogg", G3: "G3.ogg", A3: "A3.ogg", B3: "B3.ogg",
+          C4: "C4.ogg", D4: "D4.ogg", E4: "E4.ogg", F4: "F4.ogg", G4: "G4.ogg"
+        },
+        baseUrl
+      });
+
+      // Light effects chain
+      reverb = new Tone.Reverb({ decay: 2.0, wet: 0.16 });
+      limiter = new Tone.Limiter(-1.0);
+      guitar.connect(reverb);
+      reverb.connect(limiter);
+      limiter.toDestination();
+
+      metroSynth = new Tone.MembraneSynth({
+        pitchDecay: 0.01,
+        octaves: 2,
+        envelope: { attack: 0.001, decay: 0.08, sustain: 0.0, release: 0.01 }
+      }).connect(limiter);
+
+      Tone.Transport.bpm.value = Number(elTempo.value);
+      resetTransportState();
+
+      await Tone.loaded();
+
+      isReady = true;
+      btnPlay.disabled = false;
+      btnStop.disabled = false;
+
+      btnInit.textContent = "Loaded";
+      setStatus('<span class="ok">đã load xong – bấm Play</span>');
+
+      // Enable chord buttons
+      renderChordButtons();
+      updateHud();
+    } catch (e) {
+      console.error(e);
+      btnInit.disabled = false;
+      btnInit.textContent = "1) Bật âm + Load guitar (retry)";
+      setStatus('<span class="err">load thất bại</span> (mở Console/Network lọc .ogg để xem lỗi)');
+      alert("Load thất bại. Mở DevTools → Network, lọc .ogg xem URL nào bị 404/CORS. Console đã log chi tiết.");
+    }
+  });
+
+  btnPlay.addEventListener("click", async () => {
+    if (!isReady) return;
+    stepIndex = 0;
+    barIndex = 0;
+    highlightStep(-1);
+    queuedChord = null;
+    updateHud();
+
+    await Tone.start();
+    Tone.Transport.start("+0.05");
+    setStatus('<span class="ok">đang chạy</span>');
+  });
+
+  btnStop.addEventListener("click", () => {
+    Tone.Transport.stop();
+    highlightStep(-1);
+    setStatus('<span class="warn">đã dừng</span>');
+  });
+
+  // ======================
+  // 7) Boot
+  // ======================
+  buildGenreOptions();
+  buildChordSetOptions();
+  currentGenre = GENRES[0];
+  rebuildPatternOptions();
+  renderChordButtons(); // initially disabled until init
+  updateHud();
+  setStatus('<span class="warn">chưa load</span> (bấm nút 1)');
+})();
+</script>
+</body>
+</html>
