@@ -3,21 +3,23 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-  <title>Guitar Vỉa Hè - Pro Console</title>
+  <title>Guitar Party Monster</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.18/Tone.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
 
   <style>
     :root { 
-      --bg: #1a1a1a; 
-      --panel: #2b2b2b; 
-      --accent: #ff9800; 
-      --text: #e0e0e0;
-      --chord-btn: #333;
-      --active: #4caf50;
+      --bg: #121212; 
+      --panel: #1e1e1e; 
+      --neon-blue: #00f3ff;
+      --neon-pink: #ff00ff;
+      --neon-green: #00ff41;
+      --text-main: #e0e0e0;
+      --glass: rgba(255,255,255,0.05);
     }
     * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
     body { 
-      margin: 0; background: var(--bg); color: var(--text); 
+      margin: 0; background: var(--bg); color: var(--text-main); 
       font-family: system-ui, -apple-system, sans-serif; 
       height: 100vh; width: 100vw; overflow: hidden;
     }
@@ -29,487 +31,491 @@
       align-items: center; justify-content: center; text-align: center;
       padding: 20px;
     }
-    /* Chỉ hiện thông báo xoay khi ở màn hình dọc */
     @media (orientation: landscape) { #rotateMsg { display: none; } }
-    
-    /* Layout chính chia 3 cột */
-    .console {
+
+    /* LAYOUT CHÍNH: 3 CỘT */
+    .deck {
       display: grid;
-      grid-template-columns: 1.2fr 0.8fr 1fr; /* Trái (Hợp âm) - Giữa (Màn hình) - Phải (Điệu) */
-      height: 100%;
-      gap: 4px;
-      padding: 4px;
+      grid-template-columns: 280px 1fr 1.2fr; /* Trái (Điệu) - Giữa (Control) - Phải (Phím đàn) */
+      height: 100%; gap: 2px;
     }
 
-    /* Common Panel Styles */
+    /* PANEL CHUNG */
     .panel {
-      background: var(--panel);
-      border-radius: 8px;
-      padding: 8px;
-      display: flex; flex-direction: column;
+      background: var(--panel); border-right: 1px solid #333;
+      padding: 10px; display: flex; flex-direction: column; gap: 10px;
+      overflow-y: auto;
+    }
+    h3 { 
+      margin: 0; font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px; 
+      border-bottom: 1px solid #333; padding-bottom: 4px; margin-bottom: 4px;
+    }
+
+    /* CỘT 1: RHYTHM STATION */
+    .genre-select {
+      background: #000; color: var(--neon-blue); border: 1px solid #444; 
+      padding: 8px; font-weight: bold; font-size: 14px; border-radius: 4px; width: 100%;
+    }
+    .pattern-list { display: flex; flex-direction: column; gap: 4px; flex: 1; overflow-y: auto; }
+    .pat-btn {
+      padding: 10px; background: #2a2a2a; color: #aaa; border: 1px solid #333;
+      border-radius: 4px; text-align: left; font-size: 13px; cursor: pointer;
+      display: flex; justify-content: space-between;
+    }
+    .pat-btn.active { 
+      background: rgba(0, 243, 255, 0.15); color: var(--neon-blue); border-color: var(--neon-blue); 
+    }
+    .pat-bpm { font-size: 10px; background: #000; padding: 2px 4px; border-radius: 3px; }
+
+    /* CỘT 2: MIXER & FX */
+    .lcd-screen {
+      background: #000; border: 2px solid #333; color: var(--neon-green);
+      padding: 10px; border-radius: 4px; font-family: 'VT323', monospace;
+      text-align: center; height: 80px; display: flex; flex-direction: column; justify-content: center;
+      box-shadow: inset 0 0 15px rgba(0,255,65,0.1);
       position: relative;
     }
-    h3 { margin: 0 0 8px 0; font-size: 14px; color: #888; text-transform: uppercase; letter-spacing: 1px; text-align: center; }
+    .lcd-chord { font-size: 38px; line-height: 1; text-shadow: 0 0 5px var(--neon-green); }
+    .lcd-info { font-size: 16px; color: #555; display: flex; justify-content: space-between; width: 100%; padding: 0 10px; }
+    
+    .fx-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .btn-fx {
+      padding: 15px 5px; border: none; border-radius: 4px; font-weight: bold; font-size: 12px;
+      cursor: pointer; color: #000; text-transform: uppercase;
+    }
+    .btn-intro { background: #ffeb3b; }
+    .btn-fill { background: var(--neon-pink); color: white; box-shadow: 0 0 5px var(--neon-pink); }
+    .btn-end { background: #ff9800; }
+    .btn-break { background: #f44336; color: white; }
 
-    /* --- CỘT TRÁI: CHORD PADS --- */
-    .key-select {
-      display: flex; gap: 5px; margin-bottom: 8px;
+    .progression-box {
+      background: #151515; border-radius: 4px; padding: 6px;
     }
-    .key-select select {
-      flex: 1; background: #000; color: var(--accent); border: 1px solid #444; 
-      padding: 8px; font-weight: bold; font-size: 16px; border-radius: 4px;
+    .prog-btn {
+      width: 100%; background: #333; color: #ccc; border: 1px solid #444; 
+      padding: 8px; margin-bottom: 4px; font-size: 11px; text-align: left;
     }
-    .chord-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr; /* 2 cột */
-      grid-auto-rows: 1fr;
-      gap: 6px;
-      flex: 1;
+    .prog-btn:hover { background: #444; }
+
+    /* CỘT 3: CHORD MATRIX */
+    .key-control { display: flex; gap: 5px; margin-bottom: 5px; }
+    .key-btn { flex: 1; background: #222; color: white; border: 1px solid #444; padding: 6px; font-size: 12px; }
+    
+    .matrix { 
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; 
+      height: 100%; align-content: start; 
     }
-    .c-btn {
-      background: var(--chord-btn);
-      border: 1px solid #444; color: #fff;
-      border-radius: 6px; font-size: 24px; font-weight: bold;
-      cursor: pointer; position: relative;
+    .chord-pad {
+      aspect-ratio: 1.4; background: #252525; border: 1px solid #333; border-radius: 6px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      font-size: 20px; font-weight: bold; color: #888; position: relative;
       transition: all 0.1s;
     }
-    .c-btn:active { transform: scale(0.95); background: #444; }
-    .c-btn.active { 
-      background: var(--accent); color: #000; 
-      border-color: #fff; box-shadow: 0 0 10px var(--accent);
+    .chord-pad span { font-size: 10px; color: #555; margin-top: 2px; }
+    .chord-pad.active { 
+      background: var(--neon-blue); color: #000; border-color: #fff; 
+      box-shadow: 0 0 15px var(--neon-blue); transform: scale(0.98);
     }
-    .c-btn .sub { font-size: 12px; position: absolute; bottom: 4px; right: 4px; opacity: 0.7; }
+    /* Màu sắc theo nhóm hợp âm */
+    .chord-pad[data-type="minor"] { border-bottom: 3px solid var(--neon-pink); }
+    .chord-pad[data-type="major"] { border-bottom: 3px solid var(--neon-green); }
+    .chord-pad[data-type="7th"] { border-bottom: 3px solid #ff9800; }
 
-    /* --- CỘT GIỮA: INFO & MASTER --- */
-    .lcd {
-      background: #000; border: 2px solid #555; color: #5cffb3;
-      padding: 10px; border-radius: 4px; font-family: monospace;
-      text-align: center; margin-bottom: 10px;
-      box-shadow: inset 0 0 10px rgba(0,255,0,0.2);
+    /* MASTER CONTROLS */
+    .transport { display: flex; gap: 10px; margin-top: auto; }
+    .big-btn { 
+      flex: 1; padding: 15px; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; 
+      cursor: pointer;
     }
-    .lcd .big { font-size: 32px; font-weight: bold; display: block; }
-    .lcd .small { font-size: 14px; color: #aaa; }
-    
-    .slider-container {
-      flex: 1; display: flex; align-items: center; justify-content: center;
-      background: #222; border-radius: 8px; margin-bottom: 10px; position: relative;
-    }
-    /* Slider dọc */
-    input[type=range][orient=vertical] {
-      writing-mode: bt-lr; /* IE */
-      -webkit-appearance: slider-vertical; /* Webkit */
-      width: 40px; height: 90%;
-    }
-    .fill-btn {
-      height: 60px; background: #d32f2f; color: white;
-      border: none; border-radius: 8px; font-size: 20px; font-weight: bold;
-      box-shadow: 0 4px 0 #b71c1c;
-      margin-top: auto;
-    }
-    .fill-btn:active { transform: translateY(4px); box-shadow: none; }
+    #btnStart { background: #4caf50; color: #fff; }
+    #btnStop { background: #333; color: #888; }
+    #btnStop.playing { background: #f44336; color: #fff; animation: pulse 1s infinite; }
 
-    /* --- CỘT PHẢI: RHYTHM & ACTION --- */
-    .rhythm-list {
-      display: flex; flex-direction: column; gap: 6px;
-      flex: 1; overflow-y: auto;
-    }
-    .r-btn {
-      padding: 12px; background: #333; color: #ccc; border: 1px solid #444;
-      border-radius: 6px; text-align: left; font-size: 14px;
-    }
-    .r-btn.selected { background: #2196f3; color: white; border-color: white; font-weight: bold; }
-    
-    .action-row {
-      display: flex; gap: 8px; margin-top: 8px; height: 60px;
-    }
-    #btnInit { background: #4caf50; color: white; font-weight: bold; width: 100%; border-radius: 8px; font-size: 18px; border:none;}
-    #btnPlayStop { 
-      background: #444; color: #888; flex: 1; border:none; 
-      border-radius: 8px; font-size: 18px; font-weight: bold; 
-    }
-    #btnPlayStop.playing { background: #ff9800; color: #000; animation: pulse 1s infinite; }
-    
     @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.8; } 100% { opacity: 1; } }
   </style>
 </head>
 <body>
 
   <div id="rotateMsg">
-    <h1 style="color:var(--accent)">Vui lòng xoay ngang điện thoại</h1>
-    <p>Giao diện "Vỉa Hè Console" cần không gian rộng để quẩy!</p>
+    <h1 style="color:var(--neon-blue)">XOAY NGANG ĐIỆN THOẠI</h1>
+    <p>Để kích hoạt chế độ "Party Monster"</p>
     <div style="font-size:40px;">🔄</div>
   </div>
 
-  <div class="console">
+  <div class="deck">
     <div class="panel">
-      <h3>Smart Chords</h3>
-      <div class="key-select">
-        <select id="keySelect">
-          <option value="C">Tone: Đô trưởng (C)</option>
-          <option value="Am" selected>Tone: La thứ (Am)</option>
-          <option value="G">Tone: Sol trưởng (G)</option>
-          <option value="Em">Tone: Mi thứ (Em)</option>
-          <option value="F">Tone: Fa trưởng (F)</option>
-          <option value="Dm">Tone: Rê thứ (Dm)</option>
+      <h3>1. Rhythm Station</h3>
+      <select id="genreSelect" class="genre-select">
         </select>
-      </div>
-      <div class="chord-grid" id="chordPad">
+      <div id="patternList" class="pattern-list">
         </div>
+      
+      <div style="margin-top:auto">
+        <label style="font-size:12px; color:#888;">Tempo</label>
+        <input type="range" id="tempo" min="50" max="180" value="80" style="width:100%">
+      </div>
     </div>
 
     <div class="panel">
-      <h3>Master</h3>
-      <div class="lcd">
-        <span class="small" id="statusText">Sẵn sàng</span>
-        <span class="big" id="lcdChord">--</span>
-        <span class="small" id="lcdTempo">Tempo: 78</span>
+      <h3>2. Mixer & FX</h3>
+      <div class="lcd-screen">
+        <div class="lcd-info"><span id="lcdStyle">SLOW SURF</span> <span id="lcdBpm">80</span></div>
+        <div class="lcd-chord" id="lcdChord">--</div>
+        <div class="lcd-info"><span id="lcdStatus">READY</span></div>
+      </div>
+
+      <div class="fx-grid">
+        <button class="btn-fx btn-intro" id="btnIntro">Intro (4 bar)</button>
+        <button class="btn-fx btn-end" id="btnEnd">Ending</button>
+        <button class="btn-fx btn-fill" id="btnFill">⚡ FILL (Dằn)</button>
+        <button class="btn-fx btn-break" id="btnBreak">STOP (Ly)</button>
+      </div>
+
+      <div class="progression-box">
+        <h3>⚡ Mashup Presets</h3>
+        <div id="progList">
+          </div>
       </div>
       
-      <div class="slider-container">
-        <input type="range" id="tempoSlider" min="50" max="160" value="78" orient="vertical">
+      <div class="transport">
+        <button id="btnStart" class="big-btn">LOAD LOA</button>
+        <button id="btnStop" class="big-btn" disabled>PLAY / STOP</button>
       </div>
-
-      <button class="fill-btn" id="btnFill">DẰN (FILL)</button>
     </div>
 
-    <div class="panel">
-      <h3>Điệu Nhạc</h3>
-      <div class="rhythm-list" id="rhythmList">
-        </div>
-      <div class="action-row">
-        <button id="btnInit">🔌 Bật Loa</button>
-        <button id="btnPlayStop" disabled style="display:none;">▶ PLAY</button>
+    <div class="panel" style="background:#111;">
+      <h3>3. Chord Matrix</h3>
+      <div class="key-control">
+        <select id="keySelect" class="genre-select" style="flex:2">
+          <option value="C">Key: C (Đô trưởng)</option>
+          <option value="Am" selected>Key: Am (La thứ)</option>
+          <option value="G">Key: G (Sol trưởng)</option>
+          <option value="Em">Key: Em (Mi thứ)</option>
+          <option value="D">Key: D (Rê trưởng)</option>
+          <option value="Bm">Key: Bm (Si thứ)</option>
+          <option value="F">Key: F (Fa trưởng)</option>
+        </select>
+        <button id="btnBassMode" class="key-btn" style="background:#333;">Bass: Auto</button>
       </div>
+      
+      <div id="matrix" class="matrix">
+        </div>
     </div>
   </div>
 
 <script>
 // ==========================================
-// 1. DỮ LIỆU ÂM NHẠC & LOGIC CỐT LÕI
+// 1. DATA CENTER
 // ==========================================
-const TUNING = [40, 45, 50, 55, 59, 64]; // E2 A2 D3 G3 B3 E4
-const CHORDS = {
-  // Basic Open
-  "C":  { frets:[-1,3,2,0,1,0], bass:5 },
-  "G":  { frets:[ 3,2,0,0,0,3], bass:6 },
-  "D":  { frets:[-1,-1,0,2,3,2], bass:4 },
-  "A":  { frets:[-1,0,2,2,2,0], bass:5 },
-  "E":  { frets:[ 0,2,2,1,0,0], bass:6 },
-  "Am": { frets:[-1,0,2,2,1,0], bass:5 },
-  "Em": { frets:[ 0,2,2,0,0,0], bass:6 },
-  "Dm": { frets:[-1,-1,0,2,3,1], bass:4 },
-  "F":  { frets:[-1,-1,3,2,1,0], bass:4, name: "F (tắt)" }, 
-  "Fmaj7": { frets:[-1,3,3,2,1,0], bass:4 },
-  // 7th & Colors
-  "A7": { frets:[-1,0,2,0,2,0], bass:5 },
-  "B7": { frets:[-1,2,1,2,0,2], bass:5 },
-  "C7": { frets:[-1,3,2,3,1,0], bass:5 },
-  "D7": { frets:[-1,-1,0,2,1,2], bass:4 },
-  "E7": { frets:[ 0,2,0,1,0,0], bass:6 },
-  "G7": { frets:[ 3,2,0,0,0,1], bass:6 },
-  // Barre
-  "Bm": { frets:[-1,2,4,4,3,2], bass:5 },
-  "F#m":{ frets:[ 2,4,4,2,2,2], bass:6 },
-  "C#m":{ frets:[-1,4,6,6,5,4], bass:5 },
-  "Gm": { frets:[ 3,5,5,3,3,3], bass:6 },
-  "Bb": { frets:[-1,1,3,3,3,1], bass:5 },
+
+// --- Mở rộng thư viện hợp âm (Slash chords, Dim, 7th) ---
+const CHORDS_DB = {
+  // Basic
+  "C":  { f:[-1,3,2,0,1,0], b:5, t:"major" },
+  "Am": { f:[-1,0,2,2,1,0], b:5, t:"minor" },
+  "Dm": { f:[-1,-1,0,2,3,1], b:4, t:"minor" },
+  "G":  { f:[ 3,2,0,0,0,3], b:6, t:"major" },
+  "Em": { f:[ 0,2,2,0,0,0], b:6, t:"minor" },
+  "F":  { f:[-1,-1,3,2,1,0], b:4, t:"major" }, // F tắt
+  "E":  { f:[ 0,2,2,1,0,0], b:6, t:"major" },
+  "A":  { f:[-1,0,2,2,2,0], b:5, t:"major" },
+  "D":  { f:[-1,-1,0,2,3,2], b:4, t:"major" },
+  "B":  { f:[-1,2,4,4,4,2], b:5, t:"major" },
+  "Bm": { f:[-1,2,4,4,3,2], b:5, t:"minor" },
+  // 7th (Nhạc vàng/Bolero cần cái này)
+  "E7": { f:[ 0,2,0,1,0,0], b:6, t:"7th" },
+  "A7": { f:[-1,0,2,0,2,0], b:5, t:"7th" },
+  "G7": { f:[ 3,2,0,0,0,1], b:6, t:"7th" },
+  "C7": { f:[-1,3,2,3,1,0], b:5, t:"7th" },
+  "B7": { f:[-1,2,1,2,0,2], b:5, t:"7th" },
+  "D7": { f:[-1,-1,0,2,1,2], b:4, t:"7th" },
+  // Slash Chords (Bass đi bộ) - Quan trọng cho Mashup
+  "C/B":{ f:[-1,2,2,0,1,0], b:5, t:"major", name:"C/B" }, 
+  "Am/G":{ f:[ 3,0,2,2,1,0], b:6, t:"minor", name:"Am/G" },
+  "G/F#":{ f:[ 2,2,0,0,0,3], b:6, t:"major", name:"G/F#" },
+  "D/F#":{ f:[ 2,0,0,2,3,2], b:6, t:"major", name:"D/F#" },
+  // Special
+  "Fmaj7":{f:[-1,3,3,2,1,0], b:4, t:"major"},
+  "Dim": {f:[-1,-1,1,2,1,2], b:4, t:"7th", name:"Dim7 (any)"} // Fake dim shape
 };
 
-// Smart Keys: Chọn tone nào thì hiện các hợp âm đó
-const SMART_KEYS = {
-  "C":  ["C", "Dm", "Em", "F", "G", "Am"],
-  "Am": ["Am", "Dm", "Em", "C", "F", "G", "E7", "G7"], // Thêm E7/G7 để về điệp khúc
-  "G":  ["G", "Am", "Bm", "C", "D", "Em", "D7"],
-  "Em": ["Em", "Am", "Bm", "G", "C", "D", "B7"],
-  "F":  ["F", "Gm", "Am", "Bb", "C", "Dm", "C7"],
-  "Dm": ["Dm", "Gm", "Am", "F", "C", "Bb", "A7"]
+// --- Thư viện điệu phân cấp (Hierarchy) ---
+const GENRES = {
+  "Bolero / Rumba": [
+    { id: "bolero_pick", name: "Bolero Rải (Xưa)", bpm: 88, s: "b-3-2-1-2-3-2-1" },
+    { id: "bolero_strum", name: "Bolero Quạt (Sung)", bpm: 92, s: "b-D-x-3-b2-D-x-3" },
+    { id: "rumba", name: "Rumba (Nhạc Vàng)", bpm: 100, s: "b-x-3-2-b2-1-2-3" }
+  ],
+  "Ballad / Pop": [
+    { id: "slow_surf", name: "Slow Surf (Quốc Dân)", bpm: 75, s: "b-3-2-3-1-3-2-3" },
+    { id: "piano_ballad", name: "Piano Ballad (16 beat)", bpm: 65, s: "b-3-2-3-1-2-3-2" },
+    { id: "blue_ballad", name: "Blue Ballad (6/8)", bpm: 70, type:"6/8", s: "b-3-2-1-2-3" }
+  ],
+  "Sôi Động / Nhậu": [
+    { id: "disco", name: "Disco / Vinahouse", bpm: 130, s: "b-D-U-D-b2-D-U-D" },
+    { id: "beatop", name: "Bebop / Fox", bpm: 140, s: "b-D-b2-U" },
+    { id: "ska", name: "Reggae / Ska", bpm: 100, s: "x-D-x-U-x-D-x-U" }
+  ]
 };
 
-// Thư viện Điệu (Đã nâng cấp)
-// Quy ước ngón: P=Bass, i=3, m=2, a=1. Strum=Quạt
-const PATTERNS = [
-  {
-    id: "bolero", name: "Bolero (Rải)", bpm: 90,
-    steps: [
-      {t:"bass", s:"root"}, {t:"pluck", s:3}, {t:"pluck", s:2}, {t:"pluck", s:1},
-      {t:"pluck", s:2}, {t:"pluck", s:3}, {t:"pluck", s:2}, {t:"pluck", s:1}
-    ]
-  },
-  {
-    id: "bolero_strum", name: "Bolero (Quạt)", bpm: 90,
-    steps: [
-      {t:"bass", s:"root"}, {t:"strum", d:"d"}, {t:"mute", s:3}, {t:"pluck", s:3},
-      {t:"bass", s:"alt"}, {t:"strum", d:"d"}, {t:"mute", s:3}, {t:"pluck", s:3}
-    ]
-  },
-  {
-    id: "slowsurf", name: "Slow Surf (Quốc Dân)", bpm: 85,
-    steps: [
-      {t:"bass", s:"root"}, {t:"pluck", s:3}, {t:"pluck", s:2}, {t:"pluck", s:3},
-      {t:"pluck", s:1}, {t:"pluck", s:3}, {t:"pluck", s:2}, {t:"pluck", s:3}
-    ]
-  },
-  {
-    id: "disco", name: "Disco / ChaCha", bpm: 125,
-    steps: [
-      {t:"bass", s:"root"}, {t:"strum", d:"d"}, {t:"strum", d:"u"}, {t:"strum", d:"d"},
-      {t:"bass", s:"alt"}, {t:"strum", d:"d"}, {t:"strum", d:"u"}, {t:"strum", d:"d"}
-    ]
-  },
-  {
-    id: "rhumba", name: "Rhumba (Nhạc Vàng)", bpm: 95,
-    steps: [
-      {t:"bass", s:"root"}, {t:"rest"}, {t:"pluck", s:3}, {t:"pluck", s:2},
-      {t:"bass", s:"alt"}, {t:"pluck", s:1}, {t:"pluck", s:2}, {t:"pluck", s:3}
-    ]
-  },
-  {
-    id: "ballad", name: "Ballad (Piano)", bpm: 70,
-    steps: [
-      {t:"bass", s:"root"}, {t:"pluck", s:3}, {t:"pluck", s:2}, {t:"pluck", s:3},
-      {t:"pluck", s:1}, {t:"pluck", s:3}, {t:"pluck", s:2}, {t:"pluck", s:3}
-    ]
-  }
+// --- Preset Vòng Hoà Thanh (Mashup) ---
+const PROGRESSIONS = [
+  { name: "Vòng Canon (Pop)", chords: ["C", "G", "Am", "Em", "F", "C", "F", "G"] },
+  { name: "Vòng Andalusian (Latin)", chords: ["Am", "G", "F", "E7"] },
+  { name: "Vòng 12-Bar Blues", chords: ["A7", "A7", "A7", "A7", "D7", "D7", "A7", "A7", "E7", "D7", "A7", "E7"] },
+  { name: "Vòng Điệp Khúc Việt", chords: ["Am", "Em", "F", "G", "C", "Dm", "E7", "Am"] }
 ];
 
-// Mẫu dằn (Fill) 1 ô nhịp đơn giản: Chát - Chát - Tum - Chát
-const FILL_PATTERN = [
-    {t:"strum", d:"d", v:0.9}, {t:"rest"}, 
-    {t:"strum", d:"d", v:0.9}, {t:"rest"},
-    {t:"strum", d:"d", v:1}, {t:"strum", d:"u", v:0.8},
-    {t:"strum", d:"d", v:1}, {t:"rest"}
-];
+// --- Ma trận hợp âm thông minh theo Key ---
+// Gồm: I, ii, iii, IV, V, vi, và các biến thể hay dùng
+const KEY_MAPS = {
+  "C": ["C", "Dm", "Em", "F", "G", "Am", "C/B", "E7", "G7"],
+  "Am": ["Am", "Dm", "C", "G", "F", "Em", "Am/G", "E7", "G7"],
+  "G": ["G", "Am", "Bm", "C", "D", "Em", "D/F#", "B7", "D7"],
+  "Em": ["Em", "Am", "Bm", "G", "C", "D", "B7", "D/F#", "E7"],
+  "D": ["D", "Em", "F#m", "G", "A", "Bm", "A7", "D7", "Bb"], // Bb để chuyển điệu
+  "F": ["F", "Gm", "Am", "Bb", "C", "Dm", "C7", "Fmaj7", "A7"]
+};
 
 // ==========================================
-// 2. ENGINE ÂM THANH (TONE.JS)
+// 2. AUDIO ENGINE
 // ==========================================
-let guitar = null;
-let reverb = null;
-let isLoaded = false;
-let isPlaying = false;
-let currentChord = null; // Tên hợp âm
-let currentPattern = PATTERNS[2]; // Mặc định Slow Surf
-let stepIndex = 0;
-let isFilling = false; // Đang dằn hay không
+let guitar = null, reverb = null;
+let isReady = false, isPlaying = false;
+let curChord = null;
+let curGenre = "Ballad / Pop";
+let curPattern = GENRES["Ballad / Pop"][0];
+let transportId = null;
+let step = 0;
+let overrideMode = null; // 'intro', 'fill', 'end', 'break'
 
-// Hàm chuyển MIDI sang Note name
-function midiToNote(midi) { return Tone.Frequency(midi, "midi").toNote(); }
+// Sample Map
+const TUNING = [40, 45, 50, 55, 59, 64]; 
+function midi(n) { return Tone.Frequency(n, "midi").toNote(); }
 
-// Lấy note của dây dựa trên hợp âm
-function getNote(chordName, stringNum) {
-  if (!chordName || !CHORDS[chordName]) return null;
-  const entry = CHORDS[chordName];
-  const idx = 6 - stringNum; 
-  const fret = entry.frets[idx];
-  if (fret === -1) return null;
-  return midiToNote(TUNING[idx] + fret);
-}
-
-// Lấy dây Bass
-function getBass(chordName, which) {
-  if (!chordName || !CHORDS[chordName]) return 6;
-  const root = CHORDS[chordName].bass;
-  if (which === "root") return root;
-  return (root === 4) ? 5 : (root === 6 ? 5 : 6); // Đổi bass đơn giản
-}
-
-async function initAudio() {
+async function init() {
+  if(isReady) return;
   await Tone.start();
   const baseUrl = "https://cdn.jsdelivr.net/npm/tonejs-instrument-guitar-acoustic-ogg@1.1.0/";
   
   guitar = new Tone.Sampler({
-    urls: {
-      E2: "E2.ogg", A2: "A2.ogg", D3: "D3.ogg", G3: "G3.ogg", B3: "B3.ogg", E4: "E4.ogg"
-    },
+    urls: { E2:"E2.ogg", A2:"A2.ogg", D3:"D3.ogg", G3:"G3.ogg", B3:"B3.ogg", E4:"E4.ogg" },
     baseUrl: baseUrl,
     onload: () => {
-      isLoaded = true;
-      document.getElementById("btnInit").style.display = "none";
-      document.getElementById("btnPlayStop").style.display = "block";
-      document.getElementById("btnPlayStop").disabled = false;
-      document.getElementById("statusText").innerText = "Đã load xong!";
-      document.getElementById("statusText").style.color = "#4caf50";
+      isReady = true;
+      document.getElementById("btnStart").style.display = 'none';
+      document.getElementById("btnStop").disabled = false;
+      document.getElementById("lcdStatus").innerText = "SYSTEM READY";
     }
   }).toDestination();
   
-  // Hiệu ứng nhẹ
-  reverb = new Tone.Reverb({ decay: 1.5, wet: 0.2 }).toDestination();
+  reverb = new Tone.Reverb({decay:2, wet:0.2}).toDestination();
   guitar.connect(reverb);
-  
-  // Set volume to tránh vỡ
-  guitar.volume.value = -2;
-
-  Tone.Transport.scheduleRepeat(loop, "8n"); // Đánh theo móc đơn
+  guitar.volume.value = -3;
 }
 
-function loop(time) {
-  if (!currentChord) return;
-  
-  // Xác định pattern đang chạy (Normal hay Fill)
-  const activePatternObj = isFilling ? {steps: FILL_PATTERN} : currentPattern;
-  const steps = activePatternObj.steps;
-  const step = steps[stepIndex % steps.length];
-  
-  // Xử lý sự kiện fill: Nếu hết vòng fill thì tắt fill
-  if (isFilling && (stepIndex % steps.length === steps.length - 1)) {
-    isFilling = false;
+// Hàm lấy note (quan trọng)
+function getNotes(chord, stringIdx) {
+  if (!chord || !CHORDS_DB[chord]) return null;
+  const c = CHORDS_DB[chord];
+  if (stringIdx === "bass") return midi(TUNING[6-c.b] + c.f[6-c.b]);
+  if (stringIdx === "bass2") { // Bass đảo (dây trên hoặc dưới)
+    let b = c.b === 6 ? 5 : (c.b === 5 ? 6 : 5);
+    return midi(TUNING[6-b] + c.f[6-b]);
   }
-
-  // Thực thi step
-  try {
-    if (step.t === "bass") {
-      const s = getBass(currentChord, step.s);
-      trigger(getNote(currentChord, s), time, 1.0);
-    } else if (step.t === "pluck") {
-      trigger(getNote(currentChord, step.s), time, 0.8);
-    } else if (step.t === "strum") {
-      strum(time, step.d === "d", step.v || 0.8);
-    }
-  } catch(e) {}
-
-  stepIndex++;
+  // Lấy note dây melody
+  let s = stringIdx;
+  if(c.f[6-s] === -1) return null; // Muted string
+  return midi(TUNING[6-s] + c.f[6-s]);
 }
 
-function trigger(note, time, vel) {
-  if (note && guitar) guitar.triggerAttackRelease(note, "4n", time, vel);
-}
-
-function strum(time, down, vel) {
-  // Lấy các dây active
+function getStrumNotes(chord, down) {
+  if (!chord || !CHORDS_DB[chord]) return [];
   let notes = [];
-  for (let s=6; s>=1; s--) {
-    let n = getNote(currentChord, s);
-    if (n) notes.push(n);
+  for(let i=1; i<=6; i++) {
+    let n = getNotes(chord, i);
+    if(n) notes.push(n);
   }
-  if (!down) notes.reverse(); // Quạt lên
+  return down ? notes.reverse() : notes;
+}
+
+// Core Loop
+function loop(time) {
+  if(!curChord && overrideMode !== 'break') return;
+
+  // Xử lý Override Pattern (Fill, Intro...)
+  let patternCode = curPattern.s;
+  let steps = patternCode.split("-");
   
-  // Rải siêu nhanh để tạo tiếng quạt
-  notes.forEach((n, i) => {
-    if (guitar) guitar.triggerAttackRelease(n, "2n", time + i*0.015, vel);
-  });
+  if (overrideMode === 'fill') steps = ["b","D","x","D","b","D","U","D"];
+  if (overrideMode === 'break') {
+    // Stop sound
+    overrideMode = null;
+    return;
+  }
+  
+  // Parse Step
+  let s = steps[step % steps.length];
+  
+  // Play
+  if (s === 'b') playNote(getNotes(curChord, "bass"), time, 1);
+  else if (s === 'b2') playNote(getNotes(curChord, "bass2"), time, 1);
+  else if (s === 'x') { /* mute/rest */ }
+  else if (s === 'D') strum(time, true);
+  else if (s === 'U') strum(time, false);
+  else if (!isNaN(s)) playNote(getNotes(curChord, parseInt(s)), time, 0.7);
+
+  step++;
+  // Reset override after 1 bar (8 steps approx)
+  if (overrideMode === 'fill' && step % 8 === 0) overrideMode = null;
+}
+
+function playNote(n, t, v) { if(n) guitar.triggerAttackRelease(n, "8n", t, v); }
+function strum(t, down) {
+  let notes = getStrumNotes(curChord, down);
+  notes.forEach((n,i) => guitar.triggerAttackRelease(n, "4n", t + i*0.01, 0.8));
 }
 
 // ==========================================
-// 3. GIAO DIỆN & SỰ KIỆN
+// 3. UI LOGIC
 // ==========================================
 
-// Render Chord Pads theo Tone
-function renderPads(key) {
-  const grid = document.getElementById("chordPad");
-  grid.innerHTML = "";
-  const chords = SMART_KEYS[key] || SMART_KEYS["Am"];
+// --- Setup Genre & Patterns ---
+const genreSel = document.getElementById("genreSelect");
+const patList = document.getElementById("patternList");
+
+function renderGenres() {
+  Object.keys(GENRES).forEach(g => {
+    let opt = document.createElement("option");
+    opt.value = g; opt.innerText = g;
+    genreSel.appendChild(opt);
+  });
+  renderPatterns(Object.keys(GENRES)[0]);
+}
+
+function renderPatterns(gName) {
+  patList.innerHTML = "";
+  GENRES[gName].forEach(p => {
+    let div = document.createElement("div");
+    div.className = "pat-btn";
+    if(p.id === curPattern.id) div.classList.add("active");
+    div.innerHTML = `<span>${p.name}</span> <span class="pat-bpm">${p.bpm}</span>`;
+    div.onclick = () => {
+      document.querySelectorAll(".pat-btn").forEach(e=>e.classList.remove("active"));
+      div.classList.add("active");
+      curPattern = p;
+      updateLCD();
+      Tone.Transport.bpm.value = p.bpm;
+      document.getElementById("tempo").value = p.bpm;
+    };
+    patList.appendChild(div);
+  });
+  curGenre = gName;
+}
+
+genreSel.onchange = (e) => renderPatterns(e.target.value);
+
+// --- Setup Chord Matrix ---
+const matrix = document.getElementById("matrix");
+const keySel = document.getElementById("keySelect");
+
+function renderMatrix(key) {
+  matrix.innerHTML = "";
+  const chords = KEY_MAPS[key] || KEY_MAPS["Am"];
   
   chords.forEach(c => {
-    const btn = document.createElement("div");
-    btn.className = "c-btn";
-    btn.innerHTML = `${c} <span class="sub">${getRoman(key, c)}</span>`;
+    let btn = document.createElement("div");
+    let info = CHORDS_DB[c];
+    btn.className = "chord-pad";
+    btn.dataset.type = info ? info.t : "major";
+    btn.innerHTML = `${info && info.name ? info.name : c}<span>${getRoman(key,c)}</span>`;
     
-    // Sự kiện bấm (Touch & Click)
-    const activate = () => {
-      // Highlight UI
-      document.querySelectorAll(".c-btn").forEach(b => b.classList.remove("active"));
+    // Touch Logic
+    const hit = () => {
+      document.querySelectorAll(".chord-pad").forEach(b=>b.classList.remove("active"));
       btn.classList.add("active");
-      
-      // Update Logic
-      currentChord = c;
+      curChord = c;
       document.getElementById("lcdChord").innerText = c;
-      
-      // Nếu chưa play thì play luôn cho ngầu
-      if (isLoaded && !isPlaying) {
-        togglePlay();
-      }
+      if(!isPlaying && isReady) togglePlay(); // Auto start
     };
     
-    btn.addEventListener("mousedown", activate);
-    btn.addEventListener("touchstart", (e) => { e.preventDefault(); activate(); });
-    grid.appendChild(btn);
-  });
-
-  // Reset chord mặc định là root
-  currentChord = chords[0];
-  document.getElementById("lcdChord").innerText = chords[0] + " (Chờ)";
-  document.querySelectorAll(".c-btn")[0]?.classList.add("active");
-}
-
-function getRoman(key, chord) {
-  // Fake roman numerals cho đẹp đội hình
-  if (chord === key) return "I";
-  return ""; 
-}
-
-// Render Rhythm List
-function renderRhythms() {
-  const list = document.getElementById("rhythmList");
-  PATTERNS.forEach((p, idx) => {
-    const btn = document.createElement("div");
-    btn.className = "r-btn" + (idx === 2 ? " selected" : ""); // Mặc định SlowSurf
-    btn.innerText = p.name;
-    btn.onclick = () => {
-      document.querySelectorAll(".r-btn").forEach(b => b.classList.remove("selected"));
-      btn.classList.add("selected");
-      currentPattern = p;
-      // Update tempo theo điệu luôn cho tiện
-      const tempo = p.bpm;
-      document.getElementById("tempoSlider").value = tempo;
-      document.getElementById("lcdTempo").innerText = "Tempo: " + tempo;
-      Tone.Transport.bpm.value = tempo;
-    };
-    list.appendChild(btn);
+    btn.onmousedown = hit;
+    btn.ontouchstart = (e) => { e.preventDefault(); hit(); };
+    matrix.appendChild(btn);
   });
 }
 
-// Toggle Play
+function getRoman(k, c) { return k===c ? "Root" : ""; } // Simple logic
+keySel.onchange = (e) => renderMatrix(e.target.value);
+
+// --- Setup Preset Progressions ---
+const progList = document.getElementById("progList");
+PROGRESSIONS.forEach(p => {
+  let btn = document.createElement("button");
+  btn.className = "prog-btn";
+  btn.innerText = `▶ ${p.name}`;
+  btn.onclick = () => {
+    // Load chords into Matrix overrides? Or just Play them?
+    // Let's simpler: Replace Matrix with these chords for playing
+    matrix.innerHTML = "";
+    p.chords.forEach(c => {
+      let b = document.createElement("div");
+      b.className = "chord-pad";
+      b.dataset.type = "major";
+      b.innerHTML = c;
+      b.onclick = () => { curChord = c; document.getElementById("lcdChord").innerText = c; };
+      matrix.appendChild(b);
+    });
+    document.getElementById("lcdStatus").innerText = "MODE: MASHUP " + p.name;
+  };
+  progList.appendChild(btn);
+});
+
+// --- FX Buttons ---
+document.getElementById("btnFill").onmousedown = () => { 
+  overrideMode = 'fill'; 
+  step = 0;
+  document.getElementById("lcdStatus").innerText = ">> FILLING <<";
+};
+document.getElementById("btnBreak").onmousedown = () => { 
+  overrideMode = 'break'; 
+  document.getElementById("lcdStatus").innerText = "!! STOP !!";
+};
+
+// --- Transport ---
 function togglePlay() {
-  if (!isLoaded) return;
+  if(!isReady) return;
   isPlaying = !isPlaying;
-  const btn = document.getElementById("btnPlayStop");
-  
-  if (isPlaying) {
+  const btn = document.getElementById("btnStop");
+  if(isPlaying) {
     Tone.Transport.start();
-    btn.innerText = "■ STOP";
+    transportId = Tone.Transport.scheduleRepeat(loop, "8n");
+    btn.innerText = "STOP";
     btn.classList.add("playing");
   } else {
     Tone.Transport.stop();
-    btn.innerText = "▶ PLAY";
+    Tone.Transport.clear(transportId);
+    btn.innerText = "PLAY";
     btn.classList.remove("playing");
-    stepIndex = 0;
-    isFilling = false;
+    step = 0;
   }
 }
 
-// Init UI Events
-document.getElementById("btnInit").onclick = () => {
-  document.getElementById("btnInit").innerText = "Đang tải...";
-  initAudio();
+document.getElementById("btnStart").onclick = init;
+document.getElementById("btnStop").onclick = togglePlay;
+document.getElementById("tempo").oninput = (e) => {
+  Tone.Transport.bpm.value = e.target.value;
+  document.getElementById("lcdBpm").innerText = e.target.value;
 };
 
-document.getElementById("btnPlayStop").onclick = togglePlay;
+function updateLCD() {
+  document.getElementById("lcdStyle").innerText = curPattern.name.toUpperCase().split("(")[0];
+  document.getElementById("lcdBpm").innerText = curPattern.bpm;
+}
 
-document.getElementById("keySelect").onchange = (e) => {
-  renderPads(e.target.value);
-};
-
-document.getElementById("tempoSlider").oninput = (e) => {
-  const val = e.target.value;
-  document.getElementById("lcdTempo").innerText = "Tempo: " + val;
-  Tone.Transport.bpm.value = val;
-};
-
-// Fill Button
-const btnFill = document.getElementById("btnFill");
-const doFill = (e) => {
-  e.preventDefault();
-  if (isPlaying) {
-    isFilling = true;
-    stepIndex = 0; // Reset về đầu khuôn để dằn ngay
-  }
-};
-btnFill.addEventListener("mousedown", doFill);
-btnFill.addEventListener("touchstart", doFill);
-
-// Start
-renderPads("Am");
-renderRhythms();
+// Init
+renderGenres();
+renderMatrix("Am");
 
 </script>
 </body>
