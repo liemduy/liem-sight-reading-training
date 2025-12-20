@@ -238,6 +238,20 @@
         padding:12px 14px;
         border-radius:14px;
       }
+      .initBtn{
+        background:#2b7a4a;
+        border:1px solid #3aa865;
+        font-weight:900;
+        padding:12px 14px;
+        border-radius:14px;
+      }
+      .addSongBtn{
+        background:#6a2a7a;
+        border:1px solid #9440a8;
+        font-weight:900;
+        padding:12px 14px;
+        border-radius:14px;
+      }
 
       .freestyleRow{
         display:flex;
@@ -309,8 +323,8 @@
         margin-top:-13px;
       }
 
-      /* Modal pattern picker */
-      #patternModal{
+      /* Modal base */
+      .modal{
         position:fixed; inset:0;
         background:rgba(0,0,0,.72);
         display:none;
@@ -318,10 +332,10 @@
         justify-content:center;
         z-index:9998;
       }
-      #patternModal.open{ display:flex; }
+      .modal.open{ display:flex; }
       .modalCard{
-        width:min(720px, 92vw);
-        max-height:min(80vh, 680px);
+        width:min(820px, 92vw);
+        max-height:min(82vh, 720px);
         overflow:auto;
         background:var(--panel);
         border:1px solid var(--border);
@@ -329,6 +343,9 @@
         padding:14px;
       }
       .modalTitle{ font-weight:1000; font-size:16px; margin-bottom:10px; }
+      .modalActions{ display:flex; justify-content:flex-end; gap:10px; margin-top:12px; }
+
+      /* Pattern picker */
       .patternList{
         display:grid;
         grid-template-columns: 1fr;
@@ -346,7 +363,35 @@
       }
       .patternItem .name{ font-weight:1000; }
       .patternItem .meta{ color:var(--muted); font-size:12px; }
-      .modalActions{ display:flex; justify-content:flex-end; margin-top:12px; }
+
+      /* Add song modal */
+      textarea{
+        width:100%;
+        min-height:320px;
+        box-sizing:border-box;
+        background:#0f1520;
+        border:1px solid #2d3f5c;
+        color:var(--text);
+        border-radius:14px;
+        padding:12px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        font-size:13px;
+        line-height:1.4;
+        resize:vertical;
+      }
+      .hint{
+        color:var(--muted);
+        font-size:12px;
+        margin-top:8px;
+        white-space:pre-wrap;
+      }
+      .dangerText{
+        color:#ffb4b4;
+        font-size:12px;
+        margin-top:8px;
+        display:none;
+      }
+      .dangerText.show{ display:block; }
     </style>
   </head>
 
@@ -360,12 +405,36 @@
     </div>
 
     <!-- Pattern picker modal -->
-    <div id="patternModal">
+    <div id="patternModal" class="modal">
       <div class="modalCard">
         <div class="modalTitle" id="modalTitle">Chọn điệu</div>
         <div class="patternList" id="patternList"></div>
         <div class="modalActions">
           <button id="btnModalClose">Đóng</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add song modal -->
+    <div id="addSongModal" class="modal">
+      <div class="modalCard">
+        <div class="modalTitle">Add your song</div>
+        <textarea id="addSongInput" spellcheck="false" placeholder="Paste bài hát theo định dạng ở đây..."></textarea>
+
+        <div id="addSongError" class="dangerText"></div>
+
+        <div class="hint">
+Định dạng:
+song-name: Tên bài
+song-style: bolero
+artist: Tên ca sĩ
+
+(Lời bài hát có hợp âm dạng [Am], [E7]...; 'ĐK:' là điệp khúc)
+        </div>
+
+        <div class="modalActions">
+          <button id="btnAddSongCancel">Hủy</button>
+          <button id="btnAddSongImport" class="addSongBtn">Thêm bài</button>
         </div>
       </div>
     </div>
@@ -430,7 +499,6 @@
                 </div>
               </div>
 
-              <!-- Optional debug toggles (can hide later) -->
               <div class="miniControls">
                 <div class="ctrlLabel">Chế độ đổi hợp âm</div>
                 <select id="changeMode" style="width:100%;">
@@ -459,7 +527,12 @@
         <div class="section">
           <div class="headerTop">
             <div class="songTitle" id="songTitle">Guitar Nhậu</div>
+
+            <!-- Song select + NEW buttons -->
             <select id="songSelect"></select>
+            <button class="initBtn" id="btnInitAudio">Bắt đầu (Load âm thanh)</button>
+            <button class="addSongBtn" id="btnAddSong">Add your song</button>
+
             <button class="playBtn" id="btnPlay">Play</button>
             <button class="stopBtn" id="btnStop">Stop</button>
           </div>
