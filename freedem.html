@@ -3,29 +3,30 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-  <title>Guitar Pro Max - Bass Run & Solo</title>
+  <title>Guitar Visualizer Pro</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.18/Tone.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
 
   <style>
     :root { 
-      --bg: #121212; 
-      --panel: #1e1e1e; 
-      --neon-blue: #00f3ff;
-      --neon-pink: #ff00ff;
+      --bg: #101010; 
+      --panel: #1a1a1a; 
+      --string: #444;
+      --string-active: #00f3ff;
       --neon-gold: #ffd700;
-      --glass: rgba(255,255,255,0.05);
+      --neon-red: #ff0055;
+      --text: #eee;
     }
     * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
     body { 
-      margin: 0; background: var(--bg); color: #e0e0e0; 
+      margin: 0; background: var(--bg); color: var(--text); 
       font-family: system-ui, -apple-system, sans-serif; 
       height: 100vh; width: 100vw; overflow: hidden;
     }
 
     /* XOAY MÀN HÌNH */
     #rotateMsg {
-      position: fixed; top:0; left:0; right:0; bottom:0; z-index: 999;
+      position: fixed; top:0; left:0; right:0; bottom:0; z-index: 9999;
       background: #000; display: flex; flex-direction: column; 
       align-items: center; justify-content: center; text-align: center;
     }
@@ -34,107 +35,161 @@
     /* LAYOUT CHÍNH */
     .deck {
       display: grid;
-      grid-template-rows: 60px 1fr; /* Dải Solo ở trên, Bàn điều khiển ở dưới */
+      grid-template-rows: 100px 1fr; /* Visualizer (100px) - Main Deck */
       height: 100%;
     }
 
-    /* SOLO RIBBON (Dải cảm ứng) */
-    .solo-ribbon {
-      background: #111; border-bottom: 2px solid var(--neon-gold);
-      display: flex; overflow: hidden; position: relative;
+    /* --- PHẦN 1: VISUALIZER (DÂY ĐÀN) --- */
+    .visualizer {
+      background: #050505; border-bottom: 2px solid #333;
+      position: relative; display: flex; flex-direction: column; 
+      justify-content: space-evenly; padding: 10px 0;
+      box-shadow: inset 0 0 20px #000;
     }
-    .ribbon-overlay {
-      position: absolute; pointer-events: none; width: 100%; height: 100%;
-      display: flex; justify-content: space-between; padding: 0 10px; align-items: center;
-      color: rgba(255,215,0,0.3); font-size: 10px; font-family: monospace;
+    .string-line {
+      height: 2px; width: 100%; background: var(--string);
+      position: relative; transition: all 0.05s;
     }
-    .solo-zone {
-      flex: 1; border-right: 1px solid #333; position: relative;
-      transition: background 0.1s;
-    }
-    .solo-zone:active, .solo-zone.active { background: var(--neon-gold); box-shadow: 0 0 15px var(--neon-gold); }
+    /* Dây bass to hơn */
+    .string-line:nth-child(6) { height: 4px; } 
+    .string-line:nth-child(5) { height: 3.5px; }
+    .string-line:nth-child(4) { height: 3px; }
 
-    /* LOWER DECK */
-    .lower-deck {
-      display: grid; grid-template-columns: 200px 1fr 1.2fr; gap: 2px; height: 100%;
+    /* Hiệu ứng rung */
+    .string-line.vibrating {
+      background: var(--string-active);
+      box-shadow: 0 0 10px var(--string-active);
+      animation: shake 0.1s infinite;
     }
-    .panel { background: var(--panel); border-right: 1px solid #333; padding: 8px; display: flex; flex-direction: column; gap: 8px; }
-    h3 { margin: 0; font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #333; padding-bottom: 2px; }
-
-    /* UI ELEMENTS */
-    .lcd {
-      background: #000; border: 1px solid #444; color: var(--neon-blue);
-      padding: 5px; font-family: 'VT323', monospace; text-align: center;
-      border-radius: 4px; height: 60px; display: flex; flex-direction: column; justify-content: center;
+    @keyframes shake {
+      0% { transform: translateY(0); }
+      25% { transform: translateY(-2px); }
+      75% { transform: translateY(2px); }
+      100% { transform: translateY(0); }
     }
-    .lcd-chord { font-size: 32px; line-height: 1; text-shadow: 0 0 5px var(--neon-blue); }
     
-    .btn-toggle {
-      background: #333; color: #888; border: 1px solid #444; padding: 10px; border-radius: 4px; font-size: 12px; cursor: pointer;
+    .note-bubble {
+      position: absolute; right: 50px; top: -10px;
+      background: var(--neon-gold); color: #000; font-size: 10px; font-weight: bold;
+      padding: 2px 5px; border-radius: 4px; opacity: 0; transition: opacity 0.2s;
     }
-    .btn-toggle.on { background: var(--neon-pink); color: white; box-shadow: 0 0 8px var(--neon-pink); border-color: white; }
+    .string-line.vibrating .note-bubble { opacity: 1; }
 
-    .matrix { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; height: 100%; }
+    /* --- PHẦN 2: BÀN ĐIỀU KHIỂN --- */
+    .lower-deck {
+      display: grid; grid-template-columns: 220px 1fr 1.3fr; gap: 2px; height: 100%;
+    }
+    .panel { 
+      background: var(--panel); border-right: 1px solid #222; 
+      padding: 8px; display: flex; flex-direction: column; gap: 8px; 
+    }
+    h3 { margin: 0; font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #333; padding-bottom: 4px; }
+
+    /* LCD Screen Update */
+    .lcd-screen {
+      background: #000; border: 1px solid #444; color: var(--string-active);
+      font-family: 'VT323', monospace; padding: 5px; border-radius: 4px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .lcd-main { font-size: 40px; line-height: 1; text-shadow: 0 0 8px var(--string-active); }
+    .lcd-sub { text-align: right; font-size: 14px; color: #888; }
+    .lcd-sub span { display: block; }
+
+    /* Transpose Controls */
+    .trans-ctrl {
+      display: flex; align-items: center; background: #222; border-radius: 4px; overflow: hidden; margin-top: 5px;
+    }
+    .trans-btn {
+      flex: 1; background: #333; border: none; color: white; font-size: 18px; padding: 10px; cursor: pointer;
+    }
+    .trans-btn:active { background: var(--neon-gold); color: black; }
+    .trans-val {
+      flex: 1; text-align: center; font-weight: bold; color: var(--neon-gold); font-family: monospace; font-size: 16px;
+    }
+
+    /* Chord Matrix */
+    .matrix { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; height: 100%; }
     .chord-pad {
-      background: #252525; border: 1px solid #333; border-radius: 4px;
+      background: #252525; border: 1px solid #333; border-radius: 6px;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
-      font-size: 18px; font-weight: bold; color: #888; transition: all 0.1s;
+      font-size: 20px; font-weight: bold; color: #888; position: relative;
     }
-    .chord-pad.active { background: var(--neon-blue); color: #000; transform: scale(0.98); box-shadow: 0 0 10px var(--neon-blue); }
+    .chord-pad span { font-size: 10px; color: #555; }
+    .chord-pad.active {
+      background: var(--string-active); color: #000;
+      box-shadow: 0 0 15px var(--string-active); transform: scale(0.96);
+    }
 
-    /* RHYTHM LIST */
-    .rhythm-item {
-      padding: 8px; background: #222; margin-bottom: 4px; border-radius: 4px; font-size: 12px; cursor: pointer; color: #aaa;
-    }
-    .rhythm-item.active { border-left: 3px solid var(--neon-blue); background: #333; color: white; }
+    /* Controls */
+    .big-btn { width: 100%; padding: 15px; border: none; border-radius: 6px; font-weight: bold; font-size: 16px; color: white; margin-top: auto; }
+    #btnStart { background: #4caf50; }
+    #btnStop { background: #333; }
+    #btnStop.playing { background: var(--neon-red); animation: pulse 1s infinite; }
+    @keyframes pulse { 50% { opacity: 0.7; } }
 
   </style>
 </head>
 <body>
 
-  <div id="rotateMsg"><h1 style="color:gold">XOAY NGANG ĐỂ SOLO</h1></div>
+  <div id="rotateMsg"><h1 style="color:var(--neon-gold)">XOAY NGANG ĐỂ HIỆN DÂY ĐÀN</h1></div>
 
   <div class="deck">
-    <div class="solo-ribbon" id="soloRibbon">
-      <div class="ribbon-overlay">
-        <span>LOW</span><span>--- PENTATONIC SCALE SOLO ---</span><span>HIGH</span>
-      </div>
-      </div>
+    <div class="visualizer" id="visualizer">
+      <div class="string-line" id="str1"><div class="note-bubble"></div></div>
+      <div class="string-line" id="str2"><div class="note-bubble"></div></div>
+      <div class="string-line" id="str3"><div class="note-bubble"></div></div>
+      <div class="string-line" id="str4"><div class="note-bubble"></div></div>
+      <div class="string-line" id="str5"><div class="note-bubble"></div></div>
+      <div class="string-line" id="str6"><div class="note-bubble"></div></div>
+    </div>
 
     <div class="lower-deck">
       <div class="panel">
         <h3>1. Rhythm</h3>
-        <div id="rhythmList" style="overflow-y:auto; flex:1;"></div>
+        <select id="genreSelect" style="width:100%; padding:8px; background:#000; color:#fff; border:1px solid #444;">
+          </select>
+        <div id="patternList" style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:4px;"></div>
+        <div style="font-size:12px; color:#aaa; margin-top:4px;">Tempo</div>
         <input type="range" id="tempo" min="60" max="160" value="80" style="width:100%">
       </div>
 
       <div class="panel">
-        <h3>2. Master</h3>
-        <div class="lcd">
-          <div style="font-size:14px; display:flex; justify-content:space-between;">
-            <span id="lcdStyle">BALLAD</span> <span id="lcdBpm">80</span>
+        <h3>2. Master Control</h3>
+        
+        <div class="lcd-screen">
+          <div class="lcd-main" id="lcdChord">--</div>
+          <div class="lcd-sub">
+            <span id="lcdStyle">BALLAD</span>
+            <span id="lcdBpm">80 BPM</span>
           </div>
-          <div class="lcd-chord" id="lcdChord">--</div>
         </div>
 
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
-          <button id="btnBassRun" class="btn-toggle">Bass Run: OFF</button>
-          <button id="btnFill" class="btn-toggle" style="background:#d32f2f; color:white;">⚡ FILL</button>
+        <div style="font-size:11px; color:#aaa; margin-top:5px;">VIRTUAL CAPO</div>
+        <div class="trans-ctrl">
+          <button class="trans-btn" id="btnTransDown">-</button>
+          <div class="trans-val" id="transVal">0</div>
+          <button class="trans-btn" id="btnTransUp">+</button>
         </div>
 
-        <select id="keySelect" style="padding:8px; background:#000; color:gold; border:1px solid #444;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:5px; margin-top:5px;">
+           <button id="btnFill" style="background:#d32f2f; color:white; border:none; padding:10px; border-radius:4px; font-weight:bold;">⚡ FILL</button>
+           <button id="btnMute" style="background:#444; color:white; border:none; padding:10px; border-radius:4px;">🔇 MUTE</button>
+        </div>
+
+        <button id="btnStart" class="big-btn">🔌 BẬT LOA</button>
+        <button id="btnStop" class="big-btn" style="display:none;">PLAY / STOP</button>
+      </div>
+
+      <div class="panel" style="background:#111;">
+        <h3>3. Smart Chords</h3>
+        <select id="keySelect" style="width:100%; padding:8px; margin-bottom:5px; background:#222; color:var(--neon-gold); border:1px solid #444;">
           <option value="Am">Key: Am (La thứ)</option>
           <option value="C">Key: C (Đô trưởng)</option>
           <option value="G">Key: G (Sol trưởng)</option>
           <option value="Em">Key: Em (Mi thứ)</option>
           <option value="Dm">Key: Dm (Rê thứ)</option>
+          <option value="F">Key: F (Fa trưởng)</option>
         </select>
-
-        <button id="btnStart" style="margin-top:auto; padding:15px; background:#4caf50; border:none; color:white; font-weight:bold; border-radius:4px;">BẬT LOA (START)</button>
-      </div>
-
-      <div class="panel" style="background:#111;">
-        <h3>3. Chords</h3>
         <div class="matrix" id="matrix"></div>
       </div>
     </div>
@@ -144,10 +199,9 @@
 // ==========================================
 // 1. DATA CENTER
 // ==========================================
-const TUNING = [40, 45, 50, 55, 59, 64]; // E2 -> E4
-function midi(n) { return Tone.Frequency(n, "midi").toNote(); }
+const TUNING = [40, 45, 50, 55, 59, 64]; // E2 -> E4 MIDI
+function midiToNote(m) { return Tone.Frequency(m, "midi").toNote(); }
 
-// Hợp âm & Cấu tạo nốt (f: frets 6->1, b: bass string)
 const CHORDS_DB = {
   "C":  { f:[-1,3,2,0,1,0], b:5 },
   "Dm": { f:[-1,-1,0,2,3,1], b:4 },
@@ -155,57 +209,93 @@ const CHORDS_DB = {
   "F":  { f:[-1,-1,3,2,1,0], b:4 }, 
   "G":  { f:[ 3,2,0,0,0,3], b:6 },
   "Am": { f:[-1,0,2,2,1,0], b:5 },
-  "Bdim":{ f:[-1,2,3,4,3,-1], b:5 }, // Fake Bdim
   "E7": { f:[ 0,2,0,1,0,0], b:6 },
   "G7": { f:[ 3,2,0,0,0,1], b:6 },
   "C7": { f:[-1,3,2,3,1,0], b:5 },
   "A7": { f:[-1,0,2,0,2,0], b:5 },
   "D7": { f:[-1,-1,0,2,1,2], b:4 },
-  "Bm": { f:[-1,2,4,4,3,2], b:5 }
+  "Bm": { f:[-1,2,4,4,3,2], b:5 },
+  "B7": { f:[-1,2,1,2,0,2], b:5 },
+  "Fmaj7": { f:[-1,3,3,2,1,0], b:4 },
+  "Am/G":{ f:[ 3,0,2,2,1,0], b:6 },
+  "C/B":{ f:[-1,2,2,0,1,0], b:5 }
 };
 
-// Map các note trong Scale (để Solo Ribbon) - Pentatonic
-// Số là MIDI note number
-const SCALES = {
-  "C":  [48, 50, 52, 55, 57, 60, 62, 64, 67, 69, 72, 74], // C Major Pentatonic
-  "Am": [45, 48, 50, 52, 55, 57, 60, 62, 64, 67, 69, 72], // A Minor Pentatonic
-  "G":  [43, 45, 47, 50, 52, 55, 57, 59, 62, 64, 67, 69],
-  "Em": [40, 43, 45, 47, 50, 52, 55, 57, 59, 62, 64, 67],
-  "Dm": [50, 53, 55, 57, 60, 62, 65, 67, 69, 72, 74, 77]
-};
-
-// Hợp âm theo Tone (Smart Chords)
 const KEY_MAPS = {
-  "C":  ["C", "Dm", "Em", "F", "G", "Am", "G7", "C7", "Bdim"],
-  "Am": ["Am", "Dm", "Em", "C", "F", "G", "E7", "G7", "A7"],
-  "G":  ["G", "Am", "Bm", "C", "D7", "Em", "A7", "D7", "G7"],
+  "C":  ["C", "Dm", "Em", "F", "G", "Am", "E7", "G7", "C/B"],
+  "Am": ["Am", "Dm", "Em", "C", "F", "G", "E7", "Am/G", "A7"],
+  "G":  ["G", "Am", "Bm", "C", "D7", "Em", "B7", "C", "G7"],
   "Em": ["Em", "Am", "Bm", "G", "C", "B7", "D7", "E7", "Am"],
-  "Dm": ["Dm", "G", "Am", "Bb", "C", "F", "A7", "D7", "Gm"] // Gm fake
+  "F":  ["F", "Gm", "Am", "Bb", "C", "Dm", "C7", "Fmaj7", "A7"]
 };
 
-// Pattern Điệu
-const PATTERNS = [
-  { name: "Slow Surf", bpm: 78, s: ["b","3","2","3","1","3","2","3"] },
-  { name: "Bolero Rải", bpm: 88, s: ["b","3","2","1","2","3","2","1"] },
-  { name: "Bolero Bùm", bpm: 92, s: ["b","3-2-1","x","3","b2","3-2-1","x","3"] }, // Strum = 3-2-1
-  { name: "Disco/Vinahouse", bpm: 135, s: ["b","D","U","D","b2","D","U","D"] },
-  { name: "Ballad 6/8", bpm: 70, s: ["b","3","2","1","2","3"] } // Loop nhanh hơn
-];
+// Patterns: số là dây (1=E high, 6=E low). b=bass root, b2=alt bass
+const GENRES = {
+  "Ballad": [
+    { name: "Slow Surf", bpm: 75, s: ["b","3","2","3","1","3","2","3"] },
+    { name: "Piano Style", bpm: 68, s: ["b","3","2","3","1","2","3","2"] }
+  ],
+  "Bolero": [
+    { name: "Bolero Pick", bpm: 88, s: ["b","3","2","1","2","3","2","1"] },
+    { name: "Bolero Strum", bpm: 92, s: ["b","D","3","2","b2","D","3","2"] }
+  ],
+  "Sôi Động": [
+    { name: "Disco", bpm: 130, s: ["b","D","U","D","b2","D","U","D"] },
+    { name: "VinaHouse", bpm: 140, s: ["b","x","D","x","b2","x","D","x"] }
+  ]
+};
 
 // ==========================================
-// 2. AUDIO ENGINE
+// 2. AUDIO & VISUAL ENGINE
 // ==========================================
 let guitar, reverb;
 let isReady = false, isPlaying = false;
-let curChord = null, prevChord = null;
-let curPattern = PATTERNS[0];
-let curKey = "Am";
-let bassRunMode = false;
+let curChord = null;
+let curPattern = GENRES["Ballad"][0];
 let step = 0;
-let overrideMode = null; // 'fill'
+let transpose = 0; // Số bán cung dịch chuyển
+let overrideMode = null;
+
+// Lấy MIDI note chính xác của dây
+function getNoteMidi(chordName, stringNum) {
+  if(!CHORDS_DB[chordName]) return null;
+  const c = CHORDS_DB[chordName];
+  
+  let targetString = stringNum;
+  if (stringNum === "bass") targetString = c.b;
+  else if (stringNum === "bass2") targetString = (c.b===6?5:(c.b===5?6:5));
+  else if (isNaN(stringNum)) return null; // D, U, x
+  else targetString = parseInt(stringNum);
+
+  // Lấy fret
+  let fret = c.f[6 - targetString]; 
+  if (fret === -1) return null; // Muted string
+
+  // Tính MIDI gốc + Fret + Transpose
+  let rawMidi = TUNING[6 - targetString] + fret;
+  return rawMidi + transpose;
+}
+
+// Visualizer Trigger
+function vibrateString(stringNum, noteName) {
+  // stringNum: 1-6. Nếu là bass/bass2 phải map lại
+  let sIdx = stringNum;
+  if (stringNum === "bass") sIdx = CHORDS_DB[curChord].b;
+  if (stringNum === "bass2") sIdx = (CHORDS_DB[curChord].b===6?5:6);
+  if (isNaN(sIdx)) return;
+
+  const el = document.getElementById("str" + sIdx);
+  if(el) {
+    el.classList.remove("vibrating");
+    void el.offsetWidth; // Trigger reflow
+    el.classList.add("vibrating");
+    // Show Note Name
+    const bubble = el.querySelector(".note-bubble");
+    if(bubble) bubble.innerText = noteName;
+  }
+}
 
 async function init() {
-  if(isReady) return;
   await Tone.start();
   guitar = new Tone.Sampler({
     urls: { E2:"E2.ogg", A2:"A2.ogg", D3:"D3.ogg", G3:"G3.ogg", B3:"B3.ogg", E4:"E4.ogg" },
@@ -213,208 +303,181 @@ async function init() {
     onload: () => {
       isReady = true;
       document.getElementById("btnStart").style.display = 'none';
+      document.getElementById("btnStop").style.display = 'block';
       startLoop();
     }
   }).toDestination();
   
-  reverb = new Tone.Reverb({decay:1.5, wet:0.2}).toDestination();
+  // Reverb nhẹ để không bị um
+  reverb = new Tone.Reverb({decay:1.2, wet:0.2}).toDestination();
   guitar.connect(reverb);
   guitar.volume.value = -2;
 }
 
-// --- Logic Bass Run (Chạy Bass) ---
-function getBassNote(chord) {
-  if(!chord) return 40;
-  let c = CHORDS_DB[chord];
-  return TUNING[6-c.b] + c.f[6-c.b]; // MIDI value
-}
-
-// Tạo câu chạy bass giữa 2 hợp âm
-function playBassRun(from, to, time) {
-  if(!from || !to) return;
-  let n1 = getBassNote(from);
-  let n2 = getBassNote(to);
-  
-  // Tính toán nốt trung gian (Walk logic)
-  let diff = n2 - n1;
-  let run = [];
-  
-  // Chỉ chạy nếu khoảng cách < 7 bán cung (Quãng 5 đổ lại)
-  if (Math.abs(diff) > 0 && Math.abs(diff) <= 7) {
-    let stepSize = diff > 0 ? 1 : -1; // Đi lên hoặc xuống
-    // Chèn 2 nốt lót vào 2 phách cuối của ô nhịp trước
-    // Ví dụ: Đang ở phách 3, 4 của ô nhịp cũ
-    let runNote1 = n2 - (stepSize * 2); 
-    let runNote2 = n2 - stepSize;
-    
-    // Trigger tiếng bass
-    guitar.triggerAttackRelease(midi(runNote1), "8n", time);
-    guitar.triggerAttackRelease(midi(runNote2), "8n", time + Tone.Time("8n").toSeconds());
-  }
-}
-
-// --- Main Loop ---
 function startLoop() {
   Tone.Transport.scheduleRepeat((time) => {
-    if(!curChord) return;
+    if(!curChord || !isPlaying) return;
 
-    // Pattern Steps
     let seq = overrideMode === 'fill' ? ["b","D","x","D","b","D","U","D"] : curPattern.s;
     let s = seq[step % seq.length];
-    
-    // Logic Bass Run: Nếu đang ở cuối ô nhịp (2 nốt cuối) và chuẩn bị đổi hợp âm
-    // Ta "cướp" quyền điều khiển để chèn Bass Run vào
-    let isEnding = (step % seq.length) >= seq.length - 2;
-    
-    // Parse Action
+
     if (s === "D") strum(time, true);
     else if (s === "U") strum(time, false);
-    else if (s.includes("-")) { // Chùm (3-2-1)
-       // Strum nhẹ
-       strum(time, true, 0.6);
-    } 
-    else if (s === "b" || s === "b2") {
-      let bString = (s === "b") ? "bass" : "bass2";
-      playNote(getNotes(curChord, bString), time, 1);
-    } 
-    else if (s !== "x") {
-      playNote(getNotes(curChord, parseInt(s)), time, 0.7);
+    else if (s === "x") { /* Mute/Rest */ }
+    else {
+      // Pluck single string
+      let midi = getNoteMidi(curChord, s);
+      if(midi) {
+        guitar.triggerAttackRelease(midiToNote(midi), "8n", time);
+        // Visual
+        Tone.Draw.schedule(() => {
+          vibrateString(s, midiToNote(midi));
+        }, time);
+      }
     }
-
+    
     step++;
     if(overrideMode === 'fill' && step % 8 === 0) overrideMode = null;
 
   }, "8n");
-  Tone.Transport.start();
 }
 
-function getNotes(chord, type) {
-  if(!CHORDS_DB[chord]) return null;
-  let c = CHORDS_DB[chord];
-  if(type==="bass") return midi(TUNING[6-c.b] + c.f[6-c.b]);
-  if(type==="bass2") {
-    let b = c.b === 6 ? 5 : (c.b === 5 ? 6 : 5);
-    return midi(TUNING[6-b] + c.f[6-b]);
+function strum(time, down) {
+  // Strum visual: rung tất cả dây active
+  let activeStrings = [];
+  for(let i=1; i<=6; i++) {
+    let m = getNoteMidi(curChord, i);
+    if(m) activeStrings.push({s:i, m:m});
   }
-  let s = type;
-  if(c.f[6-s] !== -1) return midi(TUNING[6-s] + c.f[6-s]);
-  return null;
-}
+  if(!down) activeStrings.reverse();
 
-function playNote(n, t, v) { if(n) guitar.triggerAttackRelease(n, "8n", t, v); }
-
-function strum(t, down, vel=0.8) {
-  let notes = [];
-  for(let i=1; i<=4; i++) { let n = getNotes(curChord, i); if(n) notes.push(n); }
-  if(!down) notes.reverse();
-  notes.forEach((n, i) => guitar.triggerAttackRelease(n, "4n", t + i*0.015, vel));
+  activeStrings.forEach((obj, idx) => {
+    let t = time + idx * 0.015;
+    guitar.triggerAttackRelease(midiToNote(obj.m), "4n", t, 0.7);
+    Tone.Draw.schedule(() => {
+      vibrateString(obj.s, midiToNote(obj.m));
+    }, t);
+  });
 }
 
 // ==========================================
-// 3. UI & EVENTS
+// 3. UI LOGIC
 // ==========================================
+
+// Render Genres
+const genreSelect = document.getElementById("genreSelect");
+const patternList = document.getElementById("patternList");
+
+Object.keys(GENRES).forEach(g => {
+  let opt = document.createElement("option");
+  opt.value = g; opt.innerText = g;
+  genreSelect.appendChild(opt);
+});
+
+function renderPatterns(g) {
+  patternList.innerHTML = "";
+  GENRES[g].forEach(p => {
+    let div = document.createElement("div");
+    div.style.padding = "8px";
+    div.style.background = "#222";
+    div.style.cursor = "pointer";
+    div.innerText = p.name;
+    if(p.name === curPattern.name) {
+      div.style.background = "#00f3ff"; div.style.color = "black"; div.style.fontWeight="bold";
+    }
+    div.onclick = () => {
+      curPattern = p;
+      document.getElementById("tempo").value = p.bpm;
+      Tone.Transport.bpm.value = p.bpm;
+      document.getElementById("lcdStyle").innerText = p.name.toUpperCase();
+      document.getElementById("lcdBpm").innerText = p.bpm + " BPM";
+      renderPatterns(g);
+    };
+    patternList.appendChild(div);
+  });
+}
+renderPatterns("Ballad");
+genreSelect.onchange = (e) => renderPatterns(e.target.value);
+
+// Chord Matrix
 const matrix = document.getElementById("matrix");
-const ribbon = document.getElementById("soloRibbon");
-
-// Render Chord Matrix
 function renderMatrix(key) {
-  curKey = key;
   matrix.innerHTML = "";
   KEY_MAPS[key].forEach(c => {
     let btn = document.createElement("div");
     btn.className = "chord-pad";
     btn.innerText = c;
-    
-    const hit = () => {
-      // Bass Run Logic Check trước khi đổi hợp âm
-      if (bassRunMode && isPlaying && curChord && curChord !== c) {
-        // Đây là tính năng nâng cao: Đáng lẽ phải schedule run vào cuối bar
-        // Nhưng để đơn giản, ta sẽ play luôn 1 nốt dẫn (slide) ngay khi bấm
-        let n1 = getBassNote(curChord);
-        let n2 = getBassNote(c);
-        let bridge = Math.floor((n1+n2)/2);
-        guitar.triggerAttackRelease(midi(bridge), "16n", Tone.now(), 0.5);
-      }
-
+    btn.onmousedown = (e) => {
+      e.preventDefault();
+      // Smart Muting: Release old notes before new chord
+      if(guitar) guitar.releaseAll(); 
+      
       document.querySelectorAll(".chord-pad").forEach(b=>b.classList.remove("active"));
       btn.classList.add("active");
-      prevChord = curChord;
+      
       curChord = c;
       document.getElementById("lcdChord").innerText = c;
-      if(isReady && Tone.Transport.state !== "started") Tone.Transport.start();
+      
+      // Auto Start
+      if(isReady && !isPlaying) togglePlay();
     };
-
-    btn.addEventListener("mousedown", hit);
-    btn.addEventListener("touchstart", (e)=>{e.preventDefault(); hit()});
+    btn.ontouchstart = btn.onmousedown;
     matrix.appendChild(btn);
   });
-  renderRibbon(key);
 }
-
-// Render Solo Ribbon
-function renderRibbon(key) {
-  ribbon.innerHTML = '<div class="ribbon-overlay"><span>LOW</span><span>--- PENTATONIC SOLO ---</span><span>HIGH</span></div>';
-  let scale = SCALES[key] || SCALES["Am"];
-  
-  scale.forEach((noteMidi, idx) => {
-    let zone = document.createElement("div");
-    zone.className = "solo-zone";
-    
-    const playSolo = (e) => {
-      e.preventDefault();
-      zone.classList.add("active");
-      guitar.triggerAttackRelease(midi(noteMidi), "8n", Tone.now(), 1.2); // Loud velocity
-      setTimeout(()=>zone.classList.remove("active"), 150);
-    };
-    
-    zone.addEventListener("mousedown", playSolo);
-    zone.addEventListener("touchstart", playSolo);
-    // Drag effect
-    zone.addEventListener("mouseenter", (e) => { if(e.buttons===1) playSolo(e); });
-    zone.addEventListener("touchmove", (e) => { 
-      // Calculate which element is under touch
-      let touch = e.touches[0];
-      let el = document.elementFromPoint(touch.clientX, touch.clientY);
-      if(el === zone && !zone.classList.contains("active")) playSolo(e);
-    });
-
-    ribbon.appendChild(zone);
-  });
-}
-
-// Render Rhythms
-const rList = document.getElementById("rhythmList");
-PATTERNS.forEach(p => {
-  let d = document.createElement("div");
-  d.className = "rhythm-item";
-  d.innerText = p.name;
-  d.onclick = () => {
-    document.querySelectorAll(".rhythm-item").forEach(x=>x.classList.remove("active"));
-    d.classList.add("active");
-    curPattern = p;
-    document.getElementById("lcdStyle").innerText = p.name.toUpperCase();
-    document.getElementById("tempo").value = p.bpm;
-    Tone.Transport.bpm.value = p.bpm;
-  };
-  rList.appendChild(d);
-});
-
-// Controls
 document.getElementById("keySelect").onchange = (e) => renderMatrix(e.target.value);
-document.getElementById("btnBassRun").onclick = (e) => {
-  bassRunMode = !bassRunMode;
-  e.target.classList.toggle("on", bassRunMode);
-  e.target.innerText = "Bass Run: " + (bassRunMode ? "ON" : "OFF");
-};
+renderMatrix("Am");
+
+// Transpose (Capo) Logic
+const btnUp = document.getElementById("btnTransUp");
+const btnDown = document.getElementById("btnTransDown");
+const valDisplay = document.getElementById("transVal");
+
+function updateTrans(delta) {
+  transpose += delta;
+  let sign = transpose > 0 ? "+" : "";
+  valDisplay.innerText = sign + transpose;
+  // Visual feedback: Đổi màu nếu dùng capo
+  valDisplay.style.color = transpose !== 0 ? "#ff0055" : "#ffd700";
+}
+btnUp.onclick = () => updateTrans(1);
+btnDown.onclick = () => updateTrans(-1);
+
+// Master Controls
+function togglePlay() {
+  if(!isReady) return;
+  isPlaying = !isPlaying;
+  const btn = document.getElementById("btnStop");
+  if(isPlaying) {
+    Tone.Transport.start();
+    btn.innerText = "STOP";
+    btn.classList.add("playing");
+  } else {
+    Tone.Transport.stop();
+    btn.innerText = "PLAY";
+    btn.classList.remove("playing");
+    step = 0;
+    if(guitar) guitar.releaseAll(); // Stop sound immediately
+  }
+}
+document.getElementById("btnStart").onclick = init;
+document.getElementById("btnStop").onclick = togglePlay;
+
+// Fill & Mute
 document.getElementById("btnFill").onmousedown = () => overrideMode = 'fill';
+document.getElementById("btnMute").onmousedown = () => {
+  if(guitar) guitar.releaseAll();
+  isPlaying = false;
+  Tone.Transport.stop();
+  document.getElementById("btnStop").innerText = "PLAY";
+  document.getElementById("btnStop").classList.remove("playing");
+};
+
+// Tempo
 document.getElementById("tempo").oninput = (e) => {
   Tone.Transport.bpm.value = e.target.value;
-  document.getElementById("lcdBpm").innerText = e.target.value;
+  document.getElementById("lcdBpm").innerText = e.target.value + " BPM";
 };
-document.getElementById("btnStart").onclick = init;
-
-// Init
-renderMatrix("Am");
 
 </script>
 </body>
