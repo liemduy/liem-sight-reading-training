@@ -3,9 +3,11 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Guitar Accompaniment (Singer Mode) — Soundfont Player</title>
-  <!-- Library (CDN): soundfont-player -->
+  <title>Guitar Accompaniment (Singer Mode) — Soundfont Player (HTTPS fixed)</title>
+
+  <!-- CDN: soundfont-player -->
   <script src="https://cdn.jsdelivr.net/npm/soundfont-player@0.12.0/dist/soundfont-player.min.js"></script>
+
   <style>
     :root { color-scheme: light dark; }
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 16px; line-height: 1.35; }
@@ -15,7 +17,7 @@
     .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
     label { display: grid; gap: 6px; font-size: 13px; opacity: .95; }
-    input[type="text"], input[type="number"], textarea, select {
+    input[type="number"], textarea, select {
       width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(128,128,128,.35);
       background: transparent; color: inherit;
     }
@@ -35,18 +37,19 @@
 </head>
 
 <body>
-  <h2>Guitar accompaniment (đệm hát “Singer Mode”)</h2>
+  <h2>Guitar accompaniment (Singer Mode) — HTTPS soundfont fixed</h2>
   <div class="small">
-    Thư viện âm thanh: <span class="pill">soundfont-player</span>
-    <span class="pill">Web Audio</span>
-    <span class="pill">MP3-only (không chạm .ogg)</span>
+    <span class="pill">soundfont-player</span>
+    <span class="pill">MP3-only</span>
+    <span class="pill">No .ogg</span>
+    <span class="pill">HTTPS soundfont URL</span>
   </div>
 
   <div class="grid">
     <div class="card">
       <h3>Progression</h3>
       <label>
-        Chord progression (phân tách bằng dấu <span class="mono">|</span> hoặc xuống dòng). Ví dụ: <span class="mono">C | G | Am | F</span>
+        Chord progression (tách bằng <span class="mono">|</span> hoặc xuống dòng)
         <textarea id="prog">C | G | Am | F
 Dm7 | G7 | Cmaj7 | Cmaj7</textarea>
       </label>
@@ -99,20 +102,20 @@ Dm7 | G7 | Cmaj7 | Cmaj7</textarea>
         </label>
 
         <label>
-          Guitar output gain
-          <input id="outGain" type="range" min="0" max="100" value="68" />
-          <div class="small"><span id="outGainLabel">68</span>%</div>
+          Soundfont CDN
+          <select id="cdn">
+            <option value="jsdelivr" selected>jsDelivr (HTTPS, ổn định)</option>
+            <option value="gleitz">gleitz.github.io (HTTPS)</option>
+          </select>
+          <div class="small">Nếu mạng chặn 1 CDN, thử đổi sang cái còn lại.</div>
         </label>
       </div>
 
       <div class="row">
         <label>
-          Mic ducking (nhường cho ca sĩ)
-          <select id="duck">
-            <option value="off" selected>Tắt</option>
-            <option value="on">Bật (xin quyền micro)</option>
-          </select>
-          <div class="small">Bật ducking sẽ tự giảm guitar nhẹ khi mic có tín hiệu.</div>
+          Guitar output gain
+          <input id="outGain" type="range" min="0" max="100" value="75" />
+          <div class="small"><span id="outGainLabel">75</span>%</div>
         </label>
 
         <label>
@@ -127,35 +130,32 @@ Dm7 | G7 | Cmaj7 | Cmaj7</textarea>
         <button id="btnPlay" disabled>Play</button>
         <button id="btnStop" disabled>Stop</button>
         <button id="btnTest" disabled>Test strum</button>
+        <button id="btnBeep">Beep test</button>
       </div>
 
       <div class="status mono" id="status">Ready.</div>
     </div>
 
     <div class="card">
-      <h3>Implementation notes (tóm tắt logic)</h3>
-      <ul class="small">
-        <li><b>Không dùng Tone.js</b>. Dùng <span class="mono">soundfont-player</span> qua CDN + Web Audio graph riêng.</li>
-        <li><b>Không dùng .ogg</b>: ép <span class="mono">format: "mp3"</span> khi load instrument.</li>
-        <li><b>Singer Mode</b> nội suy: density ↓, accent ↓, voicing lên cao & gọn, strum mềm + “nhường” (duck/antipull) ↑.</li>
-        <li><b>Subdivision</b>: scheduler lookahead + swing + microtiming có kiểm soát (không random trắng).</li>
-        <li><b>Chống kéo ca sĩ</b>: giảm transient + giảm lowmid (EQ) + ducking theo mic (nếu bật).</li>
-      </ul>
-
       <h3>Debug</h3>
+      <div class="small">Nếu Beep nghe được nhưng guitar không nghe: gần như chắc chắn soundfont URL bị chặn (mixed content / CORS / CDN blocked).</div>
       <label class="small">
         Last scheduled events
         <div class="status mono" id="debug">—</div>
+      </label>
+      <label class="small">
+        Last load URL sample
+        <div class="status mono" id="lastUrl">—</div>
       </label>
     </div>
   </div>
 
 <script>
 (() => {
-  // ---------- UI ----------
   const $ = (id) => document.getElementById(id);
   const statusEl = $("status");
   const debugEl = $("debug");
+  const lastUrlEl = $("lastUrl");
 
   const ui = {
     prog: $("prog"),
@@ -167,26 +167,23 @@ Dm7 | G7 | Cmaj7 | Cmaj7</textarea>
     swingLabel: $("swingLabel"),
     inst: $("inst"),
     sfset: $("sfset"),
+    cdn: $("cdn"),
     outGain: $("outGain"),
     outGainLabel: $("outGainLabel"),
-    duck: $("duck"),
     antipull: $("antipull"),
     antipullLabel: $("antipullLabel"),
     btnStart: $("btnStart"),
     btnPlay: $("btnPlay"),
     btnStop: $("btnStop"),
     btnTest: $("btnTest"),
+    btnBeep: $("btnBeep"),
   };
 
-  function log(msg) {
-    statusEl.textContent = msg;
-  }
-
+  function log(msg) { statusEl.textContent = msg; }
   function clamp(x, a, b) { return Math.max(a, Math.min(b, x)); }
   function lerp(a, b, t) { return a + (b - a) * t; }
+  function norm01(v) { return clamp(Number(v) / 100, 0, 1); }
   function nowMs() { return (typeof performance !== "undefined" ? performance.now() : Date.now()); }
-
-  function norm01FromSlider(sliderEl) { return clamp(Number(sliderEl.value) / 100, 0, 1); }
 
   function updateLabels() {
     ui.singerLabel.textContent = ui.singer.value;
@@ -202,45 +199,17 @@ Dm7 | G7 | Cmaj7 | Cmaj7</textarea>
   });
   updateLabels();
 
-  // ---------- Audio core ----------
+  // ---------- Audio ----------
   let ac = null;
   let instrument = null;
 
   // Output chain
-  let out = {
+  const out = {
     preGain: null,
     hp: null,
     presence: null,
     softLP: null,
-    duckGain: null,
-    reverbSend: null,
-    reverbReturn: null,
     master: null,
-  };
-
-  // Mic ducking
-  let mic = {
-    stream: null,
-    source: null,
-    analyser: null,
-    data: null,
-    env: 0,
-    lastT: 0,
-    raf: 0,
-  };
-
-  // Transport / scheduler
-  let transport = {
-    isPlaying: false,
-    lookaheadMs: 25,
-    scheduleAheadSec: 0.20,
-    timer: 0,
-    nextTime: 0,
-    stepIndex: 0,
-    progression: [],
-    chordIndex: 0,
-    barSteps: 16, // treat 1 bar = 16th grid (4/4)
-    chordPerBar: 1, // default: 1 chord per bar
   };
 
   function ensureAudioContext() {
@@ -248,108 +217,89 @@ Dm7 | G7 | Cmaj7 | Cmaj7</textarea>
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     ac = new AudioCtx({ latencyHint: "interactive" });
 
-    // Build output chain (lightweight but musical)
     out.preGain = ac.createGain();
+
     out.hp = ac.createBiquadFilter();
     out.hp.type = "highpass";
-    out.hp.frequency.value = 70;
-    out.hp.Q.value = 0.707;
+    out.hp.frequency.value = 80;
 
     out.presence = ac.createBiquadFilter();
     out.presence.type = "peaking";
     out.presence.frequency.value = 3200;
     out.presence.Q.value = 0.9;
-    out.presence.gain.value = 1.5;
+    out.presence.gain.value = 1.2;
 
     out.softLP = ac.createBiquadFilter();
     out.softLP.type = "lowpass";
     out.softLP.frequency.value = 12000;
-    out.softLP.Q.value = 0.707;
 
-    out.duckGain = ac.createGain();
-    out.duckGain.gain.value = 1.0;
+    out.master = ac.createGain();
+    out.master.gain.value = 0.7;
 
-    // Tiny reverb: dual delay feedback network (very light; not convolution)
-    const d1 = ac.createDelay(1.0);
-    const d2 = ac.createDelay(1.0);
-    d1.delayTime.value = 0.071;
-    d2.delayTime.value = 0.113;
-
-    const fb1 = ac.createGain();
-    const fb2 = ac.createGain();
-    fb1.gain.value = 0.18;
-    fb2.gain.value = 0.16;
-
-    const rvLP = ac.createBiquadFilter();
-    rvLP.type = "lowpass";
-    rvLP.frequency.value = 5200;
-
-    out.reverbSend = ac.createGain();
-    out.reverbReturn = ac.createGain();
-    out.reverbSend.gain.value = 0.20;
-    out.reverbReturn.gain.value = 0.32;
-
-    // routing
     out.preGain.connect(out.hp);
     out.hp.connect(out.presence);
     out.presence.connect(out.softLP);
-    out.softLP.connect(out.duckGain);
-    out.duckGain.connect(out.reverbSend);
-    out.duckGain.connect(ac.destination);
+    out.softLP.connect(out.master);
+    out.master.connect(ac.destination);
 
-    // reverb loop
-    out.reverbSend.connect(d1);
-    d1.connect(rvLP);
-    rvLP.connect(d2);
-    d2.connect(out.reverbReturn);
-    out.reverbReturn.connect(ac.destination);
-
-    // feedback
-    d1.connect(fb1);
-    fb1.connect(d1);
-    d2.connect(fb2);
-    fb2.connect(d2);
-
-    // Master gain (via preGain for simplicity)
-    setOutputGain(norm01FromSlider(ui.outGain));
-
+    applyOutputGain();
     return ac;
-  }
-
-  function setOutputGain(x01) {
-    if (!ac || !out.preGain) return;
-    // perceptual-ish curve
-    const g = Math.pow(x01, 1.6);
-    out.preGain.gain.setTargetAtTime(g, ac.currentTime, 0.01);
   }
 
   async function unlockAudio() {
     const ctx = ensureAudioContext();
-    if (ctx.state !== "running") {
-      await ctx.resume();
-    }
+    if (ctx.state !== "running") await ctx.resume();
+  }
+
+  function applyOutputGain() {
+    if (!ac) return;
+    const g = Math.pow(norm01(ui.outGain.value), 1.4);
+    out.master.gain.setTargetAtTime(g, ac.currentTime, 0.01);
+  }
+  ui.outGain.addEventListener("input", applyOutputGain);
+
+  // ---------- Soundfont URL (HTTPS forced) ----------
+  // soundfont-player mặc định có thể sinh URL http://..., gây bị chặn trên https.  [oai_citation:2‡Gitee](https://gitee.com/mirrors_danigb/soundfont-player?skip_mobile=true)
+  function makeNameToUrl(cdnChoice) {
+    const base =
+      cdnChoice === "gleitz"
+        ? "https://gleitz.github.io/midi-js-soundfonts/"
+        : "https://cdn.jsdelivr.net/gh/gleitz/midi-js-soundfonts@gh-pages/";
+
+    // instrument js files: {soundfont}/{name}-{format}.js
+    return (name, soundfont, format) => {
+      const url = `${base}${soundfont}/${name}-${format}.js`;
+      // debug
+      lastUrlEl.textContent = url;
+      return url;
+    };
   }
 
   async function loadInstrument() {
     const ctx = ensureAudioContext();
     const name = ui.inst.value;
     const set = ui.sfset.value;
+    const cdnChoice = ui.cdn.value;
 
-    log("Loading instrument...");
+    log("Loading instrument (mp3 over HTTPS)...");
     instrument = await window.Soundfont.instrument(ctx, name, {
       soundfont: set,
-      format: "mp3",          // critical: avoid .ogg on iOS and “network filter .ogg”
+      format: "mp3",                     // iOS-friendly, tránh .ogg
+      nameToUrl: makeNameToUrl(cdnChoice),
       destination: out.preGain,
-      // Performance: decode only the notes we’ll likely use (rough range)
-      // You can widen this if you want more realism.
-      notes: buildPrefetchNotes(40, 76),
-      // Softer default envelope; we will modulate per note.
-      attack: 0.002,
+      gain: 1.0,
+      attack: 0.003,
       release: 0.18,
-      gain: 0.9
+      // prefetch a modest range (faster decode)
+      notes: buildPrefetchNotes(40, 76),
     });
 
-    log(`Loaded: ${name} (${set}, mp3).`);
+    // Sanity ping: nếu cái này không nghe được, 99% là soundfont URL bị chặn / không load sample.
+    try {
+      instrument.play(64, ctx.currentTime + 0.05, { gain: 0.6, duration: 0.25, attack: 0.002, release: 0.08 });
+    } catch (_) {}
+
+    log(`Loaded: ${name} (${set}, mp3, ${cdnChoice}). Press Play.`);
     ui.btnPlay.disabled = false;
     ui.btnTest.disabled = false;
   }
@@ -360,66 +310,29 @@ Dm7 | G7 | Cmaj7 | Cmaj7</textarea>
     return notes;
   }
 
-  // ---------- Chord parsing / voicing ----------
-  const NOTE_TO_PC = {
-    "C":0,"C#":1,"Db":1,"D":2,"D#":3,"Eb":3,"E":4,"F":5,"F#":6,"Gb":6,"G":7,"G#":8,"Ab":8,"A":9,"A#":10,"Bb":10,"B":11
-  };
+  // ---------- Chord utilities ----------
+  const NOTE_TO_PC = { "C":0,"C#":1,"Db":1,"D":2,"D#":3,"Eb":3,"E":4,"F":5,"F#":6,"Gb":6,"G":7,"G#":8,"Ab":8,"A":9,"A#":10,"Bb":10,"B":11 };
 
   function parseProgression(text) {
-    // Accept "|" or newline separators. Also tolerate extra spaces.
-    const raw = text
-      .replace(/\r/g, "")
-      .split(/\n|[|]/g)
-      .map(s => s.trim())
-      .filter(Boolean);
-
-    // Default: 1 chord per bar. If user writes "C x2", we interpret repeats.
-    const seq = [];
-    for (const token of raw) {
-      const m = token.match(/^(.+?)\s*x\s*(\d+)$/i);
-      if (m) {
-        const chord = m[1].trim();
-        const n = clamp(parseInt(m[2], 10) || 1, 1, 64);
-        for (let i = 0; i < n; i++) seq.push(chord);
-      } else {
-        seq.push(token);
-      }
-    }
-    return seq;
+    return text.replace(/\r/g,"").split(/\n|[|]/g).map(s => s.trim()).filter(Boolean);
   }
 
   function chordToPitchClasses(symbol) {
-    // Very practical subset for accompaniment:
-    // Root: C, F#, Bb...
-    // Quality: maj, m/min, dim, aug, sus2, sus4
-    // 7th: 7, maj7, m7
-    // Added: add9, 6
     const s = symbol.trim();
-
     const rootMatch = s.match(/^([A-G])(#{1}|b{1})?/);
     if (!rootMatch) return null;
-
     const rootName = rootMatch[1] + (rootMatch[2] || "");
     const rootPc = NOTE_TO_PC[rootName];
     if (rootPc == null) return null;
 
     const rest = s.slice(rootMatch[0].length).trim().toLowerCase();
+    let third = 4, fifth = 7, seventh = null, add9 = false, sixth = null, sus = null;
 
-    // Defaults
-    let third = 4; // major
-    let fifth = 7;
-    let seventh = null;
-    let add9 = false;
-    let sixth = null;
-    let sus = null;
-
-    // Detect basic quality
-    if (rest.startsWith("m") && !rest.startsWith("maj")) third = 3; // m, min
+    if (rest.startsWith("m") && !rest.startsWith("maj")) third = 3;
     if (rest.includes("dim") || rest.includes("o")) { third = 3; fifth = 6; }
     if (rest.includes("aug") || rest.includes("+")) { third = 4; fifth = 8; }
-
-    if (rest.includes("sus2")) { sus = 2; }
-    else if (rest.includes("sus4") || rest.includes("sus")) { sus = 5; }
+    if (rest.includes("sus2")) sus = 2;
+    else if (rest.includes("sus4") || rest.includes("sus")) sus = 5;
 
     if (rest.includes("maj7") || rest.includes("ma7")) seventh = 11;
     else if (rest.includes("m7") || rest.includes("min7")) seventh = 10;
@@ -428,226 +341,126 @@ Dm7 | G7 | Cmaj7 | Cmaj7</textarea>
     if (rest.includes("add9")) add9 = true;
     if (rest.includes("6") && !rest.includes("16")) sixth = 9;
 
-    const pcs = [];
-    pcs.push(rootPc);
-
-    if (sus != null) pcs.push((rootPc + sus) % 12);
-    else pcs.push((rootPc + third) % 12);
-
+    const pcs = [rootPc];
+    pcs.push((rootPc + (sus != null ? sus : third)) % 12);
     pcs.push((rootPc + fifth) % 12);
-
     if (sixth != null) pcs.push((rootPc + sixth) % 12);
     if (seventh != null) pcs.push((rootPc + seventh) % 12);
     if (add9) pcs.push((rootPc + 2) % 12);
 
-    // unique + stable order
     const uniq = [];
     for (const pc of pcs) if (!uniq.includes(pc)) uniq.push(pc);
     return uniq;
   }
 
-  function voiceChord(pitchClasses, opts) {
-    // opts:
-    // - centerMidi: where to place chord
-    // - maxNotes
-    // - includeBass
-    // - bassMidi
-    // - spread: how wide to stack
-    const center = opts.centerMidi;
-    const maxNotes = opts.maxNotes;
-
-    // build chord tones across octaves near center
+  function voiceChord(pitchClasses, centerMidi, maxNotes) {
     const candidates = [];
     for (let oct = -2; oct <= 3; oct++) {
       for (const pc of pitchClasses) {
-        const m = pc + 12 * (Math.floor(center / 12) + oct);
+        const m = pc + 12 * (Math.floor(centerMidi / 12) + oct);
         if (m >= 30 && m <= 88) candidates.push(m);
       }
     }
-    candidates.sort((a,b) => a-b);
+    candidates.sort((a,b)=>a-b);
 
-    // pick tones closest to center (then de-duplicate pitch class as needed)
     const chosen = [];
     const chosenPCs = new Set();
-    const distSorted = candidates
-      .map(m => ({ m, d: Math.abs(m - center) }))
-      .sort((a,b) => a.d - b.d);
+    const distSorted = candidates.map(m => ({m, d: Math.abs(m - centerMidi)})).sort((a,b)=>a.d-b.d);
 
     for (const item of distSorted) {
       const pc = ((item.m % 12) + 12) % 12;
-      if (chosenPCs.has(pc) && chosen.length >= 2) continue; // allow some doubling only early
+      if (chosenPCs.has(pc) && chosen.length >= 2) continue;
       chosen.push(item.m);
       chosenPCs.add(pc);
       if (chosen.length >= maxNotes) break;
     }
-
-    chosen.sort((a,b) => a-b);
-
-    if (opts.includeBass) {
-      const rootPc = pitchClasses[0];
-      let bass = opts.bassMidi;
-      // snap bass to root pitch-class near bassMidi
-      const bassCandidates = [];
-      for (let k = -2; k <= 2; k++) {
-        const m = rootPc + 12 * (Math.floor(bass / 12) + k);
-        if (m >= 28 && m <= 55) bassCandidates.push(m);
-      }
-      bassCandidates.sort((a,b) => Math.abs(a-bass) - Math.abs(b-bass));
-      const bassNote = bassCandidates[0] ?? (rootPc + 36);
-      // Ensure bass is below chord
-      if (bassNote < chosen[0]) chosen.unshift(bassNote);
-      else chosen.unshift(Math.max(28, chosen[0] - 12));
-    }
-
+    chosen.sort((a,b)=>a-b);
     return chosen;
   }
 
-  // ---------- Musical policy (Normal ↔ Singer Mode) ----------
+  // ---------- Policy ----------
   function computePolicy() {
-    const singer = norm01FromSlider(ui.singer);
-    const antiPull = norm01FromSlider(ui.antipull);
+    const singer = norm01(ui.singer.value);
+    const antiPull = norm01(ui.antipull.value);
     const swingPct = clamp(Number(ui.swing.value) / 100, 0, 0.60);
 
     const bpm = clamp(Number(ui.bpm.value) || 84, 40, 220);
     const beat = 60 / bpm;
     const step16 = beat / 4;
 
-    // Density: in Singer Mode, reduce events
-    const density = lerp(1.0, 0.55, singer); // scalar used by patterns
-
-    // Accent: in Singer Mode, reduce downbeat transient
-    const accentDown = lerp(1.00, 0.78, singer);
-    const accentUp   = lerp(0.82, 0.70, singer);
-
-    // Strum spread: Singer tends to be softer, less “đinh” → slightly more spread (up to ~20ms)
-    const strumSpreadSec = lerp(0.010, 0.020, singer);
-
-    // Microtiming: keep controlled; Singer Mode: slightly behind (relaxed)
-    const behindSec = lerp(0.000, 0.010, singer * antiPull);
-
-    // Jitter: very small, not white-noise heavy
-    const jitterSec = lerp(0.004, 0.006, singer) * 0.9;
-
-    // Voicing
-    const maxNotes = Math.round(lerp(5, 3, singer)); // Singer: gọn 3 notes
-    const includeBass = singer < 0.45;               // Singer: often skip bass thump unless needed
-    const centerMidi = lerp(52, 64, singer);         // Singer: push chord up to avoid vocal body
-    const bassMidi = lerp(40, 38, singer);
-
-    // Mix/EQ policy
-    // Singer: cut low-mid pressure + soften top-end transient
-    const hpHz = lerp(70, 110, singer);
-    const lpHz = lerp(12500, 9000, singer * 0.8);
-    const presenceDb = lerp(1.8, 0.8, singer);
-
-    // Reverb: Singer slightly more “glue”
-    const rvSend = lerp(0.18, 0.24, singer);
-    const rvReturn = lerp(0.30, 0.36, singer);
-
     return {
       bpm, beat, step16,
       singer, antiPull, swingPct,
-      density,
-      accentDown, accentUp,
-      strumSpreadSec,
-      behindSec, jitterSec,
-      maxNotes, includeBass, centerMidi, bassMidi,
-      hpHz, lpHz, presenceDb, rvSend, rvReturn
+      density: lerp(1.0, 0.55, singer),
+      accentDown: lerp(1.00, 0.78, singer),
+      accentUp:   lerp(0.82, 0.70, singer),
+      strumSpreadSec: lerp(0.010, 0.020, singer),
+      behindSec: lerp(0.000, 0.010, singer * antiPull),
+      jitterSec: lerp(0.004, 0.006, singer) * 0.9,
+      maxNotes: Math.round(lerp(5, 3, singer)),
+      centerMidi: lerp(52, 64, singer),
     };
   }
 
-  function applyMixPolicy(p) {
-    if (!ac) return;
-    out.hp.frequency.setTargetAtTime(p.hpHz, ac.currentTime, 0.05);
-    out.softLP.frequency.setTargetAtTime(p.lpHz, ac.currentTime, 0.05);
-    out.presence.gain.setTargetAtTime(p.presenceDb, ac.currentTime, 0.08);
-    out.reverbSend.gain.setTargetAtTime(p.rvSend, ac.currentTime, 0.08);
-    out.reverbReturn.gain.setTargetAtTime(p.rvReturn, ac.currentTime, 0.08);
-    setOutputGain(norm01FromSlider(ui.outGain));
+  function applySwingToTime(baseTime, stepIndex, p) {
+    const s = stepIndex % 16;
+    const is8thOff = (s === 4 || s === 12);
+    if (!is8thOff) return baseTime;
+    const maxDelay = p.step16 * 0.60;
+    return baseTime + (maxDelay * p.swingPct);
   }
 
-  // ---------- Patterns ----------
+  function humanizeTime(t, p) {
+    const jitter = (Math.random() * 2 - 1) * p.jitterSec;
+    return t + jitter + p.behindSec;
+  }
+
   function patternEvents(patternName, stepIndex, p) {
-    // Return an array of events within a 16th step:
-    // Each event: { kind: "strum"|"arp", dir: "down"|"up", vel: 0..1, durSec, gate: 0..1 }
     const s = stepIndex % 16;
     const events = [];
 
-    // Swing: move even 16ths? We'll apply at scheduling-time only for 8th feel.
-    // Here we define rhythms. Density scales by p.density.
-
     if (patternName === "strum8") {
-      // Strong on 1, light on "&" (8ths)
       const on8 = (s === 0 || s === 8);
       const off8 = (s === 4 || s === 12);
-
-      if (on8 && Math.random() < 0.98) {
-        events.push({ kind:"strum", dir:"down", vel: 0.92 * p.accentDown, durSec: 0.75, gate: 1.0 });
-      }
-      if (off8 && Math.random() < (0.88 * p.density)) {
-        events.push({ kind:"strum", dir:"up", vel: 0.76 * p.accentUp, durSec: 0.62, gate: 0.9 });
-      }
-      // occasional ghost upstroke (very soft), reduced in Singer Mode
-      if ((s === 2 || s === 10) && Math.random() < (0.16 * (1 - p.singer))) {
-        events.push({ kind:"strum", dir:"up", vel: 0.50 * p.accentUp, durSec: 0.35, gate: 0.6 });
-      }
-    }
-
-    else if (patternName === "strum16lite") {
-      // 16ths but controlled; Singer Mode reduces the “in-between”
+      if (on8) events.push({ kind:"strum", dir:"down", vel: 0.92 * p.accentDown, dur: 0.75 });
+      if (off8 && Math.random() < (0.88 * p.density)) events.push({ kind:"strum", dir:"up", vel: 0.76 * p.accentUp, dur: 0.62 });
+    } else if (patternName === "strum16lite") {
       const strong = (s === 0 || s === 8);
       const med = (s === 4 || s === 12);
       const lite = (s === 2 || s === 6 || s === 10 || s === 14);
-
-      if (strong) events.push({ kind:"strum", dir:"down", vel: 0.90 * p.accentDown, durSec: 0.70, gate: 1.0 });
-      if (med && Math.random() < (0.92 * p.density)) events.push({ kind:"strum", dir:"up", vel: 0.72 * p.accentUp, durSec: 0.55, gate: 0.9 });
+      if (strong) events.push({ kind:"strum", dir:"down", vel: 0.90 * p.accentDown, dur: 0.70 });
+      if (med && Math.random() < (0.92 * p.density)) events.push({ kind:"strum", dir:"up", vel: 0.72 * p.accentUp, dur: 0.55 });
 
       const liteProb = lerp(0.55, 0.12, p.singer) * p.density;
-      if (lite && Math.random() < liteProb) {
-        events.push({ kind:"strum", dir: (s % 4 === 2 ? "down" : "up"), vel: 0.55, durSec: 0.28, gate: 0.55 });
-      }
-    }
-
-    else if (patternName === "arp8") {
-      // Fingerstyle-ish arpeggio on 8ths: 1 (bass) - & (chord) - 2 (bass) - & (chord)...
+      if (lite && Math.random() < liteProb) events.push({ kind:"strum", dir: (s % 4 === 2 ? "down" : "up"), vel: 0.55, dur: 0.28 });
+    } else if (patternName === "arp8") {
       const on8 = (s === 0 || s === 8);
       const off8 = (s === 4 || s === 12);
-      if (on8) events.push({ kind:"arp", dir:"down", vel: 0.86 * p.accentDown, durSec: 0.55, gate: 1.0 });
-      if (off8 && Math.random() < (0.95 * p.density)) events.push({ kind:"arp", dir:"up", vel: 0.74 * p.accentUp, durSec: 0.48, gate: 0.9 });
-    }
-
-    else if (patternName === "bossa") {
-      // Very simplified bossa cell (light, singer-friendly)
-      // Steps: 0(bass), 6(chord), 8(bass), 14(chord)
+      if (on8) events.push({ kind:"arp", dir:"down", vel: 0.86 * p.accentDown, dur: 0.55 });
+      if (off8 && Math.random() < (0.95 * p.density)) events.push({ kind:"arp", dir:"up", vel: 0.74 * p.accentUp, dur: 0.48 });
+    } else if (patternName === "bossa") {
       const bass = (s === 0 || s === 8);
       const chord = (s === 6 || s === 14);
-      if (bass) events.push({ kind:"arp", dir:"down", vel: 0.78 * p.accentDown, durSec: 0.50, gate: 1.0 });
-      if (chord && Math.random() < (0.98 * p.density)) events.push({ kind:"strum", dir:"up", vel: 0.66 * p.accentUp, durSec: 0.52, gate: 0.85 });
+      if (bass) events.push({ kind:"arp", dir:"down", vel: 0.78 * p.accentDown, dur: 0.50 });
+      if (chord) events.push({ kind:"strum", dir:"up", vel: 0.66 * p.accentUp, dur: 0.52 });
     }
 
     return events;
   }
 
-  // ---------- Timing / swing / humanize ----------
-  function applySwingToTime(baseTime, stepIndex, p) {
-    // Apply swing to the 8th offbeats (i.e., step 4 and 12) by delaying them
-    // Swing amount up to 60% of a 16th.
-    const s = stepIndex % 16;
-    const is8thOff = (s === 4 || s === 12);
-    if (!is8thOff) return baseTime;
+  // ---------- Transport ----------
+  const transport = {
+    isPlaying: false,
+    lookaheadMs: 25,
+    scheduleAheadSec: 0.20,
+    timer: 0,
+    nextTime: 0,
+    stepIndex: 0,
+    chordIndex: 0,
+    barSteps: 16,
+    progression: [],
+  };
 
-    const maxDelay = p.step16 * 0.60;          // cap
-    const delay = maxDelay * p.swingPct;       // scaled
-    return baseTime + delay;
-  }
-
-  function humanizeTime(t, p) {
-    // Controlled microtiming: small jitter + singer “behind” feel.
-    const jitter = (Math.random() * 2 - 1) * p.jitterSec;
-    return t + jitter + p.behindSec;
-  }
-
-  // ---------- Scheduling / playback ----------
   function startTransport() {
     if (!instrument || !ac) return;
 
@@ -656,18 +469,13 @@ Dm7 | G7 | Cmaj7 | Cmaj7</textarea>
     transport.chordIndex = 0;
 
     transport.progression = parseProgression(ui.prog.value);
-    if (transport.progression.length === 0) transport.progression = ["C"];
+    if (!transport.progression.length) transport.progression = ["C"];
 
-    const p = computePolicy();
-    applyMixPolicy(p);
-
-    // Start slightly in the future
     transport.nextTime = ac.currentTime + 0.08;
     transport.timer = window.setInterval(schedulerTick, transport.lookaheadMs);
 
     ui.btnPlay.disabled = true;
     ui.btnStop.disabled = false;
-
     log("Playing...");
   }
 
@@ -676,23 +484,19 @@ Dm7 | G7 | Cmaj7 | Cmaj7</textarea>
     if (transport.timer) window.clearInterval(transport.timer);
     transport.timer = 0;
 
-    // Stop all currently playing notes in instrument
     try { instrument && instrument.stop && instrument.stop(); } catch (_) {}
 
     ui.btnPlay.disabled = false;
     ui.btnStop.disabled = true;
-
     log("Stopped.");
   }
 
   function currentChordSymbol() {
     const seq = transport.progression;
-    if (!seq || seq.length === 0) return "C";
-    return seq[transport.chordIndex % seq.length];
+    return seq[transport.chordIndex % seq.length] || "C";
   }
 
   function advanceChordIfNeeded(stepIndex) {
-    // 1 chord per bar (16 steps). Customize here if you need 2 chords/bar etc.
     if (stepIndex > 0 && (stepIndex % transport.barSteps === 0)) {
       transport.chordIndex = (transport.chordIndex + 1) % transport.progression.length;
     }
@@ -700,9 +504,8 @@ Dm7 | G7 | Cmaj7 | Cmaj7</textarea>
 
   function schedulerTick() {
     if (!transport.isPlaying) return;
-    const p = computePolicy();
-    applyMixPolicy(p);
 
+    const p = computePolicy();
     const horizon = ac.currentTime + transport.scheduleAheadSec;
     const scheduled = [];
 
@@ -713,21 +516,15 @@ Dm7 | G7 | Cmaj7 | Cmaj7</textarea>
       const pcs = chordToPitchClasses(chordSym) || chordToPitchClasses("C");
       const events = patternEvents(ui.pattern.value, transport.stepIndex, p);
 
-      // schedule each event
       for (const ev of events) {
         let t = transport.nextTime;
         t = applySwingToTime(t, transport.stepIndex, p);
         t = humanizeTime(t, p);
 
-        // If antiPull high + singer high, avoid “hard” downbeat by slightly spreading earlier/later
-        const soften = p.singer * p.antiPull;
-        const vel = clamp(ev.vel * lerp(1.0, 0.92, soften), 0.05, 1.0);
-
-        scheduleEvent(chordSym, pcs, t, ev, p, vel);
-        scheduled.push({ t: t.toFixed(3), step: transport.stepIndex, chord: chordSym, kind: ev.kind, dir: ev.dir, vel: vel.toFixed(2) });
+        scheduleEvent(chordSym, pcs, t, ev, p);
+        scheduled.push({ t: t.toFixed(3), step: transport.stepIndex, chord: chordSym, kind: ev.kind, dir: ev.dir, vel: ev.vel.toFixed(2) });
       }
 
-      // advance step
       transport.stepIndex++;
       transport.nextTime += p.step16;
     }
@@ -739,192 +536,57 @@ Dm7 | G7 | Cmaj7 | Cmaj7</textarea>
     }
   }
 
-  function scheduleEvent(chordSym, pcs, timeSec, ev, p, vel) {
-    // Voicing policy
-    const isDownbeat = (transport.stepIndex % 16 === 0);
-    const includeBass = p.includeBass && isDownbeat && (ev.kind !== "arp");
-    const chordNotes = voiceChord(pcs, {
-      centerMidi: p.centerMidi,
-      maxNotes: p.maxNotes,
-      includeBass,
-      bassMidi: p.bassMidi,
-    });
+  function scheduleEvent(chordSym, pcs, timeSec, ev, p) {
+    const chordNotes = voiceChord(pcs, p.centerMidi, p.maxNotes);
+    if (!chordNotes.length) return;
 
-    if (!chordNotes || chordNotes.length === 0) return;
+    const order = (ev.dir === "down") ? chordNotes.slice() : chordNotes.slice().reverse();
+    const spread = p.strumSpreadSec;
 
-    // Strum ordering
-    const order = (ev.dir === "down")
-      ? chordNotes.slice()                 // low -> high
-      : chordNotes.slice().reverse();      // high -> low
-
-    // Strum spread by "strings"
-    const spread = p.strumSpreadSec * lerp(1.0, 0.85, ev.kind === "arp" ? 0.6 : 0.0);
-
-    // Envelope shaping: Singer Mode softer transient (slower attack, slightly shorter release)
-    const atk = lerp(0.004, 0.010, p.singer) * lerp(1.0, 1.2, (1 - vel));
+    const atk = lerp(0.004, 0.010, p.singer) * lerp(1.0, 1.15, (1 - ev.vel));
     const rel = lerp(0.22, 0.14, p.singer);
-    const dur = clamp(ev.durSec * lerp(1.0, 0.85, p.singer), 0.18, 1.2);
+    const dur = clamp(ev.dur * lerp(1.0, 0.85, p.singer), 0.18, 1.2);
 
-    // Arp: focus bass + top note instead of full chord in Singer Mode
     if (ev.kind === "arp") {
+      // Singer Mode: giảm “đinh” -> giữ 2 nốt (low + high)
       if (p.singer > 0.55) {
-        // keep 2 notes: lowest + one upper tone
         const low = chordNotes[0];
         const high = chordNotes[chordNotes.length - 1];
-        playNote(low, timeSec, dur * 0.95, vel * 0.95, atk, rel);
-        playNote(high, timeSec + spread * 1.3, dur * 0.85, vel * 0.75, atk, rel);
+        playNote(low,  timeSec, dur * 0.95, ev.vel * 0.95, atk, rel);
+        playNote(high, timeSec + spread * 1.3, dur * 0.85, ev.vel * 0.75, atk, rel);
         return;
       }
-      // normal arp: walk through 3 notes
-      const pick = [order[0], order[Math.floor(order.length/2)], order[order.length - 1]].filter(n => n != null);
-      pick.forEach((n, i) => playNote(n, timeSec + i * spread * 1.2, dur * 0.9, vel * (i === 0 ? 1.0 : 0.8), atk, rel));
-      return;
     }
 
-    // Strum: full-ish chord; Singer Mode may drop an inner note for space
+    // Strum / full-ish
     let notes = order;
     if (p.singer > 0.65 && notes.length >= 4) {
-      // remove one inner tone (reduce masking)
       const mid = Math.floor(notes.length / 2);
       notes = notes.filter((_, idx) => idx !== mid);
     }
 
     notes.forEach((midi, i) => {
       const t = timeSec + i * spread;
-      const v = vel * (1 - (i * 0.04)); // slightly taper
+      const v = clamp(ev.vel * (1 - i * 0.04), 0.04, 1.0);
       playNote(midi, t, dur, v, atk, rel);
     });
   }
 
-  function playNote(midi, timeSec, durSec, gain01, attackSec, releaseSec) {
+  function playNote(midi, when, duration, gain01, attack, release) {
     if (!instrument) return;
-
-    // Prevent too-hot
     const g = clamp(gain01, 0.03, 1.0);
-
-    // In Singer Mode, reduce “pick glare” by shrinking gain on very high notes
-    const singer = norm01FromSlider(ui.singer);
-    const hiAtten = midi >= 76 ? lerp(1.0, 0.78, singer) : 1.0;
-    const finalGain = g * hiAtten;
-
-    instrument.play(midi, timeSec, {
-      gain: finalGain,
-      duration: durSec,
-      attack: attackSec,
-      release: releaseSec
-    });
+    instrument.play(midi, when, { gain: g, duration, attack, release });
   }
 
-  // ---------- Mic ducking ----------
-  async function setMicDucking(on) {
-    if (!ac) ensureAudioContext();
-
-    if (!on) {
-      stopMicLoop();
-      if (out && out.duckGain) out.duckGain.gain.setTargetAtTime(1.0, ac.currentTime, 0.03);
-      return;
-    }
-
-    // request mic
-    if (!navigator.mediaDevices?.getUserMedia) {
-      log("Mic ducking: getUserMedia không hỗ trợ trên trình duyệt này.");
-      ui.duck.value = "off";
-      return;
-    }
-
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: false
-        }
-      });
-      mic.stream = stream;
-      mic.source = ac.createMediaStreamSource(stream);
-
-      mic.analyser = ac.createAnalyser();
-      mic.analyser.fftSize = 1024;
-      mic.analyser.smoothingTimeConstant = 0.86;
-      mic.data = new Uint8Array(mic.analyser.fftSize);
-
-      mic.source.connect(mic.analyser);
-
-      mic.env = 0;
-      mic.lastT = nowMs();
-      mic.raf = requestAnimationFrame(micLoop);
-
-      log("Mic ducking: ON.");
-    } catch (e) {
-      log("Mic ducking: không lấy được micro (bị từ chối hoặc lỗi quyền).");
-      ui.duck.value = "off";
-    }
-  }
-
-  function stopMicLoop() {
-    if (mic.raf) cancelAnimationFrame(mic.raf);
-    mic.raf = 0;
-
-    if (mic.stream) {
-      for (const tr of mic.stream.getTracks()) tr.stop();
-    }
-    mic.stream = null;
-    mic.source = null;
-    mic.analyser = null;
-    mic.data = null;
-    mic.env = 0;
-  }
-
-  function micLoop() {
-    if (!mic.analyser || !mic.data || !ac) return;
-
-    mic.analyser.getByteTimeDomainData(mic.data);
-
-    // RMS estimate
-    let sumSq = 0;
-    for (let i = 0; i < mic.data.length; i++) {
-      const x = (mic.data[i] - 128) / 128;
-      sumSq += x * x;
-    }
-    const rms = Math.sqrt(sumSq / mic.data.length); // ~0..1
-    const rmsDb = 20 * Math.log10(Math.max(1e-6, rms));
-
-    // Envelope follower (attack/release)
-    const tNow = nowMs();
-    const dt = Math.max(0.001, (tNow - mic.lastT) / 1000);
-    mic.lastT = tNow;
-
-    // “signal present” when > -45dBFS-ish (tune as needed)
-    const target = rmsDb > -45 ? clamp((rmsDb + 45) / 25, 0, 1) : 0; // 0..1
-    const atk = 1 - Math.exp(-dt / 0.020);
-    const rel = 1 - Math.exp(-dt / 0.140);
-    mic.env += (target - mic.env) * (target > mic.env ? atk : rel);
-
-    // Compute duck gain
-    const singer = norm01FromSlider(ui.singer);
-    const antiPull = norm01FromSlider(ui.antipull);
-    const strength = lerp(0.25, 0.55, singer) * lerp(0.6, 1.0, antiPull);
-
-    // max reduction: up to ~ -6dB (0.5) but usually less
-    const reduction = 1 - (mic.env * strength * 0.65);
-    const g = clamp(reduction, 0.55, 1.0);
-
-    out.duckGain.gain.setTargetAtTime(g, ac.currentTime, 0.015);
-
-    mic.raf = requestAnimationFrame(micLoop);
-  }
-
-  // ---------- Buttons / events ----------
+  // ---------- Buttons ----------
   ui.btnStart.addEventListener("click", async () => {
     ui.btnStart.disabled = true;
     try {
       await unlockAudio();
       await loadInstrument();
-      if (ui.duck.value === "on") await setMicDucking(true);
-      log("Ready. Press Play.");
     } catch (e) {
       console.error(e);
-      log("Load error. Check console / network.");
+      log("Load error. Mở DevTools > Network/Console để xem request soundfont có bị chặn không.");
       ui.btnStart.disabled = false;
     }
   });
@@ -944,36 +606,42 @@ Dm7 | G7 | Cmaj7 | Cmaj7</textarea>
   ui.btnTest.addEventListener("click", async () => {
     await unlockAudio();
     const p = computePolicy();
-    applyMixPolicy(p);
 
     const chordSym = (parseProgression(ui.prog.value)[0] || "C");
     const pcs = chordToPitchClasses(chordSym) || chordToPitchClasses("C");
-
     const t = ac.currentTime + 0.06;
-    scheduleEvent(chordSym, pcs, t, { kind:"strum", dir:"down", vel: 0.92, durSec: 0.75, gate: 1.0 }, p, 0.9);
+
+    scheduleEvent(chordSym, pcs, t, { kind:"strum", dir:"down", vel: 0.92, dur: 0.75 }, p);
     log(`Test strum: ${chordSym}`);
   });
 
-  ui.outGain.addEventListener("input", () => {
-    if (!ac) return;
-    setOutputGain(norm01FromSlider(ui.outGain));
+  ui.btnBeep.addEventListener("click", async () => {
+    await unlockAudio();
+    const ctx = ensureAudioContext();
+
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.value = 880;
+
+    g.gain.value = 0.0001;
+    osc.connect(g);
+    g.connect(ctx.destination);
+
+    const t0 = ctx.currentTime;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(0.15, t0 + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.18);
+
+    osc.start(t0);
+    osc.stop(t0 + 0.20);
+
+    log("Beep test fired.");
   });
 
-  ui.duck.addEventListener("change", async () => {
-    if (ui.duck.value === "on") {
-      await unlockAudio();
-      await setMicDucking(true);
-    } else {
-      await setMicDucking(false);
-      log("Mic ducking: OFF.");
-    }
-  });
-
-  // Auto-stop on page hide to avoid “stuck audio” states on iOS
   document.addEventListener("visibilitychange", () => {
     if (document.hidden && transport.isPlaying) stopTransport();
   });
-
 })();
 </script>
 </body>
