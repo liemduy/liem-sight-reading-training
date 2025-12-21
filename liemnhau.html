@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Đệm hát – Pattern tay phải (CDN Guitar) – Debug build</title>
+  <title>Đệm hát – Pattern tay phải (CDN Guitar) – Fixed Gate + Debug</title>
 
   <!-- CDN: soundfont-player (cần internet) -->
   <script src="https://cdn.jsdelivr.net/npm/soundfont-player@0.12.0/dist/soundfont-player.min.js"></script>
@@ -11,7 +11,7 @@
   <style>
     :root{
       --text:#e8eef7; --muted:#9fb0c7; --accent:#6aa9ff;
-      --danger:#ff6a6a; --good:#52d18f; --line:rgba(255,255,255,.10);
+      --danger:#ff6a6a; --warn:#ffcc66; --good:#52d18f; --line:rgba(255,255,255,.10);
     }
     *{box-sizing:border-box}
     body{
@@ -20,6 +20,7 @@
       background:linear-gradient(180deg,#070a0f 0%, #0b0f14 40%, #070a0f 100%);
       padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom) 0;
     }
+
     header{
       position:sticky; top:0; z-index:10;
       background:rgba(11,15,20,.78); backdrop-filter: blur(10px);
@@ -30,7 +31,18 @@
     .title{font-weight:950}
     .status{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
     .dot{width:10px;height:10px;border-radius:999px;background:var(--danger);box-shadow:0 0 0 3px rgba(255,106,106,.14)}
+    .dot.warn{background:var(--warn);box-shadow:0 0 0 3px rgba(255,204,102,.16)}
     .dot.on{background:var(--good);box-shadow:0 0 0 3px rgba(82,209,143,.16)}
+    .pill{
+      font-size:12px;color:var(--muted);
+      padding:6px 10px;border-radius:999px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.04);
+      display:inline-flex;gap:8px;align-items:center;justify-content:center;
+      white-space:nowrap;
+    }
+    .pill b{color:var(--text)}
+
     main{padding:14px}
     .grid{max-width:1040px;margin:0 auto;display:grid;gap:12px}
     .card{
@@ -50,6 +62,7 @@
     .cur{font-size:42px;font-weight:950;color:var(--accent);letter-spacing:.3px}
     .next{font-size:14px;color:var(--muted)}
     .hint{color:var(--muted);font-size:13px;line-height:1.5}
+
     .controls{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:10px}
     button, select{
       appearance:none;
@@ -65,6 +78,27 @@
     button.primary{background:rgba(106,169,255,.18);border-color:rgba(106,169,255,.35)}
     button.danger{background:rgba(255,106,106,.14);border-color:rgba(255,106,106,.30)}
     button.good{background:rgba(82,209,143,.14);border-color:rgba(82,209,143,.30)}
+    button.ghost{background:rgba(255,255,255,.03)}
+    button[disabled]{opacity:.55;cursor:not-allowed;transform:none}
+
+    .split{display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap}
+    input[type="range"]{width:180px}
+
+    .beats{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .beat{
+      width:34px;height:34px;border-radius:10px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.04);
+      display:flex;align-items:center;justify-content:center;
+      color:var(--muted);font-weight:950;
+    }
+    .beat.on{
+      background:rgba(82,209,143,.16);
+      border-color:rgba(82,209,143,.35);
+      color:var(--text);
+      box-shadow:0 0 0 3px rgba(82,209,143,.14);
+    }
+
     .lyrics{font-size:18px;line-height:1.75;white-space:pre-wrap}
     .ch{
       display:inline-block;
@@ -81,6 +115,7 @@
       border-color:rgba(106,169,255,.55);
       box-shadow:0 0 0 3px rgba(106,169,255,.18);
     }
+
     .footer{
       position:sticky; bottom:0; z-index:20;
       background:rgba(11,15,20,.85); backdrop-filter: blur(10px);
@@ -91,32 +126,8 @@
       max-width:1040px;margin:0 auto;
       display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:10px
     }
-    .pill{
-      font-size:12px;color:var(--muted);
-      padding:6px 10px;border-radius:999px;
-      border:1px solid var(--line);
-      background:rgba(255,255,255,.04);
-      display:inline-flex;gap:8px;align-items:center;justify-content:center;
-      white-space:nowrap;
-    }
-    .pill b{color:var(--text)}
-    .split{display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap}
-    input[type="range"]{width:180px}
-    .beats{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-    .beat{
-      width:34px;height:34px;border-radius:10px;
-      border:1px solid rgba(255,255,255,.10);
-      background:rgba(255,255,255,.04);
-      display:flex;align-items:center;justify-content:center;
-      color:var(--muted);font-weight:950;
-    }
-    .beat.on{
-      background:rgba(82,209,143,.16);
-      border-color:rgba(82,209,143,.35);
-      color:var(--text);
-      box-shadow:0 0 0 3px rgba(82,209,143,.14);
-    }
 
+    /* Gate */
     #gate{
       position:fixed; inset:0; z-index:9999;
       background:rgba(0,0,0,.72);
@@ -124,7 +135,7 @@
       padding:24px;
     }
     #gate .box{
-      width:min(720px,100%);
+      width:min(760px,100%);
       border-radius:16px;
       border:1px solid rgba(255,255,255,.14);
       background:rgba(18,26,36,.92);
@@ -133,8 +144,10 @@
     }
     #gate h2{margin:0 0 8px 0;font-size:18px}
     #gate p{margin:0 0 12px 0;color:var(--muted);line-height:1.5}
+    #gate .row{display:grid;grid-template-columns:1fr;gap:10px}
     #gate button{width:100%;padding:14px 12px;font-size:18px}
     .patnote{color:var(--muted);font-size:13px}
+
     .err{
       margin-top:10px;
       border:1px solid rgba(255,106,106,.35);
@@ -147,6 +160,7 @@
       white-space:pre-wrap;
     }
 
+    /* Debug details */
     details.card summary{
       list-style:none;
       cursor:pointer;
@@ -173,6 +187,12 @@
     }
     .optRow span{color:var(--muted);font-size:12px;font-weight:900}
     .optRow select{padding:10px 10px;border-radius:12px}
+    .kbd{
+      font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+      font-size:12px;padding:2px 6px;border-radius:6px;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(255,255,255,.05);
+    }
   </style>
 </head>
 
@@ -181,21 +201,25 @@
     <div class="box">
       <h2>Bật âm thanh + tải tiếng guitar (CDN)</h2>
       <p>
-        Chạm nút dưới để trình duyệt cho phép audio (iOS cần “unlock”). Sau đó app tải tiếng guitar qua CDN (cần internet).
+        Chạm nút dưới để trình duyệt cho phép audio. Sau đó app tải tiếng guitar qua CDN (cần internet).
+        Nếu CDN bị chặn, bạn vẫn có thể vào bài ở chế độ <b>Silent</b> (không tiếng) để bám hợp âm.
       </p>
-      <button class="primary" id="gateBtn">Tap to Enable Audio</button>
+
+      <div class="row">
+        <button class="primary" id="gateBtn">Enable Audio & Load Guitar</button>
+        <button class="ghost" id="gateSilentBtn">Continue (Silent mode)</button>
+      </div>
+
       <div id="gateErr" class="err"></div>
+
       <p class="patnote" style="margin-top:10px">
-        Nếu mở bằng Zalo/Facebook in-app hoặc mở file dạng file:// trong Files, hãy “Open in Safari/Chrome” và tốt nhất mở qua http/https.
-      </p>
-      <p class="patnote" style="margin-top:8px">
-        Nếu các CDN bị chặn (jsDelivr/GitHub Pages), instrument sẽ không load được và app chỉ chạy “silent mode”.
+        Khuyến nghị: mở qua <b>http/https</b> và bằng <b>Safari/Chrome</b> thật (tránh Zalo/Facebook in-app, tránh file://).
       </p>
     </div>
   </div>
 
   <header>
-    <div class="title">Đệm hát – Pattern tay phải (CDN guitar) – Debug build</div>
+    <div class="title">Đệm hát – Pattern tay phải (CDN guitar) – Fixed Gate + Debug</div>
     <div class="status">
       <span class="dot" id="audDot"></span><span id="audText">Audio: chưa bật</span>
       <span class="pill">Beat: <b id="beatText">—</b></span>
@@ -215,7 +239,7 @@
             </div>
             <div class="hint">
               Bấm <b>NEXT</b> để đổi hợp âm. Pattern chạy liên tục để bạn bám nhịp mà hát.
-              Nếu thấy “lạc quẻ”, mở <b>Debug options</b> để thử từng giả thuyết (U kéo xuống trầm, X dày, trùng bass, v.v.).
+              Mẹo: thử <b>bolero_basic (B-X-B-X)</b> trước; nếu “lạc quẻ” hãy mở <b>Debug options</b>.
             </div>
           </div>
           <div class="beats" id="beats"></div>
@@ -274,9 +298,8 @@
           <div class="hint" style="margin-top:10px" id="patDesc">—</div>
           <div class="hint" style="margin-top:6px" id="loadInfo">Instrument: chưa load</div>
 
-          <!-- Debug / Options -->
           <details class="card" style="margin-top:12px">
-            <summary>Debug options (để tìm nguyên nhân “lạc quẻ”)</summary>
+            <summary>Debug options (nhiều lựa chọn để tìm nguyên nhân “lạc quẻ”)</summary>
             <div class="bd">
               <div class="optGrid">
                 <div class="optRow">
@@ -368,16 +391,20 @@
               </div>
 
               <div class="hint" style="margin-top:10px">
-                Gợi ý test nhanh: <b>Triad + Remove bass + Upstroke High-only</b> rồi bấm <b>Am</b> và hát câu đầu.
-                Nếu tự nhiên “ăn” hơn, nguyên nhân thường là <b>U kéo xuống trầm / strum quá dày / trùng bass</b>.
+                Bộ test nhanh: <b>Voicing=Triad</b>, <b>Remove bass=ON</b>, <b>Upstroke=High-only</b>, pattern <b>bolero_basic</b>.
+                Nếu hết “cấn”, nguyên nhân thường là quét quá trầm / trùng bass / upstroke đảo cả cụm.
               </div>
             </div>
           </details>
+
         </div>
       </section>
 
       <section class="card">
-        <div class="hd"><div><b>Lời + hợp âm</b></div><small style="color:var(--muted)">hợp âm trong [ ] là nút</small></div>
+        <div class="hd">
+          <div><b>Lời + hợp âm</b></div>
+          <small style="color:var(--muted)">hợp âm trong [ ] là nút</small>
+        </div>
         <div class="bd"><div class="lyrics" id="lyrics"></div></div>
       </section>
 
@@ -460,12 +487,6 @@ const PATTERNS = [
   { id:"waltz_3", name:"Waltz 3/4 (B X X)", sig:{beats:3, sub:2},
     desc:"Nhịp 3/4: 1 bass, 2–3 chát/chord.",
     steps:["B",".","X",".","X","."] },
-  { id:"pop_16_light", name:"Pop 16th nhẹ", sig:{beats:4, sub:4},
-    desc:"Pop 16th nhẹ: thêm chuyển động 16th nhưng vẫn thở.",
-    steps:["D",".","U",".","D",".","U",".","D",".","U",".","D",".","U","."] },
-  { id:"funk_16", name:"Funk 16th (dày)", sig:{beats:4, sub:4},
-    desc:"Funk/disco 16th: rất dày, nên giảm tempo khi hát.",
-    steps:["D","U","D","U","X","U","D","U","D","U","X","U","D","U","D","U"] },
 ];
 
 const patternSel = document.getElementById('patternSel');
@@ -478,7 +499,7 @@ for(const p of PATTERNS){
 patternSel.value = "bolero_basic";
 
 /* =========================
-   C) AUDIO (iOS unlock mạnh)
+   C) AUDIO / UI STATE
    ========================= */
 let audioCtx = null;
 let instrument = null;
@@ -490,18 +511,33 @@ const loadInfo = document.getElementById('loadInfo');
 const patDesc = document.getElementById('patDesc');
 const beatText = document.getElementById('beatText');
 const modeText = document.getElementById('modeText');
+
 const gateEl = document.getElementById('gate');
 const gateErrEl = document.getElementById('gateErr');
+const gateBtn = document.getElementById('gateBtn');
+const gateSilentBtn = document.getElementById('gateSilentBtn');
 
-function setAudioUI(on){
-  audDot.classList.toggle('on', !!on);
-  audText.textContent = on ? "Audio: đã bật" : "Audio: chưa bật";
+function setStatus(state, text){
+  audDot.classList.remove('on','warn');
+  if(state === 'ready') audDot.classList.add('on');
+  if(state === 'unlocked') audDot.classList.add('warn');
+  audText.textContent = text;
   modeText.textContent = (audioCtx && instrument) ? "Audio" : "Silent";
 }
+
+function hideGate(){
+  // Cưỡng bức tắt popup: set display none + remove khỏi DOM để tránh “kẹt”
+  try{
+    gateEl.style.display = "none";
+    gateEl.setAttribute("aria-hidden","true");
+    setTimeout(() => { try{ gateEl.remove(); }catch(e){} }, 50);
+  }catch(e){}
+}
+
 function ensureAudio(){
   if(audioCtx) return;
   audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  setAudioUI(true);
+  setStatus('unlocked', "Audio: đã unlock (đang tải tiếng...)");
 }
 
 // Soundfont base (mp3) – CDN
@@ -510,25 +546,18 @@ function nameToUrl(name, soundfont, format){
   return `${SOUNDFONT_BASE}${name}-${format}.js`;
 }
 
-async function loadInstrument(name){
-  ensureAudio();
-  if(audioCtx.state === "suspended") await audioCtx.resume();
-
-  loadInfo.textContent = `Instrument: đang load ${name}...`;
-  instrument = await window.Soundfont.instrument(audioCtx, name, {
-    format: "mp3",
-    soundfont: "FluidR3_GM",
-    nameToUrl
+function withTimeout(promise, ms, label="timeout"){
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error(label)), ms);
+    promise.then(v => { clearTimeout(t); resolve(v); }).catch(err => { clearTimeout(t); reject(err); });
   });
-  loadInfo.textContent = `Instrument: OK (${name})`;
-  setAudioUI(true);
 }
 
-/* iOS unlock: resume + tiny beep trong gesture */
 async function unlockAudioIOS(){
   ensureAudio();
   if(audioCtx.state === "suspended") await audioCtx.resume();
 
+  // tiny beep to unlock on iOS
   const t = audioCtx.currentTime;
   const osc = audioCtx.createOscillator();
   const g = audioCtx.createGain();
@@ -542,46 +571,78 @@ async function unlockAudioIOS(){
   osc.stop(t + 0.04);
 }
 
+async function loadInstrument(name){
+  ensureAudio();
+  if(audioCtx.state === "suspended") await audioCtx.resume();
+
+  loadInfo.textContent = `Instrument: đang load ${name}...`;
+  // timeout để tránh “đứng” rồi người dùng tưởng app kẹt
+  instrument = await withTimeout(
+    window.Soundfont.instrument(audioCtx, name, {
+      format: "mp3",
+      soundfont: "FluidR3_GM",
+      nameToUrl
+    }),
+    15000,
+    "Load instrument timeout (CDN blocked or slow network)"
+  );
+  loadInfo.textContent = `Instrument: OK (${name})`;
+  setStatus('ready', "Audio: đã bật");
+}
+
+/* Gate actions */
 let enabling = false;
 async function enableFromGesture(){
   if(enabling) return;
   enabling = true;
+
   gateErrEl.style.display = "none";
   gateErrEl.textContent = "";
+  gateBtn.disabled = true;
+  gateBtn.textContent = "Loading...";
 
   try{
     await unlockAudioIOS();
     await loadInstrument(document.getElementById('instSel').value);
 
-    // chỉ ẩn gate khi load OK
-    gateEl.style.display = 'none';
-    updatePatternUI();
+    // Thành công => tắt popup chắc chắn
+    hideGate();
 
-    // nếu đã có chord hiện tại thì vào transport luôn (tùy Groove)
+    updatePatternUI();
     if(currentChordName && grooveOn && !isMuted) startTransport();
   }catch(e){
-    const msg = "Không bật được âm thanh / tải instrument.\n\n" +
+    // Nếu fail: vẫn cho user Continue Silent hoặc retry
+    setStatus(audioCtx ? 'unlocked' : 'locked', audioCtx ? "Audio: unlock nhưng chưa tải được tiếng" : "Audio: chưa bật");
+    const msg =
+      "Không tải được tiếng guitar.\n\n" +
       (e?.message ?? String(e)) +
-      "\n\nGợi ý:\n- Mở bằng Safari/Chrome thật (không in-app)\n- Mở qua http/https\n- Kiểm tra CDN jsDelivr & GitHub Pages có bị chặn không";
+      "\n\nBạn có thể:\n- Bấm “Continue (Silent mode)” để vào bài (không tiếng)\n- Hoặc mở bằng Safari/Chrome thật + http/https\n- Hoặc thử mạng khác (CDN/GitHub Pages có thể bị chặn)";
     gateErrEl.style.display = "block";
     gateErrEl.textContent = msg;
-    setAudioUI(!!audioCtx);
   }finally{
     enabling = false;
+    gateBtn.disabled = false;
+    gateBtn.textContent = "Enable Audio & Load Guitar";
   }
 }
 
-/* attach gesture events (iOS picky) */
-function attachGesture(el){
-  ["pointerdown","touchstart","mousedown","click"].forEach(evt=>{
-    el.addEventListener(evt, (ev)=>{ ev.preventDefault(); enableFromGesture(); }, {passive:false});
-  });
+function continueSilent(){
+  // Cho phép user vào bài ngay cả khi audio/instrument không có
+  setStatus(audioCtx ? 'unlocked' : 'locked', audioCtx ? "Audio: chưa tải tiếng (Silent)" : "Audio: chưa bật (Silent)");
+  hideGate();
 }
-attachGesture(document.getElementById('gateBtn'));
-attachGesture(document.getElementById('btnEnable'));
+
+gateBtn.addEventListener('click', enableFromGesture);
+gateSilentBtn.addEventListener('click', continueSilent);
+
+/* Also enable via main button */
+document.getElementById('btnEnable').addEventListener('click', () => {
+  // Nếu gate còn tồn tại thì gọi enableFromGesture; nếu gate đã remove thì enable trực tiếp
+  enableFromGesture();
+});
 
 /* =========================
-   D) VOICINGS / BASS (base + options)
+   D) VOICINGS / BASS + Debug Options
    ========================= */
 const VOICE_BASE = {
   "Am": ["A2","E3","A3","C4","E4"],
@@ -593,11 +654,9 @@ const VOICE_BASE = {
   "C":  ["C3","G3","C4","E4","G4"],
   "Em": ["E2","B2","E3","G3","B3","E4"],
 
-  // sus4 để “êm” dominant
   "A7sus4": ["A2","E3","G3","D4","E4"],
   "E7sus4": ["E2","B2","D3","A3","B3","E4"],
 };
-
 const VOICE_TRIAD = {
   "Am": ["A3","C4","E4"],
   "A7": ["A3","C#4","E4","G4"],
@@ -611,7 +670,6 @@ const VOICE_TRIAD = {
   "A7sus4": ["A3","D4","E4","G4"],
   "E7sus4": ["E3","A3","B3","D4"],
 };
-
 const VOICE_MIDHIGH = {
   "Am": ["E3","A3","C4","E4"],
   "A7": ["E3","G3","C#4","E4"],
@@ -629,9 +687,6 @@ const VOICE_MIDHIGH = {
 const BASS_ROOT = {"Am":"A2","A7":"A2","Dm":"D3","E7":"E2","F":"F2","G":"G2","C":"C3","Em":"E2","A7sus4":"A2","E7sus4":"E2"};
 const BASS_5TH  = {"Am":"E3","A7":"E3","Dm":"A3","E7":"B2","F":"C3","G":"D3","C":"G3","Em":"B2","A7sus4":"E3","E7sus4":"B2"};
 
-/* =========================
-   E) OPTIONS (Debug engine)
-   ========================= */
 const OPT = {
   strumRange: "drop1",      // full | drop1 | top4 | top3
   upstroke: "highOnly",     // reverseFull | highOnly
@@ -649,7 +704,6 @@ const debugNoteEl = document.getElementById("optDebugNote");
 // Note transpose
 const NOTE_TO_SEMI = {C:0,"C#":1,D:2,"D#":3,E:4,F:5,"F#":6,G:7,"G#":8,A:9,"A#":10,B:11};
 const SEMI_TO_NOTE = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
-
 function parseNoteName(s){
   const m = /^([A-G])(#?)(-?\d+)$/.exec(s);
   if(!m) return null;
@@ -676,14 +730,14 @@ function trNotes(arr, semis){
   if(!arr || !semis) return arr;
   return arr.map(n => trNote(n, semis));
 }
-
+function setDebug(text){
+  if(debugNoteEl) debugNoteEl.textContent = text;
+}
 function getVoiceDict(){
   if(OPT.voicing === "triad") return VOICE_TRIAD;
   if(OPT.voicing === "midHigh") return VOICE_MIDHIGH;
   return VOICE_BASE;
 }
-
-// “Làm êm” dominant để tránh cấn giai điệu
 function mapChordSoft(ch){
   if(OPT.domSoft === "minor"){
     if(ch === "A7") return "Am";
@@ -695,7 +749,6 @@ function mapChordSoft(ch){
   }
   return ch;
 }
-
 function pickStrumNotes(ch, stroke){
   const dict = getVoiceDict();
   const base = dict[ch] || VOICE_BASE[ch];
@@ -703,39 +756,27 @@ function pickStrumNotes(ch, stroke){
 
   let notes = [...base];
 
-  // remove bass duplication (bỏ nốt thấp nhất)
   if(OPT.removeBassFromVoice && notes.length >= 4){
     notes = notes.slice(1);
   }
 
-  // range
   if(OPT.strumRange === "top4") notes = notes.slice(-4);
   if(OPT.strumRange === "top3") notes = notes.slice(-3);
 
-  // upstroke behavior
   if(stroke === "U"){
-    if(OPT.upstroke === "highOnly"){
-      notes = notes.slice(-4).reverse();  // quan trọng: không kéo xuống trầm
-    }else{
-      notes = notes.reverse();
-    }
+    notes = (OPT.upstroke === "highOnly")
+      ? notes.slice(-4).reverse()
+      : notes.reverse();
   }
 
   return trNotes(notes, OPT.transpose);
 }
-
 function pickBass(ch, stepIndex){
   if(OPT.bassMode === "off") return null;
   if(OPT.bassMode === "root") return trNote(BASS_ROOT[ch] || null, OPT.transpose);
-
-  // root5: luân phiên root–5th
   const isRoot = (stepIndex % 2) === 0;
   const note = isRoot ? (BASS_ROOT[ch] || null) : (BASS_5TH[ch] || BASS_ROOT[ch] || null);
   return trNote(note, OPT.transpose);
-}
-
-function setDebug(text){
-  if(debugNoteEl) debugNoteEl.textContent = text;
 }
 
 function bindOpt(id, fn){
@@ -744,7 +785,6 @@ function bindOpt(id, fn){
   el.addEventListener("change", () => fn(el.value));
   fn(el.value);
 }
-
 bindOpt("optStrumRange", v => OPT.strumRange = v);
 bindOpt("optUpstroke",   v => OPT.upstroke = v);
 bindOpt("optChop",       v => OPT.chop = v);
@@ -756,7 +796,7 @@ bindOpt("optTranspose",  v => OPT.transpose = +v);
 bindOpt("optOffset",     v => OPT.offsetMs = +v);
 
 /* =========================
-   F) AUDIO PLAY HELPERS
+   E) PLAY HELPERS
    ========================= */
 function getVol(){ return (+document.getElementById('vol').value)/100; }
 function getStrumMs(){ return +document.getElementById('strum').value; }
@@ -788,25 +828,6 @@ function playStrum(chIn, t, stroke="D", baseGain=0.55, dur=0.35){
   setDebug(`Chord=${chIn}→${ch}, stroke=${stroke}, notes=[${notes.join(", ")}]`);
 }
 
-function playChop(chIn, t){
-  if(!instrument || !audioCtx || isMuted) return;
-
-  if(OPT.chop === "percOnly"){
-    // chỉ “cụp” như gõ (dùng click nhỏ)
-    click(t + (OPT.offsetMs/1000), false);
-    setDebug(`Chop=percOnly (${chIn})`);
-    return;
-  }
-
-  const oldRange = OPT.strumRange;
-  if(OPT.chop === "highOnly") OPT.strumRange = "top3";
-
-  playStrum(chIn, t, "D", 0.30, 0.08);
-
-  OPT.strumRange = oldRange;
-}
-
-/* Click metronome */
 let clickOn = true;
 function click(t, strong=false){
   if(!audioCtx || isMuted || !clickOn) return;
@@ -823,8 +844,23 @@ function click(t, strong=false){
   osc.stop(t + 0.07);
 }
 
+function playChop(chIn, t){
+  if(!instrument || !audioCtx || isMuted) return;
+
+  if(OPT.chop === "percOnly"){
+    click(t + (OPT.offsetMs/1000), false);
+    setDebug(`Chop=percOnly (${chIn})`);
+    return;
+  }
+
+  const oldRange = OPT.strumRange;
+  if(OPT.chop === "highOnly") OPT.strumRange = "top3";
+  playStrum(chIn, t, "D", 0.30, 0.08);
+  OPT.strumRange = oldRange;
+}
+
 /* =========================
-   G) TRANSPORT (pattern runner)
+   F) TRANSPORT (pattern runner)
    ========================= */
 let grooveOn = true;
 let countInOn = true;
@@ -867,13 +903,11 @@ function shouldApplyQueued(p){
 
 function startTransport(){
   if(!audioCtx || !instrument || schedTimer) return;
-
   const t0 = now() + 0.06;
   transportStart = t0;
   nextStepTime = t0;
   stepIndex = 0;
   phase = (countInOn ? "countin" : "play");
-
   schedTimer = setInterval(scheduler, 25);
 }
 function stopTransport(){
@@ -895,13 +929,11 @@ function scheduler(){
   while(nextStepTime < now() + lookAhead){
     const t = nextStepTime;
 
-    // click on beats
     if((stepIndex % p.sig.sub) === 0){
       const beat = currentBeatNumber(p);
       click(t, beat === 1);
     }
 
-    // count-in for 1 bar
     if(phase === "countin"){
       if(stepIndex >= spb){
         phase = "play";
@@ -909,13 +941,11 @@ function scheduler(){
       }
     }
 
-    // apply queued chord on boundary
     if(queuedChordName && phase === "play" && shouldApplyQueued(p)){
       currentChordName = queuedChordName;
       queuedChordName = null;
     }
 
-    // play step
     if(phase === "play" && currentChordName){
       const token = p.steps[stepIndex % spb] ?? ".";
       const ch = mapChordSoft(currentChordName);
@@ -938,7 +968,7 @@ function scheduler(){
 }
 
 /* =========================
-   H) UI: beats indicator
+   G) UI: beats indicator
    ========================= */
 const beatsEl = document.getElementById('beats');
 function renderBeatLights(n){
@@ -987,7 +1017,7 @@ patternSel.addEventListener('change', () => {
 })();
 
 /* =========================
-   I) CHORD TIMELINE (Prev/Next)
+   H) CHORD TIMELINE (Prev/Next)
    ========================= */
 let curIdx = 0;
 const curChordEl = document.getElementById('curChord');
@@ -1012,19 +1042,18 @@ function setActive(i, doPlay=false){
 if(chordEvents.length) setActive(0,false);
 
 function requestChord(ch){
-  // luôn cho phép “vào bài” (highlight + set chord) kể cả silent mode
+  // Cho phép “vào bài” ngay cả Silent
   if(!currentChordName){
     currentChordName = ch;
     if(audioCtx && instrument){
       playStrum(currentChordName, now()+0.02, "D", 0.55, 0.40);
       if(grooveOn) startTransport();
     }
-    setAudioUI(!!audioCtx);
     return;
   }
 
   if(!(audioCtx && instrument)){
-    currentChordName = ch; // silent mode: chỉ đổi chord để bám lời
+    currentChordName = ch;
     setDebug(`Silent: set chord ${ch}`);
     return;
   }
@@ -1035,7 +1064,6 @@ function requestChord(ch){
     playStrum(currentChordName, now()+0.02, "D", 0.40, 0.22);
     return;
   }
-
   queuedChordName = ch;
   playStrum(ch, now()+0.02, "D", 0.16, 0.16);
 }
@@ -1055,11 +1083,10 @@ function resetAll(){
   document.getElementById('btnMute').classList.remove('danger');
   if(chordEvents.length) setActive(0,false);
   setDebug("Reset");
-  setAudioUI(!!audioCtx);
 }
 
 /* =========================
-   J) UI wiring
+   I) UI wiring
    ========================= */
 document.getElementById('btnNext').addEventListener('click', () => next());
 document.getElementById('btnPrev').addEventListener('click', () => prev());
@@ -1074,7 +1101,6 @@ document.getElementById('btnMute').addEventListener('click', (e) => {
   isMuted = !isMuted;
   e.target.textContent = isMuted ? "Unmute" : "Mute";
   e.target.classList.toggle('danger', isMuted);
-  setAudioUI(!!audioCtx);
 });
 
 document.getElementById('btnGroove').addEventListener('click', (e) => {
@@ -1099,7 +1125,7 @@ document.getElementById('btnCount').addEventListener('click', (e) => {
 
 // instrument switch
 document.getElementById('instSel').addEventListener('change', async (e) => {
-  if(!audioCtx) return; // chưa bật audio
+  if(!audioCtx) return;
   try{
     await loadInstrument(e.target.value);
   }catch(err){
@@ -1136,9 +1162,6 @@ window.addEventListener('keydown', (e) => {
   if(e.code === 'ArrowLeft'){ e.preventDefault(); prev(); }
   if(e.key.toLowerCase() === 'r'){ hit(); }
 });
-
-// initial UI
-setAudioUI(false);
 </script>
 </body>
 </html>
