@@ -1,0 +1,921 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Bolero Backing (1 file) - Tone.js</title>
+  <style>
+    :root { --bg:#0b0f14; --panel:#121925; --muted:#9fb0c3; --text:#e8f0fb; --accent:#6fb1ff; --bad:#ff6b6b; --ok:#4cd964; }
+    html, body { margin:0; padding:0; background:var(--bg); color:var(--text); font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 14px 12px 90px; }
+    h1 { font-size: 18px; margin: 8px 0 10px; }
+    .row { display:flex; gap:10px; flex-wrap: wrap; align-items:center; }
+    .panel { background:var(--panel); border:1px solid rgba(255,255,255,.08); border-radius: 14px; padding: 12px; }
+    .panel h2 { margin: 0 0 10px; font-size: 14px; color: var(--muted); font-weight: 600; letter-spacing:.2px; }
+    button, input[type="range"], select { font-size: 14px; }
+    button {
+      appearance:none; border:1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.06);
+      color:var(--text); padding: 10px 12px; border-radius: 12px; cursor:pointer;
+      touch-action: manipulation;
+    }
+    button.primary { background: rgba(111,177,255,.20); border-color: rgba(111,177,255,.35); }
+    button.danger { background: rgba(255,107,107,.18); border-color: rgba(255,107,107,.35); }
+    button.small { padding: 6px 10px; border-radius: 10px; font-size: 13px; }
+    button:disabled { opacity:.45; cursor:not-allowed; }
+    .stat { display:flex; gap:10px; align-items:center; flex-wrap: wrap; color: var(--muted); font-size: 13px; }
+    .stat b { color: var(--text); font-weight:700; }
+    .grid { display:grid; grid-template-columns: 1fr; gap:10px; }
+    @media (min-width: 980px) { .grid { grid-template-columns: 1.15fr .85fr; } }
+    textarea {
+      width: 100%; min-height: 260px; resize: vertical; box-sizing: border-box;
+      background: rgba(0,0,0,.25); color: var(--text); border:1px solid rgba(255,255,255,.12);
+      border-radius: 12px; padding: 12px; font-size: 14px; line-height: 1.35;
+      outline: none;
+    }
+    .hint { color: var(--muted); font-size: 13px; line-height: 1.35; }
+    .pill { padding: 2px 8px; border-radius: 999px; border:1px solid rgba(255,255,255,.10); color: var(--muted); font-size: 12px; }
+    .ok { color: var(--ok); }
+    .bad { color: var(--bad); }
+    .divider { height:1px; background: rgba(255,255,255,.08); margin:10px 0; }
+    .kbd { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; padding:2px 6px; border:1px solid rgba(255,255,255,.15); border-radius: 6px; background: rgba(255,255,255,.06); color: var(--text); }
+    .bigChord { font-size: 34px; font-weight: 800; letter-spacing:.5px; }
+    .smallChord { font-size: 14px; color: var(--muted); }
+    .notice {
+      border-radius: 14px; padding: 10px 12px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.05);
+      color: var(--muted);
+      font-size: 13px; line-height: 1.35;
+    }
+    .notice.bad { border-color: rgba(255,107,107,.35); background: rgba(255,107,107,.10); }
+    .notice.ok { border-color: rgba(76,217,100,.35); background: rgba(76,217,100,.10); }
+    .tableWrap {
+      max-height: 360px; overflow:auto; border-radius: 12px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.18);
+    }
+    table { width:100%; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 8px 10px; border-bottom:1px solid rgba(255,255,255,.08); vertical-align: middle; }
+    th { position: sticky; top: 0; background: rgba(18,25,37,.92); color: var(--muted); text-align:left; z-index: 2; }
+    tr.active { background: rgba(111,177,255,.15); }
+    select {
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.12);
+      color: var(--text);
+      padding: 7px 10px;
+      border-radius: 10px;
+      outline: none;
+    }
+    .mono { font-family: ui-monospace, Menlo, Consolas, monospace; }
+  </style>
+
+  <!-- Tone.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/15.3.5/Tone.js"></script>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Bolero backing (1 file HTML) — Tone.js</h1>
+
+    <div class="notice" id="originNotice"></div>
+
+    <div class="grid" style="margin-top:10px;">
+      <div class="panel">
+        <h2>Đầu vào (tutorial dạng text có hợp âm)</h2>
+        <textarea id="inputText"></textarea>
+
+        <div class="row" style="margin-top:10px;">
+          <button class="primary" id="btnParse">Parse hợp âm</button>
+          <button id="btnLoadDemo">Nạp ví dụ (bài bạn gửi)</button>
+          <span class="pill" id="parseInfo">Chưa parse</span>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="row" style="justify-content:space-between; gap:12px;">
+          <div class="hint" style="flex: 1 1 420px;">
+            Hợp âm phải nằm trong ngoặc vuông, ví dụ <span class="kbd">[Am]</span>. App sẽ tách ra danh sách hợp âm theo thứ tự xuất hiện.
+            Bạn bấm <b>Chord ▶︎</b> để chuyển hợp âm theo thực tế lúc hát.
+          </div>
+          <div class="hint" style="flex: 1 1 380px;">
+            <b>Double-tap</b> vào <b>Chord ▶︎</b> để đổi ở <b>nhịp 3</b> (half-bar). <b>Giữ</b> nút để <b>HOLD</b>.
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Phát nhạc</h2>
+
+        <div class="row">
+          <button class="primary" id="btnEnable">Bật Audio</button>
+          <button id="btnPlay" disabled>Play</button>
+          <button class="danger" id="btnStop" disabled>Stop</button>
+          <span class="pill" id="audioState">Audio: OFF</span>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="stat">
+          <span>Tempo: <b><span id="tempoVal">90</span> BPM</b></span>
+          <input id="tempo" type="range" min="50" max="130" value="90" />
+          <button id="btnTap" disabled>Tap tempo</button>
+        </div>
+
+        <div class="stat" style="margin-top:8px;">
+          <span>Transpose: <b><span id="trVal">0</span> st</b></span>
+          <input id="transpose" type="range" min="-12" max="12" value="0" />
+          <span class="pill" id="keyHint">Key: —</span>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="row">
+          <label class="hint">Default pattern:</label>
+          <select id="defaultPattern" disabled>
+            <option value="bolero_basic">Bolero basic (bass + chát)</option>
+            <option value="bolero_chorus">Bolero chorus (quạt nhẹ)</option>
+            <option value="slow_strum">Slow strum (dễ hát)</option>
+          </select>
+          <button class="small" id="btnApplyDefault" disabled>Áp dụng default cho toàn bài</button>
+          <button class="small" id="btnPreview" disabled>Nghe thử hợp âm đang chọn (1 ô)</button>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="row">
+          <button id="btnPrev" disabled>◀︎ Chord</button>
+          <button class="primary" id="btnNext" disabled>Chord ▶︎</button>
+          <button class="small" id="btnEnd" disabled>END (chốt 1 ô)</button>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="stat">
+          <span class="bigChord" id="nowChord">—</span>
+          <span class="smallChord">Next: <b id="nextChord">—</b></span>
+        </div>
+        <div class="hint">Pattern đang dùng cho hợp âm này: <b id="nowPattern">—</b></div>
+
+        <div class="divider"></div>
+
+        <div class="hint" id="engineInfo"></div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:10px;">
+      <h2>Danh sách hợp âm + cách đánh (có thể đổi từng hợp âm)</h2>
+      <div class="hint" style="margin-bottom:8px;">
+        Mỗi dòng là 1 “bước hợp âm” theo tutorial. Bạn có thể đổi pattern từng bước bằng menu.
+        Bấm vào dòng để chọn, sau đó dùng <b>Nghe thử</b> hoặc khi đang Play thì app sẽ dùng pattern của dòng đó.
+      </div>
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:44px;">#</th>
+              <th style="width:110px;">Chord</th>
+              <th>Neo (từ sau chord)</th>
+              <th style="width:220px;">Pattern</th>
+              <th style="width:90px;">Preview</th>
+            </tr>
+          </thead>
+          <tbody id="chordTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+
+  // UI
+  const inputText = $("inputText");
+  const btnParse = $("btnParse");
+  const btnLoadDemo = $("btnLoadDemo");
+  const parseInfo = $("parseInfo");
+
+  const originNotice = $("originNotice");
+
+  const btnEnable = $("btnEnable");
+  const btnPlay = $("btnPlay");
+  const btnStop = $("btnStop");
+  const audioState = $("audioState");
+
+  const btnTap = $("btnTap");
+  const tempoSlider = $("tempo");
+  const tempoVal = $("tempoVal");
+
+  const trSlider = $("transpose");
+  const trVal = $("trVal");
+  const keyHint = $("keyHint");
+
+  const defaultPatternSel = $("defaultPattern");
+  const btnApplyDefault = $("btnApplyDefault");
+  const btnPreview = $("btnPreview");
+
+  const btnPrev = $("btnPrev");
+  const btnNext = $("btnNext");
+  const btnEnd = $("btnEnd");
+
+  const nowChordEl = $("nowChord");
+  const nextChordEl = $("nextChord");
+  const nowPatternEl = $("nowPattern");
+
+  const engineInfo = $("engineInfo");
+  const chordTable = $("chordTable");
+
+  // Demo text
+  const DEMO = `Bolero
+Am
+
+1. Tuổi đời chân đơn [Am] côi gót mòn đại lộ [F] buồn
+Đèn [G] đêm bóng mờ nhạt [C] nhòa
+[A7] Hồn lắng tâm [Dm] tư, đi vào dĩ [Am] vãng
+Đường tình không chung [E7] lối mang nuối tiếc cho [F] nhau [E7]
+
+2. Ngày nào tay trong [Am] tay lối về cùng hẹn [F] hò
+Dìu [G] em giấc mộng vừa [C] tròn
+[A7] Tình thắm môi [Dm] hồng, đêm dài lưu [Am] luyến,
+Nghẹn ngào trong thương [E7] nhớ vì mai bước theo [Am] chồng. [Dm] [Am]
+
+ĐK:
+Em sang ngang [F] rồi chôn kỷ [G] niệm vào thương [C] nhớ
+Hôn lên tóc [Am] mềm lệ [A7] sầu thắm ướt đôi [Dm] mi
+Xin em một [G] lần cho ước nguyện tình yêu [E7] cuối
+Thương yêu không [G] thành thôi giã [E7] từ đi em [Am] ơi.
+
+3. Người về lên xe [Am] hoa, kỷ niệm buồn vào [F] hồn
+Bờ [G] môi tắt hẳn nụ [C] cười
+[A7] Giây phút bên [Dm] nhau nay còn đâu [Am] nữa
+Người về trong thương [E7] nhớ người đi nhớ thương [Am] người.`;
+
+  // Origin notice (Tone.js often needs http(s) for AudioWorklet, depending on browser).
+  function renderOriginNotice() {
+    const p = location.protocol;
+    if (p === "file:") {
+      originNotice.className = "notice bad";
+      originNotice.innerHTML =
+        "<b>Đang mở bằng file://</b> — trên một số trình duyệt, Tone.js/AudioWorklet có thể bị chặn nên AudioContext không bật được.<br>" +
+        "Cách chắc chắn: chạy qua <b>http://localhost</b> hoặc <b>https</b>. Ví dụ: mở Terminal tại thư mục file và chạy <span class='kbd'>python3 -m http.server 8000</span> rồi mở <span class='kbd'>http://localhost:8000</span>.";
+    } else {
+      originNotice.className = "notice ok";
+      originNotice.innerHTML =
+        "Origin: <span class='mono'>" + location.origin + "</span>. Nếu vẫn lỗi Audio, hãy thử tắt in-app browser/extension audio-block, rồi bấm “Bật Audio” lại.";
+    }
+  }
+
+  // Chord parsing + transpose
+  const NOTE_TO_PC = { C:0, "C#":1, Db:1, D:2, "D#":3, Eb:3, E:4, F:5, "F#":6, Gb:6, G:7, "G#":8, Ab:8, A:9, "A#":10, Bb:10, B:11 };
+  const PC_TO_NOTE_SHARP = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+
+  function normalizeRootToken(tok) {
+    if (tok.length === 2 && tok[1].toLowerCase() === "s") return tok[0].toUpperCase() + "#";
+    if (tok.length >= 2) {
+      const a = tok[0].toUpperCase();
+      const b = tok[1];
+      if (b === "#" || b === "b") return a + b;
+    }
+    return tok[0].toUpperCase();
+  }
+
+  function parseChordSymbol(symRaw) {
+    const sym = (symRaw || "").trim();
+    if (!sym) return null;
+    const m = sym.match(/^([A-Ga-g])([#b]|s)?(.*)$/);
+    if (!m) return null;
+    const root = normalizeRootToken(m[1] + (m[2] || ""));
+    const rest = (m[3] || "").trim();
+
+    let quality = "maj";
+    if (rest.startsWith("maj7")) quality = "maj7";
+    else if (rest.startsWith("m7")) quality = "m7";
+    else if (rest.startsWith("m")) quality = "min";
+    else if (rest.startsWith("7")) quality = "7";
+    else if (rest.startsWith("dim")) quality = "dim";
+    else if (rest.startsWith("aug")) quality = "aug";
+    else if (rest.startsWith("sus2")) quality = "sus2";
+    else if (rest.startsWith("sus4") || rest.startsWith("sus")) quality = "sus4";
+    else quality = "maj";
+
+    return { raw: sym, root, quality };
+  }
+
+  function transposeRoot(root, semis) {
+    const pc = NOTE_TO_PC[root];
+    if (pc === undefined) return root;
+    const npc = (pc + semis + 1200) % 12;
+    return PC_TO_NOTE_SHARP[npc];
+  }
+
+  function transposeChordSymbol(symRaw, semis) {
+    const c = parseChordSymbol(symRaw);
+    if (!c) return symRaw;
+    const newRoot = transposeRoot(c.root, semis);
+
+    let suffix = "";
+    if (c.quality === "maj") suffix = "";
+    else if (c.quality === "min") suffix = "m";
+    else if (c.quality === "7") suffix = "7";
+    else if (c.quality === "m7") suffix = "m7";
+    else if (c.quality === "maj7") suffix = "maj7";
+    else if (c.quality === "dim") suffix = "dim";
+    else if (c.quality === "aug") suffix = "aug";
+    else if (c.quality === "sus2") suffix = "sus2";
+    else if (c.quality === "sus4") suffix = "sus4";
+
+    return newRoot + suffix;
+  }
+
+  function chordIntervals(quality) {
+    switch (quality) {
+      case "min": return [0,3,7];
+      case "maj": return [0,4,7];
+      case "7": return [0,4,7,10];
+      case "m7": return [0,3,7,10];
+      case "maj7": return [0,4,7,11];
+      case "dim": return [0,3,6];
+      case "aug": return [0,4,8];
+      case "sus2": return [0,2,7];
+      case "sus4": return [0,5,7];
+      default: return [0,4,7];
+    }
+  }
+
+  function pcFromRoot(root) {
+    const pc = NOTE_TO_PC[root];
+    return (pc === undefined) ? 0 : pc;
+  }
+
+  function midiToNoteName(midi) {
+    return Tone.Frequency(midi, "midi").toNote();
+  }
+
+  // State
+  let steps = [];               // [{symRaw, anchor, pattern}]
+  let stepIndex = 0;
+  let transposeSemis = 0;
+
+  let pendingAdvance = false;
+  let pendingAdvanceHalf = false;
+  let pendingRetreat = false;
+
+  let audioEnabled = false;
+  let isPlaying = false;
+
+  let guitar = null;
+  let reverb = null, comp = null, lp = null;
+  let loopId = null;
+  let barsOnStep = 0;
+  let tapTimes = [];
+
+  function setEngineInfo(msg, ok=true) {
+    engineInfo.innerHTML = ok ? `<span class="ok">●</span> ${msg}` : `<span class="bad">●</span> ${msg}`;
+  }
+
+  function setAudioPill(on) {
+    audioState.textContent = on ? "Audio: ON" : "Audio: OFF";
+    audioState.className = on ? "pill ok" : "pill";
+  }
+
+  function updateKeyHint() {
+    const first = steps[0];
+    if (!first) { keyHint.textContent = "Key: —"; return; }
+    keyHint.textContent = "Key: " + transposeChordSymbol(first.symRaw, transposeSemis);
+  }
+
+  function parseTextToSteps(text) {
+    const re = /\[([^\]]+)\]/g;
+    let match;
+    const res = [];
+    while ((match = re.exec(text)) !== null) {
+      const symRaw = (match[1] || "").trim();
+      const after = text.slice(match.index + match[0].length);
+      const anchor = (after.match(/^\s*([^\s,.\n]+)/) || [null,""])[1];
+      res.push({ symRaw, anchor, pattern: defaultPatternSel.value });
+    }
+    return res;
+  }
+
+  function syncMainChordUI() {
+    const cur = steps[stepIndex];
+    const nxt = steps[Math.min(stepIndex + 1, steps.length - 1)];
+    nowChordEl.textContent = cur ? transposeChordSymbol(cur.symRaw, transposeSemis) : "—";
+    nextChordEl.textContent = nxt ? transposeChordSymbol(nxt.symRaw, transposeSemis) : "—";
+    nowPatternEl.textContent = cur ? humanPatternName(cur.pattern) : "—";
+  }
+
+  function humanPatternName(p) {
+    if (p === "bolero_basic") return "Bolero basic (bass + chát)";
+    if (p === "bolero_chorus") return "Bolero chorus (quạt nhẹ)";
+    if (p === "slow_strum") return "Slow strum (dễ hát)";
+    if (p === "end") return "END (chốt)";
+    return p || "—";
+  }
+
+  function renderStepTable() {
+    chordTable.innerHTML = "";
+    steps.forEach((s, i) => {
+      const tr = document.createElement("tr");
+      if (i === stepIndex) tr.classList.add("active");
+
+      const tdIdx = document.createElement("td");
+      tdIdx.textContent = String(i + 1);
+      tdIdx.className = "mono";
+
+      const tdChord = document.createElement("td");
+      tdChord.textContent = transposeChordSymbol(s.symRaw, transposeSemis);
+      tdChord.className = "mono";
+
+      const tdAnchor = document.createElement("td");
+      tdAnchor.textContent = s.anchor || "";
+
+      const tdPat = document.createElement("td");
+      const sel = document.createElement("select");
+      sel.innerHTML = `
+        <option value="bolero_basic">Bolero basic (bass + chát)</option>
+        <option value="bolero_chorus">Bolero chorus (quạt nhẹ)</option>
+        <option value="slow_strum">Slow strum (dễ hát)</option>
+        <option value="end">END (chốt)</option>
+      `;
+      sel.value = s.pattern || "bolero_basic";
+      sel.addEventListener("change", () => {
+        s.pattern = sel.value;
+        if (i === stepIndex) syncMainChordUI();
+      });
+      tdPat.appendChild(sel);
+
+      const tdPrev = document.createElement("td");
+      const b = document.createElement("button");
+      b.className = "small";
+      b.textContent = "▶︎";
+      b.disabled = !audioEnabled || isPlaying;
+      b.addEventListener("click", async (ev) => {
+        ev.stopPropagation();
+        stepIndex = i;
+        syncMainChordUI();
+        renderStepTable();
+        await previewOneBar();
+      });
+      tdPrev.appendChild(b);
+
+      tr.appendChild(tdIdx);
+      tr.appendChild(tdChord);
+      tr.appendChild(tdAnchor);
+      tr.appendChild(tdPat);
+      tr.appendChild(tdPrev);
+
+      tr.addEventListener("click", () => {
+        stepIndex = i;
+        barsOnStep = 0;
+        pendingAdvance = pendingAdvanceHalf = pendingRetreat = false;
+        syncMainChordUI();
+        renderStepTable();
+      });
+
+      chordTable.appendChild(tr);
+    });
+  }
+
+  // Sound
+  function makePluckyGuitar() {
+    const poly = new Tone.PolySynth(Tone.PluckSynth, {
+      maxPolyphony: 8,
+      options: { attackNoise: 1.0, dampening: 3000, resonance: 0.92 }
+    });
+
+    lp = new Tone.Filter(6500, "lowpass");
+    comp = new Tone.Compressor(-18, 3);
+    reverb = new Tone.Reverb({ decay: 2.2, wet: 0.25, preDelay: 0.01 });
+
+    poly.chain(lp, comp, reverb, Tone.Destination);
+    poly.volume.value = -10;
+    return poly;
+  }
+
+  function supportsOgg() {
+    try {
+      return Tone.ToneAudioBuffer && Tone.ToneAudioBuffer.supportsType
+        ? Tone.ToneAudioBuffer.supportsType("ogg")
+        : false;
+    } catch (e) { return false; }
+  }
+
+  function makeSampledGuitarOgg() {
+    const baseUrl = "https://cdn.jsdelivr.net/npm/tonejs-instrument-guitar-acoustic-ogg@1.1.0/";
+    const urls = {
+      "E2":"E2.ogg","F2":"F2.ogg","G2":"G2.ogg","A2":"A2.ogg","B2":"B2.ogg",
+      "C3":"C3.ogg","D3":"D3.ogg","E3":"E3.ogg","F3":"F3.ogg","G3":"G3.ogg","A3":"A3.ogg","B3":"B3.ogg",
+      "C4":"C4.ogg","D4":"D4.ogg","E4":"E4.ogg","F4":"F4.ogg","G4":"G4.ogg","A4":"A4.ogg","B4":"B4.ogg",
+      "C5":"C5.ogg","D5":"D5.ogg"
+    };
+    const samp = new Tone.Sampler({ urls, baseUrl, release: 0.6 });
+
+    lp = new Tone.Filter(7000, "lowpass");
+    comp = new Tone.Compressor(-18, 3);
+    reverb = new Tone.Reverb({ decay: 2.4, wet: 0.22, preDelay: 0.01 });
+
+    samp.chain(lp, comp, reverb, Tone.Destination);
+    samp.volume.value = -8;
+    return samp;
+  }
+
+  async function setupAudioOnce() {
+    if (audioEnabled) return;
+
+    try {
+      await Tone.start();
+
+      const ctx = (Tone.getContext && Tone.getContext().rawContext) ? Tone.getContext().rawContext : (Tone.context || Tone.getContext?.());
+      if (ctx && ctx.state !== "running" && ctx.resume) {
+        await ctx.resume();
+      }
+
+      // unlock ping
+      try {
+        const rc = (Tone.getContext && Tone.getContext().rawContext) ? Tone.getContext().rawContext : null;
+        if (rc && rc.createOscillator) {
+          const osc = rc.createOscillator();
+          const gain = rc.createGain();
+          gain.gain.value = 0.0001;
+          osc.connect(gain); gain.connect(rc.destination);
+          osc.start();
+          osc.stop(rc.currentTime + 0.03);
+        }
+      } catch (_) {}
+
+      audioEnabled = true;
+      setAudioPill(true);
+    } catch (e) {
+      console.error(e);
+      const msg = (e && (e.message || e.name)) ? (e.message || e.name) : String(e);
+      setEngineInfo(
+        "Không bật được AudioContext: <b>" + msg + "</b>.<br><br>" +
+        "Nếu bạn đang mở bằng <b>file://</b> thì khả năng cao bị chặn AudioWorklet. Hãy chạy qua <b>http://localhost</b> hoặc <b>https</b>.<br>" +
+        "Trên Mac: mở Terminal tại thư mục file, chạy <span class='kbd'>python3 -m http.server 8000</span>, rồi mở <span class='kbd'>http://localhost:8000</span>.",
+        false
+      );
+      throw e;
+    }
+
+    // instrument
+    guitar = makePluckyGuitar();
+
+    // Optional OGG sampled toggle
+    if (supportsOgg()) {
+      const toggle = document.createElement("button");
+      toggle.className = "small";
+      toggle.textContent = "Guitar: Synth (đổi)";
+      toggle.style.marginLeft = "6px";
+      defaultPatternSel.parentElement.appendChild(toggle);
+
+      let sampledOn = false;
+      let sampled = null;
+
+      toggle.addEventListener("click", async () => {
+        if (!audioEnabled) return;
+        toggle.disabled = true;
+        try {
+          if (!sampledOn) {
+            setEngineInfo("Đang tải samples guitar (OGG)…", true);
+            sampled = makeSampledGuitarOgg();
+            await sampled.loaded;
+            guitar.disconnect(); guitar.dispose();
+            guitar = sampled;
+            sampledOn = true;
+            toggle.textContent = "Guitar: Sampled (đổi)";
+            setEngineInfo("Đã bật guitar sampled.", true);
+          } else {
+            const plucky = makePluckyGuitar();
+            guitar.disconnect(); guitar.dispose();
+            guitar = plucky;
+            sampledOn = false;
+            toggle.textContent = "Guitar: Synth (đổi)";
+            setEngineInfo("Đã bật guitar synth.", true);
+          }
+        } catch (e) {
+          console.error(e);
+          setEngineInfo("Không tải được sample. Đang dùng Synth.", false);
+        } finally {
+          toggle.disabled = false;
+        }
+      });
+    }
+
+    Tone.Transport.bpm.value = Number(tempoSlider.value);
+    Tone.Transport.timeSignature = [4,4];
+
+    // enable UI
+    btnPlay.disabled = false;
+    btnStop.disabled = false;
+    btnTap.disabled = false;
+    defaultPatternSel.disabled = false;
+    btnApplyDefault.disabled = false;
+    btnPreview.disabled = false;
+    btnPrev.disabled = false;
+    btnNext.disabled = false;
+    btnEnd.disabled = false;
+
+    setEngineInfo("Sẵn sàng. Bấm Play để chạy. Bạn có thể đổi pattern từng hợp âm ở bảng bên dưới.", true);
+    renderStepTable();
+  }
+
+  function killLoop() {
+    if (loopId !== null) { Tone.Transport.clear(loopId); loopId = null; }
+  }
+
+  function stopAll() {
+    if (!audioEnabled) return;
+    killLoop();
+    Tone.Transport.stop();
+    Tone.Transport.position = "0:0:0";
+    isPlaying = false;
+    pendingAdvance = pendingAdvanceHalf = pendingRetreat = false;
+    barsOnStep = 0;
+    renderStepTable();
+    syncMainChordUI();
+  }
+
+  function chordTonesMidi(symRaw, transposeSt) {
+    const c = parseChordSymbol(symRaw);
+    if (!c) return { bass: 48, chord: [60,64,67], fifth: 55 };
+    const rootPc = (pcFromRoot(c.root) + transposeSt + 1200) % 12;
+    const ints = chordIntervals(c.quality);
+
+    let bass = 45 + (rootPc - 9);
+    while (bass < 40) bass += 12;
+    while (bass > 52) bass -= 12;
+
+    const chord = ints.map(iv => bass + 12 + iv);
+    for (let i=0;i<chord.length;i++) {
+      while (chord[i] < 52) chord[i] += 12;
+      while (chord[i] > 76) chord[i] -= 12;
+    }
+    chord.unshift(bass + 12);
+
+    const uniq = [...new Set(chord)];
+    uniq.sort((a,b)=>a-b);
+    return { bass, chord: uniq, fifth: bass + 7 };
+  }
+
+  function strum(time, midis, dur="8n", direction="down") {
+    const order = (direction === "up") ? [...midis].reverse() : [...midis];
+    const step = 0.012;
+    order.forEach((m, i) => {
+      const t = time + i*step;
+      guitar?.triggerAttackRelease?.(midiToNoteName(m), dur, t, 0.9);
+    });
+  }
+
+  function pick(time, midi, dur="8n", vel=0.9) {
+    guitar?.triggerAttackRelease?.(midiToNoteName(midi), dur, time, vel);
+  }
+
+  function playPatternBeat(time, beatIdx, stepPattern, symRaw) {
+    const { bass, chord, fifth } = chordTonesMidi(symRaw, transposeSemis);
+
+    if (stepPattern === "bolero_basic") {
+      if (beatIdx === 0) pick(time, bass, "8n", 0.95);
+      if (beatIdx === 1) strum(time, chord.slice(1), "16n", "down");
+      if (beatIdx === 2) pick(time, fifth, "8n", 0.90);
+      if (beatIdx === 3) strum(time, chord.slice(1), "16n", "down");
+      return;
+    }
+
+    if (stepPattern === "bolero_chorus") {
+      if (beatIdx === 0) pick(time, bass, "8n", 0.95);
+      if (beatIdx === 1) strum(time, chord, "8n", "down");
+      if (beatIdx === 2) pick(time, fifth, "8n", 0.88);
+      if (beatIdx === 3) strum(time, chord, "8n", "up");
+      return;
+    }
+
+    if (stepPattern === "slow_strum") {
+      if (beatIdx === 0) { pick(time, bass, "8n", 0.85); strum(time + 0.02, chord, "4n", "down"); }
+      if (beatIdx === 2) { pick(time, fifth, "8n", 0.80); strum(time + 0.02, chord, "4n", "down"); }
+      return;
+    }
+
+    if (stepPattern === "end") {
+      if (beatIdx === 0) strum(time, chord, "1n", "down");
+      return;
+    }
+  }
+
+  function tick(time) {
+    if (steps.length === 0) return;
+
+    const beat = (Math.floor(Tone.Transport.ticks / Tone.Transport.PPQ) % 4 + 4) % 4;
+    const atBarStart = (beat === 0);
+
+    if (atBarStart) {
+      if (pendingRetreat) {
+        stepIndex = Math.max(0, stepIndex - 1);
+        pendingRetreat = false;
+        barsOnStep = 0;
+      }
+
+      if (pendingAdvance) {
+        stepIndex = Math.min(steps.length - 1, stepIndex + 1);
+        pendingAdvance = false;
+        barsOnStep = 0;
+      }
+
+      barsOnStep += 1;
+      renderStepTable();
+      syncMainChordUI();
+    }
+
+    if (pendingAdvanceHalf && beat === 2) {
+      stepIndex = Math.min(steps.length - 1, stepIndex + 1);
+      pendingAdvanceHalf = false;
+      renderStepTable();
+      syncMainChordUI();
+    }
+
+    const st = steps[stepIndex];
+    const pat = st?.pattern || defaultPatternSel.value || "bolero_basic";
+    playPatternBeat(time, beat, pat, st.symRaw);
+
+    // If pattern is END: stop after 1 bar (on next bar start)
+    if (pat === "end" && atBarStart) {
+      Tone.Transport.scheduleOnce(() => stopAll(), Tone.Time(time).add("1m"));
+    }
+  }
+
+  function startLoop() {
+    killLoop();
+    loopId = Tone.Transport.scheduleRepeat((time) => tick(time), "4n");
+  }
+
+  async function previewOneBar() {
+    if (!audioEnabled) return;
+    if (steps.length === 0) return;
+
+    // Do not preview while playing
+    if (isPlaying) return;
+
+    const st = steps[stepIndex];
+    const pat = st?.pattern || defaultPatternSel.value || "bolero_basic";
+
+    const now = Tone.now();
+    const beatDur = Tone.Time("4n").toSeconds();
+    for (let b = 0; b < 4; b++) {
+      const t = now + b * beatDur;
+      playPatternBeat(t, b, pat, st.symRaw);
+    }
+  }
+
+  // Wiring
+  btnLoadDemo.addEventListener("click", () => { inputText.value = DEMO; });
+
+  btnParse.addEventListener("click", () => {
+    steps = parseTextToSteps(inputText.value);
+    stepIndex = 0;
+    barsOnStep = 0;
+    pendingAdvance = pendingAdvanceHalf = pendingRetreat = false;
+
+    if (steps.length === 0) {
+      parseInfo.textContent = "Không tìm thấy hợp âm dạng [Am]";
+      parseInfo.className = "pill bad";
+      chordTable.innerHTML = "";
+      syncMainChordUI();
+      return;
+    }
+
+    parseInfo.textContent = `Đã parse: ${steps.length} bước hợp âm`;
+    parseInfo.className = "pill ok";
+    updateKeyHint();
+    syncMainChordUI();
+    renderStepTable();
+    setEngineInfo("Đã parse. Bấm “Bật Audio” rồi “Play”.", true);
+  });
+
+  // Use pointerdown to satisfy user-gesture requirements
+  btnEnable.addEventListener("pointerdown", async (ev) => {
+    ev.preventDefault();
+    try { await setupAudioOnce(); }
+    catch (_) {}
+  });
+
+  btnPlay.addEventListener("click", async () => {
+    if (!audioEnabled) { await setupAudioOnce(); }
+    if (steps.length === 0) { setEngineInfo("Chưa có chord list. Bấm Parse trước.", false); return; }
+    if (isPlaying) return;
+
+    Tone.Transport.bpm.value = Number(tempoSlider.value);
+    startLoop();
+    Tone.Transport.start("+0.05");
+    isPlaying = true;
+    setEngineInfo("Đang chạy. Dùng Chord ▶︎ để chuyển hợp âm (double-tap = half).", true);
+    renderStepTable();
+  });
+
+  btnStop.addEventListener("click", () => { stopAll(); setEngineInfo("Đã dừng.", true); renderStepTable(); });
+
+  tempoSlider.addEventListener("input", () => {
+    tempoVal.textContent = tempoSlider.value;
+    if (audioEnabled) Tone.Transport.bpm.rampTo(Number(tempoSlider.value), 0.05);
+  });
+
+  trSlider.addEventListener("input", () => {
+    transposeSemis = Number(trSlider.value);
+    trVal.textContent = String(transposeSemis);
+    updateKeyHint();
+    syncMainChordUI();
+    renderStepTable();
+  });
+
+  btnTap.addEventListener("click", () => {
+    const t = performance.now();
+    tapTimes.push(t);
+    if (tapTimes.length > 6) tapTimes.shift();
+    if (tapTimes.length >= 3) {
+      const diffs = [];
+      for (let i=1;i<tapTimes.length;i++) diffs.push(tapTimes[i]-tapTimes[i-1]);
+      const avg = diffs.reduce((a,b)=>a+b,0)/diffs.length;
+      const bpm = Math.min(130, Math.max(50, Math.round(60000/avg)));
+      tempoSlider.value = bpm;
+      tempoVal.textContent = bpm;
+      if (audioEnabled) Tone.Transport.bpm.rampTo(bpm, 0.05);
+    }
+  });
+
+  defaultPatternSel.addEventListener("change", () => { /* default only */ });
+
+  btnApplyDefault.addEventListener("click", () => {
+    const p = defaultPatternSel.value;
+    steps.forEach(s => s.pattern = p);
+    renderStepTable();
+    syncMainChordUI();
+  });
+
+  btnPreview.addEventListener("click", async () => {
+    if (!audioEnabled) await setupAudioOnce();
+    await previewOneBar();
+  });
+
+  btnPrev.addEventListener("click", () => {
+    if (steps.length === 0) return;
+    pendingRetreat = true;
+    pendingAdvance = pendingAdvanceHalf = false;
+  });
+
+  // NEXT button: single tap = next bar; double-tap = half-bar; long-press = HOLD
+  let lastNextTap = 0;
+  let holdTimer = null;
+  let holdActive = false;
+
+  function armNext(singleOrHalf) {
+    if (steps.length === 0) return;
+    if (singleOrHalf === "half") {
+      pendingAdvanceHalf = true;
+      pendingAdvance = false;
+    } else if (singleOrHalf === "full") {
+      pendingAdvance = true;
+      pendingAdvanceHalf = false;
+    }
+  }
+
+  btnNext.addEventListener("pointerdown", (ev) => {
+    ev.preventDefault();
+    holdActive = false;
+    clearTimeout(holdTimer);
+    holdTimer = setTimeout(() => {
+      holdActive = true;
+      // HOLD: do nothing, but provide feedback
+      setEngineInfo("HOLD: giữ hợp âm hiện tại (không chuyển).", true);
+    }, 420); // long-press threshold
+  });
+
+  btnNext.addEventListener("pointerup", (ev) => {
+    ev.preventDefault();
+    clearTimeout(holdTimer);
+    if (holdActive) return;
+
+    const now = performance.now();
+    const isDouble = (now - lastNextTap) < 320;
+    lastNextTap = now;
+
+    armNext(isDouble ? "half" : "full");
+  });
+
+  btnEnd.addEventListener("click", () => {
+    if (steps.length === 0) return;
+    steps[stepIndex].pattern = "end";
+    syncMainChordUI();
+    renderStepTable();
+    setEngineInfo("END: hợp âm hiện tại sẽ được chốt 1 ô rồi dừng.", true);
+  });
+
+  // Init
+  tempoVal.textContent = tempoSlider.value;
+  trVal.textContent = trSlider.value;
+  inputText.value = DEMO;
+  renderOriginNotice();
+  setEngineInfo("1) Bấm Parse  2) Bấm “Bật Audio”  3) Play. Nếu mở bằng file://, hãy chạy qua http://localhost.", true);
+  setAudioPill(false);
+
+})();
+</script>
+</body>
+</html>
