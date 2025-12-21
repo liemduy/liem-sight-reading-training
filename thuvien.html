@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Guitar Accompaniment (Singer Mode) — Soundfont Player (HTTPS fixed)</title>
+  <title>Guitar — Soundfont Player (Fix: HTTPS + Probe + Connect)</title>
 
   <!-- CDN: soundfont-player -->
   <script src="https://cdn.jsdelivr.net/npm/soundfont-player@0.12.0/dist/soundfont-player.min.js"></script>
@@ -21,7 +21,7 @@
       width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(128,128,128,.35);
       background: transparent; color: inherit;
     }
-    textarea { min-height: 140px; resize: vertical; }
+    textarea { min-height: 120px; resize: vertical; }
     input[type="range"] { width: 100%; }
     button {
       padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(128,128,128,.35);
@@ -31,58 +31,23 @@
     button:disabled { opacity: .55; cursor: not-allowed; }
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size: 12px; }
     .status { white-space: pre-wrap; padding: 10px; border-radius: 8px; border: 1px dashed rgba(128,128,128,.45); }
-    .pill { display:inline-block; padding: 3px 8px; border-radius: 999px; border: 1px solid rgba(128,128,128,.35); font-size: 12px; opacity: .9; }
     .small { font-size: 12px; opacity: .85; }
+    .pill { display:inline-block; padding: 3px 8px; border-radius: 999px; border: 1px solid rgba(128,128,128,.35); font-size: 12px; opacity: .9; }
   </style>
 </head>
 
 <body>
-  <h2>Guitar accompaniment (Singer Mode) — HTTPS soundfont fixed</h2>
+  <h2>Guitar (Soundfont) — Fix: HTTPS + Probe + Connect</h2>
   <div class="small">
     <span class="pill">soundfont-player</span>
-    <span class="pill">MP3-only</span>
-    <span class="pill">No .ogg</span>
-    <span class="pill">HTTPS soundfont URL</span>
+    <span class="pill">mp3-only</span>
+    <span class="pill">probe URL</span>
+    <span class="pill">force connect</span>
   </div>
 
   <div class="grid">
     <div class="card">
-      <h3>Progression</h3>
-      <label>
-        Chord progression (tách bằng <span class="mono">|</span> hoặc xuống dòng)
-        <textarea id="prog">C | G | Am | F
-Dm7 | G7 | Cmaj7 | Cmaj7</textarea>
-      </label>
-
-      <div class="row">
-        <label>
-          Tempo (BPM)
-          <input id="bpm" type="number" min="40" max="220" value="84" />
-        </label>
-        <label>
-          Pattern
-          <select id="pattern">
-            <option value="strum8">Strum 8ths (pop)</option>
-            <option value="strum16lite">Strum 16ths (lite)</option>
-            <option value="arp8">Arp 8ths (fingerstyle)</option>
-            <option value="bossa">Bossa (nhẹ)</option>
-          </select>
-        </label>
-      </div>
-
-      <div class="row">
-        <label>
-          Slider: Normal → Singer Mode
-          <input id="singer" type="range" min="0" max="100" value="70" />
-          <div class="small"><span id="singerLabel">70</span>%</div>
-        </label>
-
-        <label>
-          Swing (0–60%)
-          <input id="swing" type="range" min="0" max="60" value="10" />
-          <div class="small"><span id="swingLabel">10</span>%</div>
-        </label>
-      </div>
+      <h3>Controls</h3>
 
       <div class="row3">
         <label>
@@ -90,46 +55,53 @@ Dm7 | G7 | Cmaj7 | Cmaj7</textarea>
           <select id="inst">
             <option value="acoustic_guitar_nylon" selected>Acoustic Guitar (Nylon)</option>
             <option value="acoustic_guitar_steel">Acoustic Guitar (Steel)</option>
+            <option value="acoustic_grand_piano">Piano (debug)</option>
           </select>
+          <div class="small">Thử “Piano (debug)” để loại trừ trường hợp guitar sample bị thiếu/mapping lỗi.</div>
         </label>
 
         <label>
           Soundfont set
           <select id="sfset">
-            <option value="MusyngKite" selected>MusyngKite (hay hơn, nặng hơn)</option>
-            <option value="FluidR3_GM">FluidR3_GM (nhẹ hơn)</option>
+            <option value="MusyngKite" selected>MusyngKite</option>
+            <option value="FluidR3_GM">FluidR3_GM</option>
           </select>
         </label>
 
         <label>
-          Soundfont CDN
+          Soundfont CDN (HTTPS)
           <select id="cdn">
-            <option value="jsdelivr" selected>jsDelivr (HTTPS, ổn định)</option>
-            <option value="gleitz">gleitz.github.io (HTTPS)</option>
+            <option value="gleitz" selected>gleitz.github.io</option>
+            <option value="jsdelivr">jsDelivr (GitHub gh-pages)</option>
+            <option value="rawgh">raw.githubusercontent.com (fallback)</option>
           </select>
-          <div class="small">Nếu mạng chặn 1 CDN, thử đổi sang cái còn lại.</div>
         </label>
       </div>
 
       <div class="row">
         <label>
-          Guitar output gain
-          <input id="outGain" type="range" min="0" max="100" value="75" />
-          <div class="small"><span id="outGainLabel">75</span>%</div>
+          Output gain
+          <input id="outGain" type="range" min="0" max="100" value="80" />
+          <div class="small"><span id="outGainLabel">80</span>%</div>
         </label>
 
         <label>
-          “Anti-pull” level
-          <input id="antipull" type="range" min="0" max="100" value="65" />
-          <div class="small"><span id="antipullLabel">65</span>%</div>
+          Tempo (BPM)
+          <input id="bpm" type="number" min="40" max="220" value="84" />
         </label>
       </div>
 
+      <label>
+        Progression
+        <textarea id="prog">C | G | Am | F</textarea>
+      </label>
+
       <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top: 10px;">
         <button class="primary" id="btnStart">Start Audio / Load</button>
-        <button id="btnPlay" disabled>Play</button>
+        <button id="btnProbe" disabled>Probe Soundfont URL</button>
+        <button id="btnNote" disabled>Play single note (C4)</button>
+        <button id="btnPlay" disabled>Play progression</button>
         <button id="btnStop" disabled>Stop</button>
-        <button id="btnTest" disabled>Test strum</button>
         <button id="btnBeep">Beep test</button>
       </div>
 
@@ -137,15 +109,25 @@ Dm7 | G7 | Cmaj7 | Cmaj7</textarea>
     </div>
 
     <div class="card">
-      <h3>Debug</h3>
-      <div class="small">Nếu Beep nghe được nhưng guitar không nghe: gần như chắc chắn soundfont URL bị chặn (mixed content / CORS / CDN blocked).</div>
+      <h3>Diagnostics (không cần DevTools)</h3>
+      <div class="small">
+        Nếu <b>Probe = FAIL</b> thì guitar chắc chắn không kêu (CDN/CORS/network filter). Nếu <b>Probe = OK</b> mà vẫn im lặng,
+        khả năng cao là instrument không connect đúng hoặc bị mute bởi gain (file này đã ép connect).
+      </div>
+
       <label class="small">
-        Last scheduled events
-        <div class="status mono" id="debug">—</div>
+        Resolved soundfont JS URL
+        <div class="status mono" id="sfUrl">—</div>
       </label>
+
       <label class="small">
-        Last load URL sample
-        <div class="status mono" id="lastUrl">—</div>
+        Probe result
+        <div class="status mono" id="probe">—</div>
+      </label>
+
+      <label class="small">
+        Play log
+        <div class="status mono" id="playlog">—</div>
       </label>
     </div>
   </div>
@@ -153,171 +135,197 @@ Dm7 | G7 | Cmaj7 | Cmaj7</textarea>
 <script>
 (() => {
   const $ = (id) => document.getElementById(id);
-  const statusEl = $("status");
-  const debugEl = $("debug");
-  const lastUrlEl = $("lastUrl");
 
   const ui = {
-    prog: $("prog"),
-    bpm: $("bpm"),
-    pattern: $("pattern"),
-    singer: $("singer"),
-    singerLabel: $("singerLabel"),
-    swing: $("swing"),
-    swingLabel: $("swingLabel"),
     inst: $("inst"),
     sfset: $("sfset"),
     cdn: $("cdn"),
     outGain: $("outGain"),
     outGainLabel: $("outGainLabel"),
-    antipull: $("antipull"),
-    antipullLabel: $("antipullLabel"),
+    bpm: $("bpm"),
+    prog: $("prog"),
     btnStart: $("btnStart"),
+    btnProbe: $("btnProbe"),
+    btnNote: $("btnNote"),
     btnPlay: $("btnPlay"),
     btnStop: $("btnStop"),
-    btnTest: $("btnTest"),
     btnBeep: $("btnBeep"),
+    status: $("status"),
+    sfUrl: $("sfUrl"),
+    probe: $("probe"),
+    playlog: $("playlog"),
   };
 
-  function log(msg) { statusEl.textContent = msg; }
+  function log(msg) { ui.status.textContent = msg; }
+  function plog(msg) { ui.playlog.textContent = msg + "\n" + (ui.playlog.textContent || ""); }
   function clamp(x, a, b) { return Math.max(a, Math.min(b, x)); }
-  function lerp(a, b, t) { return a + (b - a) * t; }
   function norm01(v) { return clamp(Number(v) / 100, 0, 1); }
-  function nowMs() { return (typeof performance !== "undefined" ? performance.now() : Date.now()); }
+  function lerp(a, b, t) { return a + (b - a) * t; }
 
-  function updateLabels() {
-    ui.singerLabel.textContent = ui.singer.value;
-    ui.swingLabel.textContent = ui.swing.value;
-    ui.outGainLabel.textContent = ui.outGain.value;
-    ui.antipullLabel.textContent = ui.antipull.value;
-  }
-  ["input","change"].forEach(evt => {
-    ui.singer.addEventListener(evt, updateLabels);
-    ui.swing.addEventListener(evt, updateLabels);
-    ui.outGain.addEventListener(evt, updateLabels);
-    ui.antipull.addEventListener(evt, updateLabels);
-  });
+  function updateLabels() { ui.outGainLabel.textContent = ui.outGain.value; }
+  ui.outGain.addEventListener("input", updateLabels);
   updateLabels();
 
-  // ---------- Audio ----------
+  // Audio
   let ac = null;
   let instrument = null;
 
-  // Output chain
-  const out = {
-    preGain: null,
-    hp: null,
-    presence: null,
-    softLP: null,
-    master: null,
-  };
+  // simple output chain
+  const out = { pre: null, hp: null, lp: null, master: null };
 
-  function ensureAudioContext() {
+  function ensureAudio() {
     if (ac) return ac;
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     ac = new AudioCtx({ latencyHint: "interactive" });
 
-    out.preGain = ac.createGain();
+    out.pre = ac.createGain();
 
     out.hp = ac.createBiquadFilter();
     out.hp.type = "highpass";
     out.hp.frequency.value = 80;
 
-    out.presence = ac.createBiquadFilter();
-    out.presence.type = "peaking";
-    out.presence.frequency.value = 3200;
-    out.presence.Q.value = 0.9;
-    out.presence.gain.value = 1.2;
-
-    out.softLP = ac.createBiquadFilter();
-    out.softLP.type = "lowpass";
-    out.softLP.frequency.value = 12000;
+    out.lp = ac.createBiquadFilter();
+    out.lp.type = "lowpass";
+    out.lp.frequency.value = 12000;
 
     out.master = ac.createGain();
-    out.master.gain.value = 0.7;
 
-    out.preGain.connect(out.hp);
-    out.hp.connect(out.presence);
-    out.presence.connect(out.softLP);
-    out.softLP.connect(out.master);
+    out.pre.connect(out.hp);
+    out.hp.connect(out.lp);
+    out.lp.connect(out.master);
     out.master.connect(ac.destination);
 
-    applyOutputGain();
+    applyGain();
     return ac;
   }
 
-  async function unlockAudio() {
-    const ctx = ensureAudioContext();
+  async function unlock() {
+    const ctx = ensureAudio();
     if (ctx.state !== "running") await ctx.resume();
   }
 
-  function applyOutputGain() {
+  function applyGain() {
     if (!ac) return;
     const g = Math.pow(norm01(ui.outGain.value), 1.4);
     out.master.gain.setTargetAtTime(g, ac.currentTime, 0.01);
   }
-  ui.outGain.addEventListener("input", applyOutputGain);
+  ui.outGain.addEventListener("input", applyGain);
 
-  // ---------- Soundfont URL (HTTPS forced) ----------
-  // soundfont-player mặc định có thể sinh URL http://..., gây bị chặn trên https.  [oai_citation:2‡Gitee](https://gitee.com/mirrors_danigb/soundfont-player?skip_mobile=true)
-  function makeNameToUrl(cdnChoice) {
-    const base =
-      cdnChoice === "gleitz"
-        ? "https://gleitz.github.io/midi-js-soundfonts/"
-        : "https://cdn.jsdelivr.net/gh/gleitz/midi-js-soundfonts@gh-pages/";
+  // IMPORTANT: build HTTPS URL for midi-js-soundfonts js file
+  // soundfont-player documents nameToUrl + destination + notes option, etc.  [oai_citation:2‡GitHub](https://github.com/danigb/soundfont-player)
+  function soundfontBase() {
+    switch (ui.cdn.value) {
+      case "jsdelivr":
+        return "https://cdn.jsdelivr.net/gh/gleitz/midi-js-soundfonts@gh-pages/";
+      case "rawgh":
+        return "https://raw.githubusercontent.com/gleitz/midi-js-soundfonts/gh-pages/";
+      case "gleitz":
+      default:
+        return "https://gleitz.github.io/midi-js-soundfonts/";
+    }
+  }
 
-    // instrument js files: {soundfont}/{name}-{format}.js
+  function makeNameToUrl() {
+    const base = soundfontBase();
     return (name, soundfont, format) => {
-      const url = `${base}${soundfont}/${name}-${format}.js`;
-      // debug
-      lastUrlEl.textContent = url;
+      const sf = soundfont || "MusyngKite";
+      const fmt = format || "mp3";
+      const url = `${base}${sf}/${name}-${fmt}.js`;
+      ui.sfUrl.textContent = url;
       return url;
     };
   }
 
-  async function loadInstrument() {
-    const ctx = ensureAudioContext();
-    const name = ui.inst.value;
-    const set = ui.sfset.value;
-    const cdnChoice = ui.cdn.value;
-
-    log("Loading instrument (mp3 over HTTPS)...");
-    instrument = await window.Soundfont.instrument(ctx, name, {
-      soundfont: set,
-      format: "mp3",                     // iOS-friendly, tránh .ogg
-      nameToUrl: makeNameToUrl(cdnChoice),
-      destination: out.preGain,
-      gain: 1.0,
-      attack: 0.003,
-      release: 0.18,
-      // prefetch a modest range (faster decode)
-      notes: buildPrefetchNotes(40, 76),
-    });
-
-    // Sanity ping: nếu cái này không nghe được, 99% là soundfont URL bị chặn / không load sample.
+  async function probeUrl(url) {
+    // Try HEAD first (cheap), fallback to GET if blocked.
+    ui.probe.textContent = "Probing...";
     try {
-      instrument.play(64, ctx.currentTime + 0.05, { gain: 0.6, duration: 0.25, attack: 0.002, release: 0.08 });
-    } catch (_) {}
+      let r;
+      try {
+        r = await fetch(url, { method: "HEAD", mode: "cors", cache: "no-store" });
+      } catch (_) {
+        r = null;
+      }
+      if (r && r.ok) {
+        ui.probe.textContent = `OK (HEAD ${r.status})`;
+        return true;
+      }
 
-    log(`Loaded: ${name} (${set}, mp3, ${cdnChoice}). Press Play.`);
-    ui.btnPlay.disabled = false;
-    ui.btnTest.disabled = false;
+      const rg = await fetch(url, { method: "GET", mode: "cors", cache: "no-store" });
+      if (!rg.ok) {
+        ui.probe.textContent = `FAIL (GET ${rg.status})`;
+        return false;
+      }
+      // read small chunk to confirm it is JS, not an HTML error page
+      const text = await rg.text();
+      const head = (text || "").slice(0, 120).replace(/\s+/g, " ");
+      ui.probe.textContent = `OK (GET ${rg.status})\nFirst 120 chars:\n${head}`;
+      return true;
+    } catch (e) {
+      ui.probe.textContent = `FAIL (fetch error)\n${String(e)}`;
+      return false;
+    }
   }
 
-  function buildPrefetchNotes(loMidi, hiMidi) {
-    const notes = [];
-    for (let m = loMidi; m <= hiMidi; m++) notes.push(m);
-    return notes;
+  async function loadInstrument() {
+    const ctx = ensureAudio();
+    const name = ui.inst.value;
+    const sfset = ui.sfset.value;
+
+    const nameToUrl = makeNameToUrl();
+    const url = nameToUrl(name, sfset, "mp3");
+
+    // Probe first so bạn thấy rõ đang bị chặn hay không
+    const ok = await probeUrl(url);
+    if (!ok) {
+      log("Soundfont URL bị chặn/không truy cập được. Đổi CDN và thử lại.");
+      return false;
+    }
+
+    log("Loading instrument...");
+    try {
+      instrument = await window.Soundfont.instrument(ctx, name, {
+        soundfont: sfset,
+        format: "mp3",
+        nameToUrl,
+        destination: out.pre,
+        gain: 1.0,
+        attack: 0.003,
+        release: 0.18,
+        // NOTE: tạm thời KHÔNG giới hạn notes để loại trừ lỗi “decode thiếu note -> im lặng”
+      });
+
+      // Force connect (kể cả đã set destination)
+      if (instrument && typeof instrument.connect === "function") {
+        instrument.connect(out.pre);
+      }
+
+      // “ping” 1 nốt để xác nhận có tiếng thật
+      instrument.play(60, ctx.currentTime + 0.05, { gain: 0.8, duration: 0.35, attack: 0.002, release: 0.10 });
+
+      log(`Loaded: ${name} (${sfset}).`);
+      plog(`Loaded OK. connect=${typeof instrument.connect === "function"}`);
+
+      ui.btnProbe.disabled = false;
+      ui.btnNote.disabled = false;
+      ui.btnPlay.disabled = false;
+      return true;
+    } catch (e) {
+      console.error(e);
+      log("Load instrument FAILED (xem probe + thử đổi CDN).");
+      ui.probe.textContent += `\n\nInstrument load error:\n${String(e)}`;
+      return false;
+    }
   }
 
-  // ---------- Chord utilities ----------
+  // very small scheduler for progression (basic)
+  let timer = 0;
+  let step = 0;
+  let chords = [];
+
   const NOTE_TO_PC = { "C":0,"C#":1,"Db":1,"D":2,"D#":3,"Eb":3,"E":4,"F":5,"F#":6,"Gb":6,"G":7,"G#":8,"Ab":8,"A":9,"A#":10,"Bb":10,"B":11 };
 
-  function parseProgression(text) {
-    return text.replace(/\r/g,"").split(/\n|[|]/g).map(s => s.trim()).filter(Boolean);
-  }
-
-  function chordToPitchClasses(symbol) {
+  function chordToPCs(symbol) {
     const s = symbol.trim();
     const rootMatch = s.match(/^([A-G])(#{1}|b{1})?/);
     if (!rootMatch) return null;
@@ -326,321 +334,131 @@ Dm7 | G7 | Cmaj7 | Cmaj7</textarea>
     if (rootPc == null) return null;
 
     const rest = s.slice(rootMatch[0].length).trim().toLowerCase();
-    let third = 4, fifth = 7, seventh = null, add9 = false, sixth = null, sus = null;
-
+    let third = 4, fifth = 7;
     if (rest.startsWith("m") && !rest.startsWith("maj")) third = 3;
-    if (rest.includes("dim") || rest.includes("o")) { third = 3; fifth = 6; }
-    if (rest.includes("aug") || rest.includes("+")) { third = 4; fifth = 8; }
-    if (rest.includes("sus2")) sus = 2;
-    else if (rest.includes("sus4") || rest.includes("sus")) sus = 5;
-
-    if (rest.includes("maj7") || rest.includes("ma7")) seventh = 11;
-    else if (rest.includes("m7") || rest.includes("min7")) seventh = 10;
-    else if (rest.includes("7")) seventh = 10;
-
-    if (rest.includes("add9")) add9 = true;
-    if (rest.includes("6") && !rest.includes("16")) sixth = 9;
-
-    const pcs = [rootPc];
-    pcs.push((rootPc + (sus != null ? sus : third)) % 12);
-    pcs.push((rootPc + fifth) % 12);
-    if (sixth != null) pcs.push((rootPc + sixth) % 12);
-    if (seventh != null) pcs.push((rootPc + seventh) % 12);
-    if (add9) pcs.push((rootPc + 2) % 12);
-
-    const uniq = [];
-    for (const pc of pcs) if (!uniq.includes(pc)) uniq.push(pc);
-    return uniq;
+    const pcs = [rootPc, (rootPc + third) % 12, (rootPc + fifth) % 12];
+    return [...new Set(pcs)];
   }
 
-  function voiceChord(pitchClasses, centerMidi, maxNotes) {
-    const candidates = [];
-    for (let oct = -2; oct <= 3; oct++) {
-      for (const pc of pitchClasses) {
-        const m = pc + 12 * (Math.floor(centerMidi / 12) + oct);
-        if (m >= 30 && m <= 88) candidates.push(m);
+  function voice(pcs, center=60) {
+    const cand = [];
+    for (let oct=-2; oct<=3; oct++) {
+      for (const pc of pcs) {
+        const m = pc + 12*(Math.floor(center/12)+oct);
+        if (m>=36 && m<=84) cand.push(m);
       }
     }
-    candidates.sort((a,b)=>a-b);
-
-    const chosen = [];
-    const chosenPCs = new Set();
-    const distSorted = candidates.map(m => ({m, d: Math.abs(m - centerMidi)})).sort((a,b)=>a.d-b.d);
-
-    for (const item of distSorted) {
-      const pc = ((item.m % 12) + 12) % 12;
-      if (chosenPCs.has(pc) && chosen.length >= 2) continue;
-      chosen.push(item.m);
-      chosenPCs.add(pc);
-      if (chosen.length >= maxNotes) break;
-    }
-    chosen.sort((a,b)=>a-b);
-    return chosen;
+    cand.sort((a,b)=>a-b);
+    // pick 3 nearest to center
+    const pick = cand.map(m => ({m, d: Math.abs(m-center)})).sort((a,b)=>a.d-b.d).slice(0,3).map(x=>x.m).sort((a,b)=>a-b);
+    return pick;
   }
 
-  // ---------- Policy ----------
-  function computePolicy() {
-    const singer = norm01(ui.singer.value);
-    const antiPull = norm01(ui.antipull.value);
-    const swingPct = clamp(Number(ui.swing.value) / 100, 0, 0.60);
-
-    const bpm = clamp(Number(ui.bpm.value) || 84, 40, 220);
-    const beat = 60 / bpm;
-    const step16 = beat / 4;
-
-    return {
-      bpm, beat, step16,
-      singer, antiPull, swingPct,
-      density: lerp(1.0, 0.55, singer),
-      accentDown: lerp(1.00, 0.78, singer),
-      accentUp:   lerp(0.82, 0.70, singer),
-      strumSpreadSec: lerp(0.010, 0.020, singer),
-      behindSec: lerp(0.000, 0.010, singer * antiPull),
-      jitterSec: lerp(0.004, 0.006, singer) * 0.9,
-      maxNotes: Math.round(lerp(5, 3, singer)),
-      centerMidi: lerp(52, 64, singer),
-    };
+  function parseProg(text) {
+    return text.replace(/\r/g,"").split(/\n|[|]/g).map(s => s.trim()).filter(Boolean);
   }
 
-  function applySwingToTime(baseTime, stepIndex, p) {
-    const s = stepIndex % 16;
-    const is8thOff = (s === 4 || s === 12);
-    if (!is8thOff) return baseTime;
-    const maxDelay = p.step16 * 0.60;
-    return baseTime + (maxDelay * p.swingPct);
+  function playChord(symbol, when) {
+    if (!instrument) return;
+    const pcs = chordToPCs(symbol) || chordToPCs("C");
+    const notes = voice(pcs, 60);
+    const spread = 0.014;
+    notes.forEach((m,i) => instrument.play(m, when + i*spread, { gain: 0.75*(1-i*0.05), duration: 0.7, attack: 0.004, release: 0.12 }));
   }
 
-  function humanizeTime(t, p) {
-    const jitter = (Math.random() * 2 - 1) * p.jitterSec;
-    return t + jitter + p.behindSec;
-  }
+  function startProg() {
+    if (!ac || !instrument) return;
+    chords = parseProg(ui.prog.value);
+    if (!chords.length) chords = ["C"];
+    step = 0;
 
-  function patternEvents(patternName, stepIndex, p) {
-    const s = stepIndex % 16;
-    const events = [];
+    const bpm = clamp(Number(ui.bpm.value)||84, 40, 220);
+    const beat = 60/bpm;
+    const bar = beat*4;
 
-    if (patternName === "strum8") {
-      const on8 = (s === 0 || s === 8);
-      const off8 = (s === 4 || s === 12);
-      if (on8) events.push({ kind:"strum", dir:"down", vel: 0.92 * p.accentDown, dur: 0.75 });
-      if (off8 && Math.random() < (0.88 * p.density)) events.push({ kind:"strum", dir:"up", vel: 0.76 * p.accentUp, dur: 0.62 });
-    } else if (patternName === "strum16lite") {
-      const strong = (s === 0 || s === 8);
-      const med = (s === 4 || s === 12);
-      const lite = (s === 2 || s === 6 || s === 10 || s === 14);
-      if (strong) events.push({ kind:"strum", dir:"down", vel: 0.90 * p.accentDown, dur: 0.70 });
-      if (med && Math.random() < (0.92 * p.density)) events.push({ kind:"strum", dir:"up", vel: 0.72 * p.accentUp, dur: 0.55 });
+    const startAt = ac.currentTime + 0.08;
+    playChord(chords[0], startAt);
 
-      const liteProb = lerp(0.55, 0.12, p.singer) * p.density;
-      if (lite && Math.random() < liteProb) events.push({ kind:"strum", dir: (s % 4 === 2 ? "down" : "up"), vel: 0.55, dur: 0.28 });
-    } else if (patternName === "arp8") {
-      const on8 = (s === 0 || s === 8);
-      const off8 = (s === 4 || s === 12);
-      if (on8) events.push({ kind:"arp", dir:"down", vel: 0.86 * p.accentDown, dur: 0.55 });
-      if (off8 && Math.random() < (0.95 * p.density)) events.push({ kind:"arp", dir:"up", vel: 0.74 * p.accentUp, dur: 0.48 });
-    } else if (patternName === "bossa") {
-      const bass = (s === 0 || s === 8);
-      const chord = (s === 6 || s === 14);
-      if (bass) events.push({ kind:"arp", dir:"down", vel: 0.78 * p.accentDown, dur: 0.50 });
-      if (chord) events.push({ kind:"strum", dir:"up", vel: 0.66 * p.accentUp, dur: 0.52 });
-    }
-
-    return events;
-  }
-
-  // ---------- Transport ----------
-  const transport = {
-    isPlaying: false,
-    lookaheadMs: 25,
-    scheduleAheadSec: 0.20,
-    timer: 0,
-    nextTime: 0,
-    stepIndex: 0,
-    chordIndex: 0,
-    barSteps: 16,
-    progression: [],
-  };
-
-  function startTransport() {
-    if (!instrument || !ac) return;
-
-    transport.isPlaying = true;
-    transport.stepIndex = 0;
-    transport.chordIndex = 0;
-
-    transport.progression = parseProgression(ui.prog.value);
-    if (!transport.progression.length) transport.progression = ["C"];
-
-    transport.nextTime = ac.currentTime + 0.08;
-    transport.timer = window.setInterval(schedulerTick, transport.lookaheadMs);
+    timer = setInterval(() => {
+      step = (step + 1) % chords.length;
+      playChord(chords[step], ac.currentTime + 0.06);
+    }, bar*1000);
 
     ui.btnPlay.disabled = true;
     ui.btnStop.disabled = false;
-    log("Playing...");
+    log("Playing progression...");
   }
 
-  function stopTransport() {
-    transport.isPlaying = false;
-    if (transport.timer) window.clearInterval(transport.timer);
-    transport.timer = 0;
-
+  function stopProg() {
+    if (timer) clearInterval(timer);
+    timer = 0;
     try { instrument && instrument.stop && instrument.stop(); } catch (_) {}
-
     ui.btnPlay.disabled = false;
     ui.btnStop.disabled = true;
     log("Stopped.");
   }
 
-  function currentChordSymbol() {
-    const seq = transport.progression;
-    return seq[transport.chordIndex % seq.length] || "C";
-  }
-
-  function advanceChordIfNeeded(stepIndex) {
-    if (stepIndex > 0 && (stepIndex % transport.barSteps === 0)) {
-      transport.chordIndex = (transport.chordIndex + 1) % transport.progression.length;
-    }
-  }
-
-  function schedulerTick() {
-    if (!transport.isPlaying) return;
-
-    const p = computePolicy();
-    const horizon = ac.currentTime + transport.scheduleAheadSec;
-    const scheduled = [];
-
-    while (transport.nextTime < horizon) {
-      advanceChordIfNeeded(transport.stepIndex);
-
-      const chordSym = currentChordSymbol();
-      const pcs = chordToPitchClasses(chordSym) || chordToPitchClasses("C");
-      const events = patternEvents(ui.pattern.value, transport.stepIndex, p);
-
-      for (const ev of events) {
-        let t = transport.nextTime;
-        t = applySwingToTime(t, transport.stepIndex, p);
-        t = humanizeTime(t, p);
-
-        scheduleEvent(chordSym, pcs, t, ev, p);
-        scheduled.push({ t: t.toFixed(3), step: transport.stepIndex, chord: chordSym, kind: ev.kind, dir: ev.dir, vel: ev.vel.toFixed(2) });
-      }
-
-      transport.stepIndex++;
-      transport.nextTime += p.step16;
-    }
-
-    if (scheduled.length) {
-      debugEl.textContent = scheduled.slice(-10).map(x =>
-        `${x.t}s  step=${String(x.step).padStart(3," ")}  ${x.chord.padEnd(6," ")}  ${x.kind}/${x.dir}  vel=${x.vel}`
-      ).join("\n");
-    }
-  }
-
-  function scheduleEvent(chordSym, pcs, timeSec, ev, p) {
-    const chordNotes = voiceChord(pcs, p.centerMidi, p.maxNotes);
-    if (!chordNotes.length) return;
-
-    const order = (ev.dir === "down") ? chordNotes.slice() : chordNotes.slice().reverse();
-    const spread = p.strumSpreadSec;
-
-    const atk = lerp(0.004, 0.010, p.singer) * lerp(1.0, 1.15, (1 - ev.vel));
-    const rel = lerp(0.22, 0.14, p.singer);
-    const dur = clamp(ev.dur * lerp(1.0, 0.85, p.singer), 0.18, 1.2);
-
-    if (ev.kind === "arp") {
-      // Singer Mode: giảm “đinh” -> giữ 2 nốt (low + high)
-      if (p.singer > 0.55) {
-        const low = chordNotes[0];
-        const high = chordNotes[chordNotes.length - 1];
-        playNote(low,  timeSec, dur * 0.95, ev.vel * 0.95, atk, rel);
-        playNote(high, timeSec + spread * 1.3, dur * 0.85, ev.vel * 0.75, atk, rel);
-        return;
-      }
-    }
-
-    // Strum / full-ish
-    let notes = order;
-    if (p.singer > 0.65 && notes.length >= 4) {
-      const mid = Math.floor(notes.length / 2);
-      notes = notes.filter((_, idx) => idx !== mid);
-    }
-
-    notes.forEach((midi, i) => {
-      const t = timeSec + i * spread;
-      const v = clamp(ev.vel * (1 - i * 0.04), 0.04, 1.0);
-      playNote(midi, t, dur, v, atk, rel);
-    });
-  }
-
-  function playNote(midi, when, duration, gain01, attack, release) {
-    if (!instrument) return;
-    const g = clamp(gain01, 0.03, 1.0);
-    instrument.play(midi, when, { gain: g, duration, attack, release });
-  }
-
-  // ---------- Buttons ----------
+  // Buttons
   ui.btnStart.addEventListener("click", async () => {
     ui.btnStart.disabled = true;
     try {
-      await unlockAudio();
-      await loadInstrument();
+      await unlock();
+      const ok = await loadInstrument();
+      if (!ok) ui.btnStart.disabled = false;
+      else {
+        ui.btnProbe.disabled = false;
+        ui.btnNote.disabled = false;
+        ui.btnPlay.disabled = false;
+      }
     } catch (e) {
       console.error(e);
-      log("Load error. Mở DevTools > Network/Console để xem request soundfont có bị chặn không.");
+      log("Start/Load error.");
       ui.btnStart.disabled = false;
     }
   });
 
+  ui.btnProbe.addEventListener("click", async () => {
+    await unlock();
+    const nameToUrl = makeNameToUrl();
+    const url = nameToUrl(ui.inst.value, ui.sfset.value, "mp3");
+    await probeUrl(url);
+  });
+
+  ui.btnNote.addEventListener("click", async () => {
+    await unlock();
+    if (!instrument) { log("Chưa load instrument."); return; }
+    instrument.play(60, ac.currentTime + 0.03, { gain: 0.9, duration: 0.45, attack: 0.002, release: 0.10 });
+    plog("Played single note: C4 (60).");
+  });
+
   ui.btnPlay.addEventListener("click", async () => {
-    try {
-      await unlockAudio();
-      startTransport();
-    } catch (e) {
-      console.error(e);
-      log("Play error. Check console.");
-    }
+    await unlock();
+    startProg();
   });
 
-  ui.btnStop.addEventListener("click", () => stopTransport());
-
-  ui.btnTest.addEventListener("click", async () => {
-    await unlockAudio();
-    const p = computePolicy();
-
-    const chordSym = (parseProgression(ui.prog.value)[0] || "C");
-    const pcs = chordToPitchClasses(chordSym) || chordToPitchClasses("C");
-    const t = ac.currentTime + 0.06;
-
-    scheduleEvent(chordSym, pcs, t, { kind:"strum", dir:"down", vel: 0.92, dur: 0.75 }, p);
-    log(`Test strum: ${chordSym}`);
-  });
+  ui.btnStop.addEventListener("click", () => stopProg());
 
   ui.btnBeep.addEventListener("click", async () => {
-    await unlockAudio();
-    const ctx = ensureAudioContext();
-
+    await unlock();
+    const ctx = ensureAudio();
     const osc = ctx.createOscillator();
     const g = ctx.createGain();
     osc.type = "sine";
     osc.frequency.value = 880;
-
     g.gain.value = 0.0001;
     osc.connect(g);
     g.connect(ctx.destination);
-
     const t0 = ctx.currentTime;
     g.gain.setValueAtTime(0.0001, t0);
     g.gain.exponentialRampToValueAtTime(0.15, t0 + 0.02);
     g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.18);
-
     osc.start(t0);
     osc.stop(t0 + 0.20);
-
     log("Beep test fired.");
   });
 
   document.addEventListener("visibilitychange", () => {
-    if (document.hidden && transport.isPlaying) stopTransport();
+    if (document.hidden) stopProg();
   });
 })();
 </script>
