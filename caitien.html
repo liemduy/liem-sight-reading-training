@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bolero Laboratory - Tự Chỉnh Thông Số</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.18/Tone.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/soundfont-player@0.12.0/dist/soundfont-player.min.js"></script>
+
+  <style>
+    :root { --bg: #121214; --panel: #1c1c1f; --accent: #4cc9f0; --text: #e0e0e0; }
+    body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; padding: 20px; font-size: 14px; }
+    
+    h2 { color: var(--accent); margin-bottom: 5px; }
+    .subtitle { color: #888; font-size: 0.85rem; margin-bottom: 20px; }
+
+    .main-grid { display: grid; grid-template-columns: 250px 1fr; gap: 20px; max-width: 1000px; margin: 0 auto; }
+    
+    /* Cột trái: Master Controls */
+    .controls-panel { background: var(--panel); padding: 15px; border-radius: 8px; border: 1px solid #333; height: fit-content; }
+    
+    .control-group { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #333; }
+    .control-group label { display: block; margin-bottom: 5px; font-weight: bold; color: #bbb; }
+    input[type=range] { width: 100%; accent-color: var(--accent); cursor: pointer; }
+    
+    button { 
+      width: 100%; padding: 10px; margin-top: 5px; border: none; border-radius: 4px; 
+      font-weight: bold; cursor: pointer; transition: 0.2s; 
+    }
+    .btn-play { background: var(--accent); color: #000; }
+    .btn-stop { background: #ef233c; color: #fff; display: none; }
+    .btn-preset { background: #333; color: #fff; margin-bottom: 5px; font-size: 0.8rem; }
+    .btn-preset:hover { background: #444; }
+
+    /* Cột phải: Step Matrix */
+    .matrix-panel { background: var(--panel); padding: 15px; border-radius: 8px; border: 1px solid #333; }
+    
+    .step-row { 
+      display: grid; grid-template-columns: 60px 1fr 1fr 1fr 40px; 
+      gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid #2a2a2a; 
+    }
+    .step-row:last-child { border-bottom: none; }
+    .step-label { font-weight: bold; color: var(--accent); }
+    
+    .slider-col { display: flex; flex-direction: column; }
+    .slider-col span { font-size: 0.7rem; color: #666; margin-bottom: 2px; }
+    
+    .val-display { font-family: monospace; color: #fff; text-align: right; }
+
+    /* Visualizer */
+    .viz-bar { height: 4px; background: #333; margin-top: 5px; position: relative; width: 100%; }
+    .viz-cursor { 
+      position: absolute; top: -2px; bottom: -2px; width: 2px; background: #ff0000; 
+      left: 0%; transition: left 0.1s linear; 
+    }
+
+    .chord-select { display: flex; gap: 5px; margin-top: 10px; }
+    .btn-chord { background: #222; border: 1px solid #444; color: #fff; flex: 1; }
+    .btn-chord.active { background: var(--accent); color: #000; border-color: var(--accent); }
+
+  </style>
+</head>
+<body>
+
+<div class="main-grid">
+  <div class="controls-panel">
+    <h2>🎛 Bolero Lab</h2>
+    <p class="subtitle">Tinh chỉnh từng mili-giây</p>
+
+    <div class="control-group">
+      <label>Trạng thái</label>
+      <div id="status" style="color: #ffb703; font-size: 0.9rem;">Chờ tải...</div>
+      <button id="btn-play" class="btn-play" onclick="initAudio()">▶ TẢI & CHƠI</button>
+      <button id="btn-stop" class="btn-stop" onclick="stopAudio()">⏹ DỪNG</button>
+    </div>
+
+    <div class="control-group">
+      <label>Tốc độ (BPM): <span id="disp-bpm">80</span></label>
+      <input type="range" id="bpm" min="50" max="140" value="80" oninput="updateMaster('bpm', this.value)">
+    </div>
+
+    <div class="control-group">
+      <label>Tone (EQ)</label>
+      <div class="slider-col">
+        <span>Low / Bass (<span id="disp-low">0</span> dB)</span>
+        <input type="range" min="-20" max="10" value="0" step="1" oninput="updateEQ('low', this.value)">
+      </div>
+      <div class="slider-col" style="margin-top:10px;">
+        <span>High / Treble (<span id="disp-high">0</span> dB)</span>
+        <input type="range" min="-20" max="10" value="0" step="1" oninput="updateEQ('high', this.value)">
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label>Hợp âm</label>
+      <div class="chord-select">
+        <button class="btn-chord active" onclick="setChord('Am')">Am</button>
+        <button class="btn-chord" onclick="setChord('Dm')">Dm</button>
+        <button class="btn-chord" onclick="setChord('E7')">E7</button>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label>Preset (Mẫu)</label>
+      <button class="btn-preset" onclick="loadPreset('video')">Kiểu Video (Lơi)</button>
+      <button class="btn-preset" onclick="loadPreset('robot')">Kiểu Đều (Robot)</button>
+    </div>
+  </div>
+
+  <div class="matrix-panel">
+    <div style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom:1px solid #444; padding-bottom:5px;">
+      <span style="font-weight:bold">Bước (Step)</span>
+      <span>Thời điểm (0-4)</span>
+      <span>Độ dài (Giây)</span>
+      <span>Lực đánh (Velocity)</span>
+      <span>#</span>
+    </div>
+    
+    <div id="steps-container">
+      </div>
+    
+    <div class="viz-bar">
+      <div id="cursor" class="viz-cursor"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ================= DATA =================
+  const CHORDS = {
+    "Am": { bass: 5, frets: [-1, 0, 2, 2, 1, 0] },
+    "Dm": { bass: 4, frets: [-1, -1, 0, 2, 3, 1] },
+    "E7": { bass: 5, frets: [0, 2, 0, 1, 0, 0] }
+  };
+  const TUNING = [40, 45, 50, 55, 59, 64];
+
+  // Cấu trúc 9 bước chuẩn
+  // Time: Tính bằng số phách (Beats). 4/4 có 4 phách (0.0 đến 4.0)
+  let stepsData = [
+    { id: 0, label: "BÙM 1", type: "bass", time: 0.00, dur: 1.0, vel: 1.0 },
+    { id: 1, label: "1",     type: "pluck1",time: 0.65, dur: 0.2, vel: 0.6 },
+    { id: 2, label: "2",     type: "pluck2",time: 0.75, dur: 0.2, vel: 0.7 },
+    { id: 3, label: "3",     type: "pluck3",time: 0.85, dur: 0.2, vel: 0.8 },
+    { id: 4, label: "CHÁT",  type: "chat",  time: 1.00, dur: 0.05, vel: 0.9 }, // Beat 2
+    { id: 5, label: "BÙM 2", type: "alt",   time: 1.50, dur: 0.5, vel: 0.85 }, // Đảo phách
+    { id: 6, label: "CHÁT",  type: "chat",  time: 2.00, dur: 0.05, vel: 0.9 }, // Beat 3
+    { id: 7, label: "BÙM 3", type: "alt",   time: 2.50, dur: 0.5, vel: 0.85 },
+    { id: 8, label: "CHÁT",  type: "chat",  time: 3.00, dur: 0.05, vel: 0.9 }, // Beat 4
+  ];
+
+  // ================= AUDIO ENGINE =================
+  let guitar, eq, loop;
+  let currentChord = "Am";
+  let isReady = false;
+
+  async function initAudio() {
+    if(isReady) { startLoop(); return; }
+
+    const btn = document.getElementById('btn-play');
+    btn.disabled = true;
+    btn.innerText = "ĐANG TẢI...";
+    document.getElementById('status').innerText = "Đang tải bộ tiếng...";
+
+    await Tone.start();
+    
+    // 1. Tạo EQ (3-band)
+    eq = new Tone.EQ3(0, 0, 0); // Low, Mid, High
+    eq.toDestination();
+
+    // 2. Tải Soundfont (Steel Guitar cho đanh)
+    try {
+      guitar = await Soundfont.instrument(Tone.context.rawContext, 'acoustic_guitar_steel', { destination: eq });
+      
+      isReady = true;
+      document.getElementById('status').innerText = "Sẵn sàng!";
+      btn.style.display = 'none';
+      document.getElementById('btn-stop').style.display = 'inline-block';
+      
+      startLoop();
+    } catch(e) {
+      document.getElementById('status').innerText = "Lỗi: " + e;
+      btn.disabled = false;
+    }
+  }
+
+  function startLoop() {
+    Tone.Transport.bpm.value = document.getElementById('bpm').value;
+    
+    // Loop 1 ô nhịp (1m)
+    loop = new Tone.Loop((time) => {
+      // Mỗi lần loop chạy (đầu ô nhịp), ta lên lịch cho các sự kiện dựa trên Slider
+      stepsData.forEach(step => {
+        // Tính thời gian tuyệt đối: time (đầu loop) + step.time (offset tính bằng beat)
+        // Convert beat sang giây: Tone.Time("4n").toSeconds() * step.time ... 
+        // Tone.js hỗ trợ cộng chuỗi: time + "0:0:0" nhưng slider là float.
+        // Cách dễ nhất: Dùng Transport.seconds làm mốc.
+        
+        // Schedule relative to current measure
+        // Lưu ý: step.time là số beat (0 - 4).
+        // Cần convert sang thời gian chuẩn của Tone.
+        // Dùng cú pháp "0:0:0" của Tone hơi phức tạp với float slider.
+        // Ta dùng Transport.schedule cho từng nốt trong khoảng thời gian này.
+      });
+      
+      // Cách trên hơi khó sync real-time.
+      // Cách tốt hơn: Loop chạy mỗi 1/16 note (Sixteenth) và check xem có sự kiện nào gần đó không?
+      // KHÔNG. Cách tốt nhất cho "Lab" là schedule tất cả events cho 1 Bar sắp tới.
+      
+      stepsData.forEach(s => {
+          // Convert Beat (float) -> Time string "0:0:0" format is tricky.
+          // Let's use arithmetic: 1 Beat = "4n".
+          let triggerTime = time + Tone.Time("4n").toSeconds() * s.time;
+          
+          playStep(s, triggerTime);
+      });
+      
+      // Visual feedback cursor
+      Tone.Draw.schedule(() => {
+        animateCursor();
+      }, time);
+
+    }, "1m").start(0);
+
+    Tone.Transport.start();
+  }
+
+  function stopAudio() {
+    Tone.Transport.stop();
+    if(loop) loop.dispose();
+    document.getElementById('btn-play').style.display = 'inline-block';
+    document.getElementById('btn-play').innerText = "TIẾP TỤC";
+    document.getElementById('btn-play').disabled = false;
+    document.getElementById('btn-stop').style.display = 'none';
+  }
+
+  function playStep(step, time) {
+    if(!guitar) return;
+    const chord = CHORDS[currentChord];
+    let notes = [];
+    
+    // Logic chọn nốt
+    if(step.type === 'bass') {
+      notes = [getNote(chord.bass)];
+    } else if (step.type === 'alt') {
+      let alt = (currentChord === 'Dm') ? 5 : (chord.bass === 5 ? 4 : 5);
+      notes = [getNote(alt)];
+    } else if (step.type.startsWith('pluck')) {
+      let offset = parseInt(step.type.replace('pluck','')); // 1, 2, 3
+      if(step.type === 'pluck3') {
+        // Nốt số 3 thường là quạt nhẹ
+        notes = [getNote(3), getNote(2), getNote(1)];
+      } else {
+        notes = [getNote(chord.bass - offset)];
+      }
+    } else if (step.type === 'chat') {
+      notes = [getNote(1), getNote(2), getNote(3)];
+    }
+
+    // Play
+    notes.forEach((n, idx) => {
+      if(!n) return;
+      // Stagger chát/strum một chút cho tự nhiên
+      let stagger = (step.type === 'chat' || step.type === 'pluck3') ? idx * 0.01 : 0;
+      
+      guitar.play(n, time + stagger, {
+        duration: step.dur,
+        gain: step.vel,
+        attack: 0.001,
+        release: step.type === 'chat' ? 0.05 : 0.1 // Force release ngắn cho chát
+      });
+    });
+  }
+
+  function getNote(stringIdx) {
+    const chord = CHORDS[currentChord];
+    const arrIdx = 6 - stringIdx;
+    const fret = chord.frets[arrIdx];
+    if(fret === -1) return null;
+    return TUNING[arrIdx] + fret;
+  }
+
+  // ================= UI LOGIC =================
+  const container = document.getElementById('steps-container');
+
+  function renderSteps() {
+    container.innerHTML = '';
+    stepsData.forEach((s, idx) => {
+      const div = document.createElement('div');
+      div.className = 'step-row';
+      div.innerHTML = `
+        <div class="step-label">${s.label}</div>
+        
+        <div class="slider-col">
+          <span>Thời điểm: <b id="val-time-${idx}">${s.time.toFixed(2)}</b></span>
+          <input type="range" min="0" max="3.9" step="0.05" value="${s.time}" 
+                 oninput="updateStep(${idx}, 'time', this.value)">
+        </div>
+        
+        <div class="slider-col">
+          <span>Độ dài: <b id="val-dur-${idx}">${s.dur}s</b></span>
+          <input type="range" min="0.05" max="1.5" step="0.05" value="${s.dur}" 
+                 oninput="updateStep(${idx}, 'dur', this.value)">
+        </div>
+
+        <div class="slider-col">
+          <span>Lực: <b id="val-vel-${idx}">${s.vel}</b></span>
+          <input type="range" min="0.1" max="1.2" step="0.1" value="${s.vel}" 
+                 oninput="updateStep(${idx}, 'vel', this.value)">
+        </div>
+
+        <div style="text-align:center; color:#555; font-size:0.8rem">
+           ${idx+1}
+        </div>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  window.updateStep = function(idx, field, val) {
+    val = parseFloat(val);
+    stepsData[idx][field] = val;
+    document.getElementById(`val-${field}-${idx}`).innerText = (field === 'dur') ? val + 's' : val;
+    
+    // Nếu chỉnh Time, sắp xếp lại mảng để đảm bảo logic (Optional, nhưng tốt cho visual)
+    // stepsData.sort((a,b) => a.time - b.time); // Đừng sort nóng, sẽ nhảy UI
+  }
+
+  window.updateMaster = function(type, val) {
+    if(type === 'bpm') {
+      document.getElementById('disp-bpm').innerText = val;
+      Tone.Transport.bpm.value = val;
+    }
+  }
+
+  window.updateEQ = function(type, val) {
+    document.getElementById(`disp-${type}`).innerText = val;
+    if(!eq) return;
+    if(type === 'low') eq.low.value = val;
+    if(type === 'high') eq.high.value = val;
+  }
+
+  window.setChord = function(c) {
+    currentChord = c;
+    document.querySelectorAll('.btn-chord').forEach(b => {
+      b.classList.toggle('active', b.innerText === c);
+    });
+  }
+
+  window.loadPreset = function(type) {
+    if(type === 'video') {
+      // Kiểu lơi: 1-2-3 dính chùm vào cuối phách 1
+      stepsData[0].time = 0.0; // Bùm
+      stepsData[1].time = 0.65; // 1
+      stepsData[2].time = 0.75; // 2
+      stepsData[3].time = 0.85; // 3
+      stepsData[4].time = 1.0; // Chát
+      stepsData[4].dur = 0.05; // Chát cụt
+    } else {
+      // Kiểu robot: Đều nhau
+      stepsData[0].time = 0.0;
+      stepsData[1].time = 0.25;
+      stepsData[2].time = 0.50;
+      stepsData[3].time = 0.75;
+      stepsData[4].time = 1.0;
+      stepsData[4].dur = 0.2; // Chát dài hơn chút
+    }
+    renderSteps();
+  }
+
+  function animateCursor() {
+    const cursor = document.getElementById('cursor');
+    cursor.style.transition = 'none';
+    cursor.style.left = '0%';
+    setTimeout(() => {
+      cursor.style.transition = `left ${Tone.Time("1m").toSeconds()}s linear`;
+      cursor.style.left = '100%';
+    }, 20);
+  }
+
+  // Init
+  renderSteps();
+
+</script>
+</body>
+</html>
