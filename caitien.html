@@ -3,19 +3,18 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>Bolero Beer Mode - Auto & Percentage</title>
+  <title>Bolero Timeline Editor - Kéo Thả Nhịp</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.18/Tone.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/soundfont-player@0.12.0/dist/soundfont-player.min.js"></script>
 
   <style>
     :root {
-      --bg: #121214;
-      --card: #1c1c1f;
-      --accent: #ff9f1c; /* Màu vàng cam bia */
-      --text: #e0e0e0;
-      --success: #2ec4b6;
-      --error: #e71d36;
+      --bg: #1e1e24;
+      --card: #25252a;
+      --text: #fff;
+      --accent: #ffae42; 
+      --drag-handle: #fff;
     }
 
     body {
@@ -30,204 +29,162 @@
       user-select: none;
     }
 
-    h2 { color: var(--accent); margin: 10px 0; font-size: 1.4rem; text-transform: uppercase; letter-spacing: 1px; }
-    
+    h2 { margin: 10px 0; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; font-size: 1.2rem; }
+
     .container {
       background: var(--card);
       padding: 15px;
       border-radius: 12px;
       width: 100%;
-      max-width: 600px; /* Rộng hơn chút để chứa input */
-      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+      max-width: 800px; /* Rộng hơn để dễ kéo */
+      box-shadow: 0 5px 20px rgba(0,0,0,0.5);
       border: 1px solid #333;
     }
 
-    /* GRID 9 BƯỚC */
-    .sequencer-grid {
-      display: grid;
-      grid-template-columns: repeat(9, 1fr);
-      gap: 4px;
-      margin-bottom: 5px;
+    /* === TIMELINE STYLES === */
+    .timeline-wrapper {
+      margin: 20px 0;
+      position: relative;
+      height: 100px;
+      width: 100%;
+      background: #000;
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      border: 2px solid #444;
     }
-    
-    .seq-step {
-      background: #333;
-      border-radius: 4px 4px 0 0;
-      height: 40px;
+
+    .segment {
+      height: 100%;
+      position: relative;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      font-size: 0.65rem;
-      text-align: center;
-      color: #999;
-      border: 1px solid #444;
-      transition: all 0.1s;
-      position: relative;
-    }
-    
-    .seq-step.active {
-      background: var(--accent);
-      color: #000;
-      font-weight: bold;
-      border-color: var(--accent);
-      z-index: 10;
-      transform: scale(1.05);
-      box-shadow: 0 0 10px var(--accent);
-    }
-
-    /* INPUT PHẦN TRĂM */
-    .percent-row {
-      display: grid;
-      grid-template-columns: repeat(9, 1fr);
-      gap: 4px;
-      margin-bottom: 15px;
-    }
-
-    .percent-input {
-      width: 100%;
-      background: #111;
-      border: 1px solid #444;
-      color: var(--accent);
-      text-align: center;
-      font-size: 0.8rem;
-      padding: 5px 0;
-      border-radius: 0 0 4px 4px;
+      font-size: 0.75rem;
+      border-right: 1px solid rgba(0,0,0,0.5);
       box-sizing: border-box;
+      transition: background 0.1s;
+      overflow: hidden;
+      min-width: 10px; /* Chống bị kéo mất tiêu */
     }
-    .percent-input:focus { outline: none; border-color: var(--accent); background: #222; }
-
-    /* VALIDATION TOTAL */
-    .total-display {
-      text-align: right;
-      font-size: 0.8rem;
-      margin-bottom: 10px;
-      font-weight: bold;
-    }
-    .total-ok { color: var(--success); }
-    .total-bad { color: var(--error); }
-
-    /* Info Box */
-    .info-box {
-      background: #000;
-      color: var(--accent);
-      font-family: monospace;
-      padding: 10px;
-      border-radius: 6px;
-      text-align: center;
-      margin-bottom: 15px;
-      border: 1px solid #333;
-      min-height: 24px;
-      font-size: 0.9rem;
-    }
-
-    /* Nút Trigger Thủ Công */
-    #btn-trigger {
-      width: 100%;
-      padding: 15px;
-      background: #333;
-      border: 2px solid #555;
-      border-radius: 8px;
-      color: #888;
-      font-size: 1.1rem;
-      font-weight: bold;
-      cursor: pointer;
-      margin-bottom: 15px;
-      transition: 0.1s;
-    }
-    #btn-trigger:active:not([disabled]) {
-      background: #555; transform: scale(0.98); color: #fff;
-    }
-
-    /* AUTO PLAY SECTION */
-    .auto-section {
-      background: #25252a;
-      padding: 15px;
-      border-radius: 8px;
-      border: 1px solid #444;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .auto-header { display: flex; justify-content: space-between; align-items: center; }
     
-    #btn-auto {
-      background: var(--accent);
-      color: #000;
+    /* Màu sắc từng loại */
+    .seg-bass { background: #d62828; color: white; } /* Bùm */
+    .seg-fill { background: #4a4e69; color: #ccc; font-size: 0.6rem; } /* 1-2-3 */
+    .seg-chat { background: #2a9d8f; color: white; } /* Chát */
+    
+    .segment.playing {
+      filter: brightness(1.5);
+      box-shadow: inset 0 0 15px #fff;
+    }
+
+    .segment span.label { font-weight: bold; pointer-events: none; }
+    .segment span.pct { font-size: 0.6rem; opacity: 0.8; pointer-events: none; margin-top: 4px;}
+
+    /* Tay nắm kéo (Resizer) */
+    .resizer {
+      width: 10px;
+      height: 100%;
+      background: transparent;
+      position: absolute;
+      right: -5px; /* Nằm giữa 2 ô */
+      top: 0;
+      z-index: 10;
+      cursor: col-resize;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .resizer::after {
+      content: "";
+      width: 2px;
+      height: 40%;
+      background: rgba(255,255,255,0.5);
+      border-radius: 2px;
+    }
+    .resizer:hover::after { background: #fff; height: 100%; }
+
+    /* CONTROLS */
+    .control-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      background: #111;
+      padding: 10px;
+      border-radius: 8px;
+    }
+
+    input[type=range] { width: 150px; accent-color: var(--accent); }
+    
+    button {
+      padding: 12px 20px;
+      border-radius: 6px;
       border: none;
-      padding: 10px 20px;
-      border-radius: 50px;
       font-weight: bold;
       cursor: pointer;
       font-size: 1rem;
-      width: 100%;
     }
-    #btn-auto.playing { background: var(--error); color: white; animation: pulse 1s infinite; }
+    .btn-play { background: var(--accent); color: #000; width: 100%; }
+    .btn-play:disabled { opacity: 0.5; cursor: wait; }
+    .btn-play.stop { background: #e63946; color: #fff; }
 
-    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.8; } 100% { opacity: 1; } }
+    .chord-row { display: flex; gap: 5px; margin-top: 15px; }
+    .btn-chord { flex: 1; background: #333; color: #fff; border: 1px solid #555; }
+    .btn-chord.active { background: var(--accent); color: #000; }
 
-    /* Hợp âm */
-    .chord-row { display: flex; gap: 8px; margin-bottom: 10px; }
-    .btn-chord {
-      flex: 1;
-      padding: 10px;
-      background: #333;
-      border: 1px solid #555;
-      color: #fff;
-      border-radius: 6px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    .btn-chord.active {
-      background: var(--accent);
-      color: #000;
-    }
-
-    /* Overlay Load */
-    #overlay-load {
+    /* Overlay */
+    #overlay {
       position: absolute; top:0; left:0; width:100%; height:100%;
-      background: rgba(0,0,0,0.9);
-      display: flex; flex-direction: column;
-      justify-content: center; align-items: center;
-      z-index: 100;
+      background: rgba(0,0,0,0.9); z-index: 99;
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
       border-radius: 12px;
     }
-    .btn-load {
-      background: var(--accent); color: #000; padding: 15px 30px;
-      font-size: 1.2rem; font-weight: bold; border: none; border-radius: 50px;
-      cursor: pointer; box-shadow: 0 0 20px var(--accent);
-    }
+    .btn-load { background: var(--accent); padding: 15px 30px; font-size: 1.2rem; border-radius: 50px; border:none; cursor: pointer; }
 
-    input[type=range] { width: 100%; accent-color: var(--accent); }
   </style>
 </head>
 <body>
 
 <div class="container" style="position: relative;">
   
-  <div id="overlay-load">
-    <h2 style="margin-bottom: 20px;">🍺 BOLERO BEER MODE</h2>
-    <button class="btn-load" onclick="initAudio()">RÓT BIA & TẢI TIẾNG</button>
-    <p id="status-text" style="margin-top:10px; color: #888;">Cần tải soundfont (~5s)</p>
+  <div id="overlay">
+    <h2>🎚️ BOLERO TIMELINE EDITOR</h2>
+    <button class="btn-load" onclick="initAudio()">BẮT ĐẦU (TẢI TIẾNG)</button>
+    <p id="status" style="color:#888; margin-top:10px;">Chờ tải soundfont...</p>
   </div>
 
   <div style="display:flex; justify-content:space-between; align-items:center;">
-    <h2>🎚️ Tùy Chỉnh Nhịp</h2>
-    <button onclick="resetPercentages()" style="background:#444; border:none; color:#fff; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.7rem;">Reset %</button>
+    <h2>Bolero Timeline</h2>
+    <button onclick="resetDefault()" style="font-size:0.7rem; padding:5px 10px; background:#444; color:#fff;">Reset chuẩn</button>
   </div>
 
-  <div class="sequencer-grid" id="seq-grid"></div>
-  
-  <div class="percent-row" id="percent-grid"></div>
+  <p style="font-size: 0.8rem; color: #aaa; margin: 0 0 10px 0;">
+    💡 Mẹo: Kéo các vạch trắng giữa các ô để điều chỉnh độ dài ngắn (nhịp lơi).
+  </p>
 
-  <div class="total-display" id="total-check">Tổng: 0%</div>
+  <div class="timeline-wrapper" id="timeline">
+    </div>
 
-  <div class="info-box" id="info-display">Sẵn sàng...</div>
+  <div class="control-row">
+    <div>
+      <div style="font-size:0.8rem; color:#aaa; margin-bottom:5px;">Tốc độ (BPM)</div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <input type="range" id="bpm" min="40" max="120" value="75" oninput="document.getElementById('bpm-val').innerText = this.value">
+        <span id="bpm-val" style="font-weight:bold; color:var(--accent);">75</span>
+      </div>
+    </div>
+    
+    <div style="text-align:right;">
+      <div style="font-size:0.8rem; color:#aaa; margin-bottom:5px;">Chế độ</div>
+      <label style="font-size:0.9rem; cursor:pointer;">
+        <input type="checkbox" id="chk-auto-chord" checked> Tự đổi hợp âm
+      </label>
+    </div>
+  </div>
 
-  <button id="btn-trigger" onclick="manualPlay()" disabled>
-    🖐️ GẢY TAY (Space)
-  </button>
+  <button id="btn-play" class="btn-play" onclick="togglePlay()">▶ CHẠY AUTO</button>
 
   <div class="chord-row">
     <button class="btn-chord active" onclick="setChord('Am')">Am</button>
@@ -235,111 +192,141 @@
     <button class="btn-chord" onclick="setChord('E7')">E7</button>
   </div>
 
-  <div class="auto-section">
-    <div class="auto-header">
-      <span style="font-weight:bold; color:#fff;">🍺 Auto Play (Ún Bia)</span>
-    </div>
-    
-    <div style="display:flex; align-items:center; gap:10px; font-size:0.9rem; margin-bottom:5px;">
-      <label>Tốc độ:</label>
-      <input type="range" id="bpm" min="40" max="120" value="70" oninput="document.getElementById('bpm-val').innerText = this.value">
-      <span id="bpm-val" style="width:30px; text-align:right;">70</span> BPM
-    </div>
-
-    <div style="display:flex; align-items:center; gap:10px; font-size:0.9rem; margin-bottom:10px;">
-       <input type="checkbox" id="chk-auto-chord" checked> 
-       <label for="chk-auto-chord">Tự đổi hợp âm sau</label>
-       <input type="number" id="bars-limit" value="2" min="1" max="8" style="width:40px; background:#111; border:1px solid #444; color:#fff; text-align:center;">
-       <span>ô nhịp</span>
-    </div>
-
-    <button id="btn-auto" onclick="toggleAutoPlay()" disabled>▶ BẮT ĐẦU AUTO</button>
-  </div>
-
 </div>
 
 <script>
   // ================= DATA =================
   const TUNING = [40, 45, 50, 55, 59, 64];
-
-  // SỬA LỖI BÙM+1: Mở dây Bass phụ (thay -1 bằng 0 hoặc fret chuẩn)
   const CHORDS = {
-    "Am": { name: "La Thứ", bass: 5, frets: [0, 0, 2, 2, 1, 0] }, // Dây 6 mở (0) để đánh Bùm+1
-    "Dm": { name: "Rê Thứ", bass: 4, frets: [-1, 0, 0, 2, 3, 1] }, // Dây 5 mở (0) để đánh Bùm+1
-    "E7": { name: "Mi 7",   bass: 5, frets: [0, 2, 0, 1, 0, 0] }   // Dây 6 mở sẵn
+    "Am": { bass: 5, frets: [0, 0, 2, 2, 1, 0] },
+    "Dm": { bass: 4, frets: [-1, 0, 0, 2, 3, 1] },
+    "E7": { bass: 5, frets: [0, 2, 0, 1, 0, 0] }
   };
   const CHORD_LOOP = ["Am", "Dm", "E7"];
 
-  const STEPS = [
-    { id: 0, label: "BÙM",   defPct: 15 },
-    { id: 1, label: "1",     defPct: 6 },
-    { id: 2, label: "2",     defPct: 6 },
-    { id: 3, label: "3",     defPct: 6 },
-    { id: 4, label: "CHÁT",  defPct: 12 },
-    { id: 5, label: "BÙM",   defPct: 20 },
-    { id: 6, label: "CHÁT",  defPct: 10 },
-    { id: 7, label: "BÙM+1", defPct: 15 },
-    { id: 8, label: "CHÁT",  defPct: 10 }
+  // Dữ liệu nhịp chuẩn (Tổng 100%)
+  const DEFAULT_STEPS = [
+    { id: 0, label: "BÙM",   type: "bass", pct: 16 },
+    { id: 1, label: "1",     type: "fill", pct: 3 },
+    { id: 2, label: "2",     type: "fill", pct: 3 },
+    { id: 3, label: "3",     type: "fill", pct: 3 },
+    { id: 4, label: "CHÁT",  type: "chat", pct: 12.5 },
+    { id: 5, label: "BÙM",   type: "bass", pct: 12.5 },
+    { id: 6, label: "CHÁT",  type: "chat", pct: 25 },
+    { id: 7, label: "BÙM+1", type: "bass", pct: 12.5 },
+    { id: 8, label: "CHÁT",  type: "chat", pct: 12.5 }
   ];
-  // Tổng default = 100%
 
-  // ================= STATE =================
+  // State hiện tại (được clone từ default để chỉnh sửa)
+  let steps = JSON.parse(JSON.stringify(DEFAULT_STEPS));
+  
   let guitar = null;
+  let isPlaying = false;
+  let currentStepIdx = 0;
+  let timerId = null;
   let currentChord = "Am";
-  let stepIndex = 0;
-  let isAutoPlaying = false;
-  let autoTimeout = null;
   let barCount = 0;
 
-  // ================= INIT UI =================
-  const seqGrid = document.getElementById('seq-grid');
-  const pctGrid = document.getElementById('percent-grid');
+  // ================= UI BUILDER (TIMELINE) =================
+  const timeline = document.getElementById('timeline');
 
-  function initUI() {
-    seqGrid.innerHTML = '';
-    pctGrid.innerHTML = '';
+  function renderTimeline() {
+    timeline.innerHTML = '';
+    steps.forEach((step, index) => {
+      // Tạo khối Segment
+      const el = document.createElement('div');
+      el.className = `segment seg-${step.type}`;
+      el.id = `seg-${index}`;
+      el.style.width = `${step.pct}%`;
+      
+      el.innerHTML = `
+        <span class="label">${step.label}</span>
+        <span class="pct" id="lbl-${index}">${step.pct.toFixed(1)}%</span>
+      `;
 
-    STEPS.forEach(s => {
-      // Label Step
-      const d = document.createElement('div');
-      d.className = 'seq-step';
-      d.id = `step-${s.id}`;
-      d.innerHTML = `<span>${s.label}</span>`;
-      seqGrid.appendChild(d);
+      // Tạo tay nắm kéo (trừ thằng cuối cùng)
+      if (index < steps.length - 1) {
+        const resizer = document.createElement('div');
+        resizer.className = 'resizer';
+        resizer.addEventListener('mousedown', (e) => initDrag(e, index));
+        // Hỗ trợ touch cho mobile
+        resizer.addEventListener('touchstart', (e) => initDrag(e, index), {passive: false});
+        el.appendChild(resizer);
+      }
 
-      // Input %
-      const inp = document.createElement('input');
-      inp.type = 'number';
-      inp.className = 'percent-input';
-      inp.id = `pct-${s.id}`;
-      inp.value = s.defPct;
-      inp.oninput = validateTotal; // Check tổng khi nhập
-      pctGrid.appendChild(inp);
+      timeline.appendChild(el);
     });
-    validateTotal();
   }
 
-  function validateTotal() {
-    let total = 0;
-    STEPS.forEach(s => {
-      total += parseFloat(document.getElementById(`pct-${s.id}`).value) || 0;
-    });
-    const disp = document.getElementById('total-check');
-    disp.innerText = `Tổng: ${total}%`;
-    if(total === 100) {
-      disp.className = 'total-display total-ok';
-      disp.innerText += " (Chuẩn)";
-      return true;
-    } else {
-      disp.className = 'total-display total-bad';
-      disp.innerText += " (Phải bằng 100%)";
-      return false;
-    }
+  // ================= DRAG LOGIC (KÉO THẢ) =================
+  let startX, startWidthLeft, startWidthRight, draggingIdx;
+
+  function initDrag(e, idx) {
+    e.preventDefault(); // Chặn scroll trên mobile
+    draggingIdx = idx;
+    
+    // Lấy tọa độ chuột/touch
+    startX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+    
+    // Lấy chiều rộng hiện tại của 2 ô liền kề
+    // Vì width lưu trong state là %, ta cần tính dựa trên container
+    const containerWidth = timeline.getBoundingClientRect().width;
+    
+    // Tính % hiện tại
+    startWidthLeft = steps[idx].pct;
+    startWidthRight = steps[idx+1].pct;
+
+    document.addEventListener('mousemove', onDrag);
+    document.addEventListener('mouseup', stopDrag);
+    document.addEventListener('touchmove', onDrag, {passive: false});
+    document.addEventListener('touchend', stopDrag);
   }
 
-  function resetPercentages() {
-    STEPS.forEach(s => document.getElementById(`pct-${s.id}`).value = s.defPct);
-    validateTotal();
+  function onDrag(e) {
+    if (draggingIdx === null) return;
+    
+    const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+    const deltaX = clientX - startX;
+    
+    const containerWidth = timeline.getBoundingClientRect().width;
+    const deltaPct = (deltaX / containerWidth) * 100;
+
+    // Tính toán % mới
+    let newLeft = startWidthLeft + deltaPct;
+    let newRight = startWidthRight - deltaPct;
+
+    // Giới hạn Min Width (2%) để không bị kéo mất tiêu
+    if (newLeft < 2 || newRight < 2) return;
+
+    // Update State
+    steps[draggingIdx].pct = newLeft;
+    steps[draggingIdx+1].pct = newRight;
+
+    // Update UI (Realtime)
+    const segLeft = document.getElementById(`seg-${draggingIdx}`);
+    const segRight = document.getElementById(`seg-${draggingIdx+1}`);
+    const lblLeft = document.getElementById(`lbl-${draggingIdx}`);
+    const lblRight = document.getElementById(`lbl-${draggingIdx+1}`);
+
+    segLeft.style.width = `${newLeft}%`;
+    segRight.style.width = `${newRight}%`;
+    
+    lblLeft.innerText = newLeft.toFixed(1) + '%';
+    lblRight.innerText = newRight.toFixed(1) + '%';
+  }
+
+  function stopDrag() {
+    draggingIdx = null;
+    document.removeEventListener('mousemove', onDrag);
+    document.removeEventListener('mouseup', stopDrag);
+    document.removeEventListener('touchmove', onDrag);
+    document.removeEventListener('touchend', stopDrag);
+  }
+
+  function resetDefault() {
+    if(isPlaying) togglePlay(); // Stop first
+    steps = JSON.parse(JSON.stringify(DEFAULT_STEPS));
+    renderTimeline();
   }
 
   // ================= AUDIO ENGINE =================
@@ -352,199 +339,123 @@
     try {
       guitar = await Soundfont.instrument(Tone.context.rawContext, 'acoustic_guitar_nylon');
       
-      document.getElementById('overlay-load').style.display = 'none';
-      document.getElementById('btn-trigger').disabled = false;
-      document.getElementById('btn-auto').disabled = false;
-      
-      highlightStep(0);
-      document.getElementById('info-display').innerText = "Đã sẵn sàng. Chọn chế độ chơi!";
+      document.getElementById('overlay').style.display = 'none';
+      document.getElementById('status').innerText = "Sẵn sàng";
+      renderTimeline(); // Vẽ timeline lần đầu
     } catch(e) {
       alert("Lỗi tải: " + e);
     }
   }
 
   function getNote(chordKey, stringIdx) {
-    if(!guitar) return null;
+    if (!guitar) return null;
     const c = CHORDS[chordKey];
-    const arrIdx = 6 - stringIdx; 
+    const arrIdx = 6 - stringIdx;
     const fret = c.frets[arrIdx];
-    if(fret === -1) return null;
+    if (fret === -1) return null;
     return TUNING[arrIdx] + fret;
   }
 
   // ================= PLAY LOGIC =================
-  function playSoundForStep(idx) {
-    if(!guitar) return;
-    const chord = CHORDS[currentChord];
-    const stepID = STEPS[idx].id;
-    let notes = [];
-    let msg = "";
-    
-    // Logic gảy dây
-    switch(stepID) {
-      case 0: // Bùm Gốc
-      case 5: 
-        notes = [getNote(currentChord, chord.bass)];
-        msg = `BÙM (Dây ${chord.bass})`;
-        playNotes(notes, 1.0, 1.2);
-        break;
-
-      case 1: // 1
-        notes = [getNote(currentChord, chord.bass - 1)];
-        msg = `1 (Dây ${chord.bass - 1})`;
-        playNotes(notes, 0.4, 0.7);
-        break;
-      case 2: // 2
-        notes = [getNote(currentChord, chord.bass - 2)];
-        msg = `2 (Dây ${chord.bass - 2})`;
-        playNotes(notes, 0.4, 0.7);
-        break;
-      case 3: // 3 (Quạt xuống)
-        notes = [3,2,1].map(s => getNote(currentChord, s));
-        msg = "3 (Quạt xuống)";
-        playStrum(notes, 0.02, 0.8, false); // false = ko ngắt
-        break;
-      
-      case 4: case 6: case 8: // CHÁT (Quạt lên + Ngắt)
-        notes = [1,2,3].map(s => getNote(currentChord, s));
-        msg = "CHÁT (Quạt lên)";
-        playStrum(notes, 0.015, 0.9, true); // true = ngắt tiếng
-        break;
-
-      case 7: // BÙM + 1
-        let altBass = chord.bass + 1;
-        if(altBass > 6) altBass = chord.bass - 1; // Fallback nếu bass là 6 thì đánh 5
-        notes = [getNote(currentChord, altBass)];
-        msg = `BÙM PHỤ (Dây ${altBass})`;
-        playNotes(notes, 1.0, 1.1);
-        break;
-    }
-    
-    document.getElementById('info-display').innerText = msg;
-    highlightStep(idx);
-  }
-
-  function playNotes(notes, dur, vel) {
-    notes.forEach(n => {
-      if(n) guitar.play(n, Tone.now(), { duration: dur, gain: vel });
-    });
-  }
-  
-  function playStrum(notes, stagger, vel, mute) {
-    notes.forEach((n, i) => {
-      if(n) {
-        let opts = { duration: mute ? 0.1 : 0.5, gain: vel, release: mute ? 0.05 : 0.1 };
-        guitar.play(n, Tone.now() + (i * stagger), opts);
-      }
-    });
-  }
-
-  function highlightStep(idx) {
-    document.querySelectorAll('.seq-step').forEach(e => e.classList.remove('active'));
-    document.getElementById(`step-${idx}`).classList.add('active');
-  }
-
-  // ================= CONTROL LOGIC =================
-  
-  // 1. MANUAL MODE
-  function manualPlay() {
-    if(isAutoPlaying) return;
-    playSoundForStep(stepIndex);
-    advanceStep();
-  }
-  
-  document.body.onkeydown = (e) => {
-    if(e.code === 'Space') { 
-      e.preventDefault(); 
-      if(isAutoPlaying) {
-         toggleAutoPlay(); // Space để dừng auto
-      } else {
-         manualPlay();
-         document.getElementById('btn-trigger').style.background = "#555";
-      }
-    }
-  }
-  document.body.onkeyup = (e) => {
-    if(e.code === 'Space' && !isAutoPlaying) document.getElementById('btn-trigger').style.background = "#333";
-  }
-
-  // 2. AUTO PLAY MODE
-  function toggleAutoPlay() {
-    const btn = document.getElementById('btn-auto');
-    if(isAutoPlaying) {
-      // Stop
-      isAutoPlaying = false;
-      clearTimeout(autoTimeout);
-      btn.innerHTML = "▶ BẮT ĐẦU AUTO";
-      btn.classList.remove('playing');
-      document.getElementById('btn-trigger').disabled = false;
+  function togglePlay() {
+    const btn = document.getElementById('btn-play');
+    if (isPlaying) {
+      isPlaying = false;
+      clearTimeout(timerId);
+      btn.innerHTML = "▶ CHẠY AUTO";
+      btn.classList.remove('stop');
+      // Xóa highlight
+      document.querySelectorAll('.segment').forEach(s => s.classList.remove('playing'));
     } else {
-      // Start
-      if(!validateTotal()) { alert("Tổng % phải là 100 mới chạy được nha bro!"); return; }
-      isAutoPlaying = true;
-      btn.innerHTML = "⏹ DỪNG LẠI (Ún bia đi)";
-      btn.classList.add('playing');
-      document.getElementById('btn-trigger').disabled = true;
-      runAutoLoop();
+      isPlaying = true;
+      btn.innerHTML = "⏹ DỪNG LẠI";
+      btn.classList.add('stop');
+      runLoop();
     }
   }
 
-  function runAutoLoop() {
-    if(!isAutoPlaying) return;
+  function runLoop() {
+    if (!isPlaying) return;
 
-    // 1. Play current step
-    playSoundForStep(stepIndex);
+    // 1. Play âm thanh của bước hiện tại
+    playStep(currentStepIdx);
 
-    // 2. Calculate delay for NEXT step
-    // Cycle Duration (ms) = (60 / BPM) * 4 beats * 1000
+    // 2. Tính thời gian chờ (Dựa trên width % hiện tại trên màn hình)
     const bpm = document.getElementById('bpm').value;
-    const totalCycleMs = (60 / bpm) * 4 * 1000;
+    const totalCycleMs = (60 / bpm) * 4 * 1000; // Tổng thời gian 1 ô nhịp (4 phách)
     
-    // Duration of THIS step based on %
-    const pct = parseFloat(document.getElementById(`pct-${STEPS[stepIndex].id}`).value) || 10;
-    const delayMs = totalCycleMs * (pct / 100);
+    const currentPct = steps[currentStepIdx].pct;
+    const delayMs = totalCycleMs * (currentPct / 100);
 
-    // 3. Advance logic
-    advanceStep();
+    // 3. Highlight UI
+    document.querySelectorAll('.segment').forEach(s => s.classList.remove('playing'));
+    document.getElementById(`seg-${currentStepIdx}`).classList.add('playing');
 
-    // 4. Schedule next
-    autoTimeout = setTimeout(runAutoLoop, delayMs);
-  }
-
-  function advanceStep() {
-    stepIndex++;
-    if(stepIndex >= STEPS.length) {
-      stepIndex = 0;
+    // 4. Next Step Logic
+    currentStepIdx++;
+    if (currentStepIdx >= steps.length) {
+      currentStepIdx = 0;
       barCount++;
       checkAutoChord();
     }
+
+    // 5. Schedule next
+    timerId = setTimeout(runLoop, delayMs);
+  }
+
+  function playStep(idx) {
+    const s = steps[idx];
+    const c = CHORDS[currentChord];
+    let notes = [];
+    
+    // Logic gảy
+    if (s.label === "BÙM") {
+      notes = [getNote(currentChord, c.bass)];
+      playNotes(notes, 1.0, 1.2);
+    } 
+    else if (s.label === "BÙM+1") {
+      let alt = c.bass + 1;
+      if (alt > 6) alt = c.bass - 1;
+      notes = [getNote(currentChord, alt)];
+      playNotes(notes, 1.0, 1.1);
+    }
+    else if (s.label === "1") playNotes([getNote(currentChord, c.bass-1)], 0.3, 0.7);
+    else if (s.label === "2") playNotes([getNote(currentChord, c.bass-2)], 0.3, 0.7);
+    else if (s.label === "3") {
+      // Quạt xuống
+      notes = [3,2,1].map(i => getNote(currentChord, i));
+      notes.forEach((n, i) => {
+        if(n) guitar.play(n, Tone.now() + i*0.015, {duration: 0.5, gain: 0.8});
+      });
+    }
+    else if (s.label === "CHÁT") {
+      // Quạt lên + ngắt
+      notes = [1,2,3].map(i => getNote(currentChord, i));
+      notes.forEach((n, i) => {
+        if(n) guitar.play(n, Tone.now() + i*0.01, {duration: 0.1, gain: 0.9, release: 0.05});
+      });
+    }
+  }
+
+  function playNotes(notes, dur, vel) {
+    notes.forEach(n => { if(n) guitar.play(n, Tone.now(), {duration: dur, gain: vel}); });
   }
 
   function checkAutoChord() {
-    if(!document.getElementById('chk-auto-chord').checked) return;
-    const limit = parseInt(document.getElementById('bars-limit').value);
-    
-    if(barCount >= limit) {
+    if (!document.getElementById('chk-auto-chord').checked) return;
+    // Đổi mỗi 2 ô nhịp (mặc định cho đỡ rối UI)
+    if (barCount >= 2) {
       barCount = 0;
-      // Next chord
-      let currIdx = CHORD_LOOP.indexOf(currentChord);
-      let nextIdx = (currIdx + 1) % CHORD_LOOP.length;
-      setChord(CHORD_LOOP[nextIdx]);
+      let i = CHORD_LOOP.indexOf(currentChord);
+      let next = CHORD_LOOP[(i+1) % CHORD_LOOP.length];
+      setChord(next);
     }
   }
 
   window.setChord = function(c) {
     currentChord = c;
     document.querySelectorAll('.btn-chord').forEach(b => b.classList.toggle('active', b.innerText === c));
-    if(isAutoPlaying) { // Hiệu ứng nháy
-        const ib = document.getElementById('info-display');
-        ib.style.background = "#333";
-        setTimeout(()=>ib.style.background="#000", 100);
-    }
   }
-
-  // Start
-  initUI();
 </script>
 
 </body>
