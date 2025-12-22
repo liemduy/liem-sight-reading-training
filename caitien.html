@@ -3,146 +3,78 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>Bolero Timeline Editor - Kéo Thả Nhịp</title>
+  <title>Bolero Timeline Pro - Nốt Nhạc</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.18/Tone.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/soundfont-player@0.12.0/dist/soundfont-player.min.js"></script>
 
   <style>
     :root {
-      --bg: #1e1e24;
-      --card: #25252a;
-      --text: #fff;
-      --accent: #ffae42; 
-      --drag-handle: #fff;
+      --bg: #121214; --card: #1e1e24; --accent: #00e676; --text: #eee;
+      --seg-bass: #e63946; --seg-fill: #457b9d; --seg-chat: #1d3557;
     }
-
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Segoe UI', sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 10px;
-      margin: 0;
-      user-select: none;
-    }
-
-    h2 { margin: 10px 0; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; font-size: 1.2rem; }
+    body { background: var(--bg); color: var(--text); font-family: sans-serif; padding: 10px; margin: 0; user-select: none; display: flex; flex-direction: column; align-items: center; }
 
     .container {
-      background: var(--card);
-      padding: 15px;
-      border-radius: 12px;
-      width: 100%;
-      max-width: 800px; /* Rộng hơn để dễ kéo */
-      box-shadow: 0 5px 20px rgba(0,0,0,0.5);
-      border: 1px solid #333;
+      background: var(--card); padding: 15px; border-radius: 12px;
+      width: 100%; max-width: 900px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); border: 1px solid #333;
     }
+    
+    h2 { color: var(--accent); margin: 0 0 15px 0; font-size: 1.2rem; text-transform: uppercase; }
 
-    /* === TIMELINE STYLES === */
-    .timeline-wrapper {
-      margin: 20px 0;
-      position: relative;
-      height: 100px;
-      width: 100%;
-      background: #000;
-      border-radius: 8px;
-      overflow: hidden;
-      display: flex;
-      border: 2px solid #444;
+    /* TIMELINE */
+    .timeline-container {
+      display: flex; height: 120px; width: 100%; background: #000;
+      border: 2px solid #555; border-radius: 8px; overflow: hidden; margin-bottom: 10px;
     }
-
+    
     .segment {
-      height: 100%;
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.75rem;
-      border-right: 1px solid rgba(0,0,0,0.5);
-      box-sizing: border-box;
-      transition: background 0.1s;
-      overflow: hidden;
-      min-width: 10px; /* Chống bị kéo mất tiêu */
+      position: relative; height: 100%; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; border-right: 1px solid rgba(0,0,0,0.5);
+      font-size: 0.75rem; transition: background 0.1s; min-width: 20px;
     }
+    .segment.playing { filter: brightness(1.4); box-shadow: inset 0 0 20px #fff; }
     
-    /* Màu sắc từng loại */
-    .seg-bass { background: #d62828; color: white; } /* Bùm */
-    .seg-fill { background: #4a4e69; color: #ccc; font-size: 0.6rem; } /* 1-2-3 */
-    .seg-chat { background: #2a9d8f; color: white; } /* Chát */
-    
-    .segment.playing {
-      filter: brightness(1.5);
-      box-shadow: inset 0 0 15px #fff;
-    }
+    /* Màu sắc */
+    .type-bass { background: var(--seg-bass); color: #fff; }
+    .type-fill { background: var(--seg-fill); color: #fff; }
+    .type-chat { background: var(--seg-chat); color: #fff; }
 
-    .segment span.label { font-weight: bold; pointer-events: none; }
-    .segment span.pct { font-size: 0.6rem; opacity: 0.8; pointer-events: none; margin-top: 4px;}
-
-    /* Tay nắm kéo (Resizer) */
+    /* Resizer Handle */
     .resizer {
-      width: 10px;
-      height: 100%;
-      background: transparent;
-      position: absolute;
-      right: -5px; /* Nằm giữa 2 ô */
-      top: 0;
-      z-index: 10;
-      cursor: col-resize;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      position: absolute; right: -6px; top: 0; bottom: 0; width: 12px;
+      cursor: col-resize; z-index: 10; display: flex; justify-content: center;
     }
-    .resizer::after {
-      content: "";
-      width: 2px;
-      height: 40%;
-      background: rgba(255,255,255,0.5);
-      border-radius: 2px;
-    }
-    .resizer:hover::after { background: #fff; height: 100%; }
+    .resizer::after { content:""; width: 2px; height: 100%; background: rgba(255,255,255,0.3); }
+    .resizer:hover::after { background: #fff; width: 4px; box-shadow: 0 0 5px #fff; }
 
-    /* CONTROLS */
-    .control-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 15px;
-      background: #111;
-      padding: 10px;
-      border-radius: 8px;
+    /* Note Dropdown */
+    .note-select {
+      margin-top: 5px; background: rgba(0,0,0,0.3); color: #fff; border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 4px; font-size: 0.7rem; padding: 2px; cursor: pointer; width: 90%; text-align: center;
+      appearance: none; -webkit-appearance: none;
     }
-
-    input[type=range] { width: 150px; accent-color: var(--accent); }
+    .note-select:hover { background: rgba(255,255,255,0.1); }
     
-    button {
-      padding: 12px 20px;
-      border-radius: 6px;
-      border: none;
-      font-weight: bold;
-      cursor: pointer;
-      font-size: 1rem;
-    }
-    .btn-play { background: var(--accent); color: #000; width: 100%; }
-    .btn-play:disabled { opacity: 0.5; cursor: wait; }
+    /* Control Bar */
+    .controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: #2a2a2e; padding: 10px; border-radius: 8px; }
+    
+    button { cursor: pointer; border: none; font-weight: bold; border-radius: 4px; padding: 8px 16px; }
+    .btn-apply { background: #ff9f1c; color: #000; margin-left: 10px; }
+    .btn-play { background: var(--accent); color: #000; padding: 12px 24px; font-size: 1rem; width: 100%; margin-top: 10px;}
     .btn-play.stop { background: #e63946; color: #fff; }
-
-    .chord-row { display: flex; gap: 5px; margin-top: 15px; }
-    .btn-chord { flex: 1; background: #333; color: #fff; border: 1px solid #555; }
-    .btn-chord.active { background: var(--accent); color: #000; }
-
+    
+    .chord-btn { flex: 1; padding: 12px; background: #333; color: #fff; border: 1px solid #555; margin-right: 5px; }
+    .chord-btn.active { background: var(--accent); color: #000; }
+    
     /* Overlay */
     #overlay {
-      position: absolute; top:0; left:0; width:100%; height:100%;
-      background: rgba(0,0,0,0.9); z-index: 99;
-      display: flex; flex-direction: column; justify-content: center; align-items: center;
-      border-radius: 12px;
+      position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9);
+      z-index: 999; display: flex; flex-direction: column; justify-content: center; align-items: center;
     }
-    .btn-load { background: var(--accent); padding: 15px 30px; font-size: 1.2rem; border-radius: 50px; border:none; cursor: pointer; }
+    .btn-load { font-size: 1.5rem; padding: 20px 40px; border-radius: 50px; background: var(--accent); }
 
+    .note-icon { font-family: 'Segoe UI Symbol', sans-serif; font-size: 1.2rem; line-height: 1; }
   </style>
 </head>
 <body>
@@ -150,313 +82,315 @@
 <div class="container" style="position: relative;">
   
   <div id="overlay">
-    <h2>🎚️ BOLERO TIMELINE EDITOR</h2>
-    <button class="btn-load" onclick="initAudio()">BẮT ĐẦU (TẢI TIẾNG)</button>
-    <p id="status" style="color:#888; margin-top:10px;">Chờ tải soundfont...</p>
+    <h2>BOLERO STUDIO PRO</h2>
+    <button class="btn-load" onclick="initAudio()">BẮT ĐẦU</button>
+    <p style="color:#aaa; margin-top:10px;">Chờ tải soundfont...</p>
   </div>
 
   <div style="display:flex; justify-content:space-between; align-items:center;">
-    <h2>Bolero Timeline</h2>
-    <button onclick="resetDefault()" style="font-size:0.7rem; padding:5px 10px; background:#444; color:#fff;">Reset chuẩn</button>
+    <h2>Timeline & Nốt Nhạc</h2>
+    <div style="display:flex; align-items:center;">
+       <span style="font-size:0.8rem; color:#aaa; margin-right:5px;">Tổng hợp nốt:</span>
+       <button class="btn-apply" onclick="applyNotesToPercent()">ÁP DỤNG NỐT</button>
+    </div>
   </div>
 
-  <p style="font-size: 0.8rem; color: #aaa; margin: 0 0 10px 0;">
-    💡 Mẹo: Kéo các vạch trắng giữa các ô để điều chỉnh độ dài ngắn (nhịp lơi).
-  </p>
-
-  <div class="timeline-wrapper" id="timeline">
+  <div class="timeline-container" id="timeline">
     </div>
 
-  <div class="control-row">
-    <div>
-      <div style="font-size:0.8rem; color:#aaa; margin-bottom:5px;">Tốc độ (BPM)</div>
-      <div style="display:flex; align-items:center; gap:10px;">
-        <input type="range" id="bpm" min="40" max="120" value="75" oninput="document.getElementById('bpm-val').innerText = this.value">
-        <span id="bpm-val" style="font-weight:bold; color:var(--accent);">75</span>
-      </div>
+  <div class="controls">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <span style="font-size:0.9rem;">Tốc độ:</span>
+      <input type="range" id="bpm" min="40" max="120" value="70" oninput="document.getElementById('bpm-v').innerText=this.value">
+      <span id="bpm-v" style="font-weight:bold; color:var(--accent);">70</span> BPM
     </div>
     
-    <div style="text-align:right;">
-      <div style="font-size:0.8rem; color:#aaa; margin-bottom:5px;">Chế độ</div>
-      <label style="font-size:0.9rem; cursor:pointer;">
-        <input type="checkbox" id="chk-auto-chord" checked> Tự đổi hợp âm
-      </label>
-    </div>
+    <label style="font-size:0.9rem; cursor:pointer;">
+      <input type="checkbox" id="chk-auto" checked> Tự đổi hợp âm
+    </label>
+  </div>
+
+  <div style="display:flex; margin-bottom:10px;">
+    <button class="chord-btn active" onclick="setChord('Am')">Am</button>
+    <button class="chord-btn" onclick="setChord('Dm')">Dm</button>
+    <button class="chord-btn" onclick="setChord('E7')">E7</button>
   </div>
 
   <button id="btn-play" class="btn-play" onclick="togglePlay()">▶ CHẠY AUTO</button>
 
-  <div class="chord-row">
-    <button class="btn-chord active" onclick="setChord('Am')">Am</button>
-    <button class="btn-chord" onclick="setChord('Dm')">Dm</button>
-    <button class="btn-chord" onclick="setChord('E7')">E7</button>
-  </div>
-
 </div>
 
 <script>
-  // ================= DATA =================
-  const TUNING = [40, 45, 50, 55, 59, 64];
-  const CHORDS = {
-    "Am": { bass: 5, frets: [0, 0, 2, 2, 1, 0] },
-    "Dm": { bass: 4, frets: [-1, 0, 0, 2, 3, 1] },
-    "E7": { bass: 5, frets: [0, 2, 0, 1, 0, 0] }
+  // ================= CONSTANTS =================
+  const NOTES_VAL = {
+    "1": { label: "𝅝 Tròn (4)", val: 4.0 },
+    "1/2": { label: "𝅗𝅥 Trắng (2)", val: 2.0 },
+    "1/4": { label: "♩ Đen (1)", val: 1.0 },
+    "1/8": { label: "♪ Đơn (0.5)", val: 0.5 },
+    "1/16": { label: "𝅘𝅥𝅯 Kép (0.25)", val: 0.25 },
+    "1/32": { label: "𝅘𝅥𝅯𝅘𝅥𝅯 Tam (0.125)", val: 0.125 }
   };
-  const CHORD_LOOP = ["Am", "Dm", "E7"];
 
-  // Dữ liệu nhịp chuẩn (Tổng 100%)
   const DEFAULT_STEPS = [
-    { id: 0, label: "BÙM",   type: "bass", pct: 16 },
-    { id: 1, label: "1",     type: "fill", pct: 3 },
-    { id: 2, label: "2",     type: "fill", pct: 3 },
-    { id: 3, label: "3",     type: "fill", pct: 3 },
-    { id: 4, label: "CHÁT",  type: "chat", pct: 12.5 },
-    { id: 5, label: "BÙM",   type: "bass", pct: 12.5 },
-    { id: 6, label: "CHÁT",  type: "chat", pct: 25 },
-    { id: 7, label: "BÙM+1", type: "bass", pct: 12.5 },
-    { id: 8, label: "CHÁT",  type: "chat", pct: 12.5 }
+    { id: 0, label: "BÙM", type: "bass", note: "1/8." }, // Đơn chấm dôi
+    { id: 1, label: "1", type: "fill", note: "1/32" },
+    { id: 2, label: "2", type: "fill", note: "1/32" },
+    { id: 3, label: "3", type: "fill", note: "1/32" },
+    { id: 4, label: "CHÁT", type: "chat", note: "1/8" },
+    { id: 5, label: "BÙM", type: "bass", note: "1/8" },
+    { id: 6, label: "CHÁT", type: "chat", note: "1/4" }, // Đen
+    { id: 7, label: "BÙM+1", type: "bass", note: "1/8" },
+    { id: 8, label: "CHÁT", type: "chat", note: "1/8" }
   ];
 
-  // State hiện tại (được clone từ default để chỉnh sửa)
-  let steps = JSON.parse(JSON.stringify(DEFAULT_STEPS));
+  // Helper để lấy value từ key nốt (vì key trên là string cho đẹp, ta cần map lại logic)
+  // Thực tế user chọn từ dropdown, ta lưu value 4, 2, 1, 0.5... vào state
   
+  // State
+  let steps = DEFAULT_STEPS.map(s => {
+    // Map default note string to value for init
+    let val = 0.5; // Default 1/8
+    if(s.note === "1/4") val = 1;
+    if(s.note === "1/8.") val = 0.75;
+    if(s.note === "1/32") val = 0.125;
+    return { ...s, noteVal: val, pct: 11.1 }; // pct sẽ tính lại sau
+  });
+
   let guitar = null;
   let isPlaying = false;
-  let currentStepIdx = 0;
-  let timerId = null;
+  let currentStep = 0;
+  let timer = null;
   let currentChord = "Am";
   let barCount = 0;
 
-  // ================= UI BUILDER (TIMELINE) =================
+  // Audio Data
+  const TUNING = [40, 45, 50, 55, 59, 64];
+  const CHORDS = { "Am":{b:5,f:[0,0,2,2,1,0]}, "Dm":{b:4,f:[-1,0,0,2,3,1]}, "E7":{b:5,f:[0,2,0,1,0,0]} };
+  const LOOP = ["Am","Dm","E7"];
+
+  // ================= UI BUILDER =================
   const timeline = document.getElementById('timeline');
 
   function renderTimeline() {
     timeline.innerHTML = '';
-    steps.forEach((step, index) => {
-      // Tạo khối Segment
+    steps.forEach((step, idx) => {
       const el = document.createElement('div');
-      el.className = `segment seg-${step.type}`;
-      el.id = `seg-${index}`;
+      el.className = `segment type-${step.type}`;
+      el.id = `seg-${idx}`;
       el.style.width = `${step.pct}%`;
       
-      el.innerHTML = `
-        <span class="label">${step.label}</span>
-        <span class="pct" id="lbl-${index}">${step.pct.toFixed(1)}%</span>
+      // Nội dung ô
+      let html = `
+        <span style="font-weight:bold">${step.label}</span>
+        <span id="pct-${idx}" style="font-size:0.6rem; opacity:0.8">${step.pct.toFixed(1)}%</span>
+        
+        <select class="note-select" onchange="updateNote(${idx}, this.value)">
+          <option value="4" ${step.noteVal==4?'selected':''}>𝅝 Tròn</option>
+          <option value="2" ${step.noteVal==2?'selected':''}>𝅗𝅥 Trắng</option>
+          <option value="1.5" ${step.noteVal==1.5?'selected':''}>♩. Đen chấm</option>
+          <option value="1" ${step.noteVal==1?'selected':''}>♩ Đen</option>
+          <option value="0.75" ${step.noteVal==0.75?'selected':''}>♪. Đơn chấm</option>
+          <option value="0.5" ${step.noteVal==0.5?'selected':''}>♪ Đơn</option>
+          <option value="0.25" ${step.noteVal==0.25?'selected':''}>𝅘𝅥𝅯 Kép</option>
+          <option value="0.125" ${step.noteVal==0.125?'selected':''}>𝅘𝅥𝅯𝅘𝅥𝅯 Tam</option>
+        </select>
       `;
 
-      // Tạo tay nắm kéo (trừ thằng cuối cùng)
-      if (index < steps.length - 1) {
-        const resizer = document.createElement('div');
-        resizer.className = 'resizer';
-        resizer.addEventListener('mousedown', (e) => initDrag(e, index));
-        // Hỗ trợ touch cho mobile
-        resizer.addEventListener('touchstart', (e) => initDrag(e, index), {passive: false});
-        el.appendChild(resizer);
+      // Resizer
+      if(idx < steps.length - 1) {
+        html += `<div class="resizer" onmousedown="initDrag(event, ${idx})" ontouchstart="initDrag(event, ${idx})"></div>`;
       }
-
+      
+      el.innerHTML = html;
       timeline.appendChild(el);
     });
   }
 
-  // ================= DRAG LOGIC (KÉO THẢ) =================
-  let startX, startWidthLeft, startWidthRight, draggingIdx;
+  window.updateNote = function(idx, val) {
+    steps[idx].noteVal = parseFloat(val);
+  }
 
-  function initDrag(e, idx) {
-    e.preventDefault(); // Chặn scroll trên mobile
-    draggingIdx = idx;
+  // ================= LOGIC TÍNH PHẦN TRĂM TỪ NỐT =================
+  window.applyNotesToPercent = function() {
+    // 1. Tính tổng giá trị nốt nhạc
+    let totalVal = steps.reduce((sum, s) => sum + s.noteVal, 0);
     
-    // Lấy tọa độ chuột/touch
+    if (totalVal === 0) return;
+
+    // 2. Chia lại phần trăm
+    steps.forEach((s, idx) => {
+      s.pct = (s.noteVal / totalVal) * 100;
+      // Update UI width
+      const seg = document.getElementById(`seg-${idx}`);
+      const lbl = document.getElementById(`pct-${idx}`);
+      if(seg) {
+        seg.style.width = `${s.pct}%`;
+        lbl.innerText = `${s.pct.toFixed(1)}%`;
+      }
+    });
+    
+    // Hiệu ứng báo thành công
+    const btn = document.querySelector('.btn-apply');
+    const oldText = btn.innerText;
+    btn.innerText = "OK! ĐÃ TÍNH %";
+    btn.style.background = "#fff";
+    setTimeout(() => {
+        btn.innerText = oldText;
+        btn.style.background = "#ff9f1c";
+    }, 1000);
+  }
+
+  // ================= DRAG & RESIZE LOGIC =================
+  let startX, dragIdx;
+  
+  window.initDrag = function(e, idx) {
+    e.preventDefault();
+    dragIdx = idx;
     startX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
-    
-    // Lấy chiều rộng hiện tại của 2 ô liền kề
-    // Vì width lưu trong state là %, ta cần tính dựa trên container
-    const containerWidth = timeline.getBoundingClientRect().width;
-    
-    // Tính % hiện tại
-    startWidthLeft = steps[idx].pct;
-    startWidthRight = steps[idx+1].pct;
-
     document.addEventListener('mousemove', onDrag);
     document.addEventListener('mouseup', stopDrag);
-    document.addEventListener('touchmove', onDrag, {passive: false});
+    document.addEventListener('touchmove', onDrag, {passive:false});
     document.addEventListener('touchend', stopDrag);
   }
 
   function onDrag(e) {
-    if (draggingIdx === null) return;
-    
+    if (dragIdx === null) return;
     const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
     const deltaX = clientX - startX;
     
-    const containerWidth = timeline.getBoundingClientRect().width;
-    const deltaPct = (deltaX / containerWidth) * 100;
+    const containerW = timeline.getBoundingClientRect().width;
+    const deltaPct = (deltaX / containerW) * 100;
 
-    // Tính toán % mới
-    let newLeft = startWidthLeft + deltaPct;
-    let newRight = startWidthRight - deltaPct;
+    // Tính toán lại chiều rộng
+    let leftPct = steps[dragIdx].pct + deltaPct;
+    let rightPct = steps[dragIdx+1].pct - deltaPct;
 
-    // Giới hạn Min Width (2%) để không bị kéo mất tiêu
-    if (newLeft < 2 || newRight < 2) return;
+    // Giới hạn Min 2% để không bị tịt
+    if(leftPct < 2 || rightPct < 2) return;
 
-    // Update State
-    steps[draggingIdx].pct = newLeft;
-    steps[draggingIdx+1].pct = newRight;
-
-    // Update UI (Realtime)
-    const segLeft = document.getElementById(`seg-${draggingIdx}`);
-    const segRight = document.getElementById(`seg-${draggingIdx+1}`);
-    const lblLeft = document.getElementById(`lbl-${draggingIdx}`);
-    const lblRight = document.getElementById(`lbl-${draggingIdx+1}`);
-
-    segLeft.style.width = `${newLeft}%`;
-    segRight.style.width = `${newRight}%`;
+    // Cập nhật State tạm thời (chưa commit startX mới để mượt)
+    // Thực ra để mượt thì nên update startX và cộng dồn, nhưng logic đơn giản này đủ dùng cho web.
+    // Update UI trực tiếp
+    document.getElementById(`seg-${dragIdx}`).style.width = `${leftPct}%`;
+    document.getElementById(`pct-${dragIdx}`).innerText = `${leftPct.toFixed(1)}%`;
     
-    lblLeft.innerText = newLeft.toFixed(1) + '%';
-    lblRight.innerText = newRight.toFixed(1) + '%';
+    document.getElementById(`seg-${dragIdx+1}`).style.width = `${rightPct}%`;
+    document.getElementById(`pct-${dragIdx+1}`).innerText = `${rightPct.toFixed(1)}%`;
+    
+    // Lưu tạm vào state để dùng cho lần kéo tiếp theo
+    // (Lưu ý: Cách này đơn giản hóa việc "dồn toa", chỉ ảnh hưởng 2 ô kề nhau)
+    steps[dragIdx].pct = leftPct;
+    steps[dragIdx+1].pct = rightPct;
+    
+    startX = clientX; // Reset mốc kéo để cộng dồn mượt hơn
   }
 
   function stopDrag() {
-    draggingIdx = null;
+    dragIdx = null;
     document.removeEventListener('mousemove', onDrag);
     document.removeEventListener('mouseup', stopDrag);
     document.removeEventListener('touchmove', onDrag);
     document.removeEventListener('touchend', stopDrag);
   }
 
-  function resetDefault() {
-    if(isPlaying) togglePlay(); // Stop first
-    steps = JSON.parse(JSON.stringify(DEFAULT_STEPS));
-    renderTimeline();
-  }
-
   // ================= AUDIO ENGINE =================
   async function initAudio() {
-    const btn = document.querySelector('.btn-load');
-    btn.innerText = "⏳ ĐANG TẢI...";
-    btn.disabled = true;
-
+    document.querySelector('.btn-load').innerText = "ĐANG TẢI...";
     await Tone.start();
     try {
       guitar = await Soundfont.instrument(Tone.context.rawContext, 'acoustic_guitar_nylon');
-      
       document.getElementById('overlay').style.display = 'none';
-      document.getElementById('status').innerText = "Sẵn sàng";
-      renderTimeline(); // Vẽ timeline lần đầu
-    } catch(e) {
-      alert("Lỗi tải: " + e);
-    }
+      // Init lần đầu với công thức Bolero chuẩn
+      applyNotesToPercent(); 
+    } catch(e) { alert(e); }
   }
 
-  function getNote(chordKey, stringIdx) {
-    if (!guitar) return null;
-    const c = CHORDS[chordKey];
-    const arrIdx = 6 - stringIdx;
-    const fret = c.frets[arrIdx];
-    if (fret === -1) return null;
-    return TUNING[arrIdx] + fret;
-  }
-
-  // ================= PLAY LOGIC =================
   function togglePlay() {
     const btn = document.getElementById('btn-play');
-    if (isPlaying) {
-      isPlaying = false;
-      clearTimeout(timerId);
-      btn.innerHTML = "▶ CHẠY AUTO";
-      btn.classList.remove('stop');
-      // Xóa highlight
+    if(isPlaying) {
+      isPlaying = false; clearTimeout(timer);
+      btn.innerHTML = "▶ CHẠY AUTO"; btn.classList.remove('stop');
       document.querySelectorAll('.segment').forEach(s => s.classList.remove('playing'));
     } else {
-      isPlaying = true;
-      btn.innerHTML = "⏹ DỪNG LẠI";
-      btn.classList.add('stop');
+      isPlaying = true; btn.innerHTML = "⏹ DỪNG LẠI"; btn.classList.add('stop');
       runLoop();
     }
   }
 
   function runLoop() {
-    if (!isPlaying) return;
-
-    // 1. Play âm thanh của bước hiện tại
-    playStep(currentStepIdx);
-
-    // 2. Tính thời gian chờ (Dựa trên width % hiện tại trên màn hình)
-    const bpm = document.getElementById('bpm').value;
-    const totalCycleMs = (60 / bpm) * 4 * 1000; // Tổng thời gian 1 ô nhịp (4 phách)
+    if(!isPlaying) return;
     
-    const currentPct = steps[currentStepIdx].pct;
-    const delayMs = totalCycleMs * (currentPct / 100);
-
-    // 3. Highlight UI
+    // Play sound
+    playStep(currentStep);
+    
+    // Highlight
     document.querySelectorAll('.segment').forEach(s => s.classList.remove('playing'));
-    document.getElementById(`seg-${currentStepIdx}`).classList.add('playing');
+    document.getElementById(`seg-${currentStep}`).classList.add('playing');
 
-    // 4. Next Step Logic
-    currentStepIdx++;
-    if (currentStepIdx >= steps.length) {
-      currentStepIdx = 0;
+    // Calc delay
+    const bpm = document.getElementById('bpm').value;
+    // Tổng thời gian 1 ô nhịp (giả sử tổng các note là 4 - tròn, hoặc tùy user set)
+    // Nhưng ta dùng logic: 100% width = 4 beats (4/4 time signature)
+    const totalBarMs = (60/bpm) * 4 * 1000;
+    const delay = totalBarMs * (steps[currentStep].pct / 100);
+
+    // Next
+    currentStep++;
+    if(currentStep >= steps.length) {
+      currentStep = 0;
       barCount++;
-      checkAutoChord();
+      if(document.getElementById('chk-auto').checked && barCount >= 2) {
+        barCount = 0;
+        let i = LOOP.indexOf(currentChord);
+        setChord(LOOP[(i+1)%LOOP.length]);
+      }
     }
-
-    // 5. Schedule next
-    timerId = setTimeout(runLoop, delayMs);
+    
+    timer = setTimeout(runLoop, delay);
   }
 
   function playStep(idx) {
+    if(!guitar) return;
     const s = steps[idx];
     const c = CHORDS[currentChord];
-    let notes = [];
+    const now = Tone.now();
     
-    // Logic gảy
-    if (s.label === "BÙM") {
-      notes = [getNote(currentChord, c.bass)];
-      playNotes(notes, 1.0, 1.2);
-    } 
-    else if (s.label === "BÙM+1") {
-      let alt = c.bass + 1;
-      if (alt > 6) alt = c.bass - 1;
-      notes = [getNote(currentChord, alt)];
-      playNotes(notes, 1.0, 1.1);
-    }
-    else if (s.label === "1") playNotes([getNote(currentChord, c.bass-1)], 0.3, 0.7);
-    else if (s.label === "2") playNotes([getNote(currentChord, c.bass-2)], 0.3, 0.7);
-    else if (s.label === "3") {
-      // Quạt xuống
-      notes = [3,2,1].map(i => getNote(currentChord, i));
-      notes.forEach((n, i) => {
-        if(n) guitar.play(n, Tone.now() + i*0.015, {duration: 0.5, gain: 0.8});
-      });
-    }
-    else if (s.label === "CHÁT") {
-      // Quạt lên + ngắt
-      notes = [1,2,3].map(i => getNote(currentChord, i));
-      notes.forEach((n, i) => {
-        if(n) guitar.play(n, Tone.now() + i*0.01, {duration: 0.1, gain: 0.9, release: 0.05});
-      });
-    }
-  }
+    // Logic gảy đơn giản hóa
+    const getN = (str) => {
+        let arrIdx = 6-str; 
+        let f = c.f[arrIdx];
+        return (f===-1)?null : TUNING[arrIdx]+f;
+    };
 
-  function playNotes(notes, dur, vel) {
-    notes.forEach(n => { if(n) guitar.play(n, Tone.now(), {duration: dur, gain: vel}); });
-  }
-
-  function checkAutoChord() {
-    if (!document.getElementById('chk-auto-chord').checked) return;
-    // Đổi mỗi 2 ô nhịp (mặc định cho đỡ rối UI)
-    if (barCount >= 2) {
-      barCount = 0;
-      let i = CHORD_LOOP.indexOf(currentChord);
-      let next = CHORD_LOOP[(i+1) % CHORD_LOOP.length];
-      setChord(next);
+    if(s.label === "BÙM") playNote([getN(c.b)], 1.0, 1.2);
+    else if(s.label === "BÙM+1") {
+       let alt = c.b+1; if(alt>6) alt=c.b-1;
+       playNote([getN(alt)], 1.0, 1.1);
+    }
+    else if(s.label === "1") playNote([getN(c.b-1)], 0.3, 0.7);
+    else if(s.label === "2") playNote([getN(c.b-2)], 0.3, 0.7);
+    else if(s.label === "3") { // Strum down
+       [3,2,1].forEach((str,i) => {
+          let n = getN(str); if(n) guitar.play(n, now+i*0.015, {duration:0.5, gain:0.8});
+       });
+    }
+    else if(s.label === "CHÁT") { // Strum up mute
+       [1,2,3].forEach((str,i) => {
+          let n = getN(str); if(n) guitar.play(n, now+i*0.01, {duration:0.1, gain:0.9, release:0.05});
+       });
     }
   }
+  
+  function playNote(ns, d, v) { ns.forEach(n => { if(n) guitar.play(n, Tone.now(), {duration:d, gain:v}); }); }
 
   window.setChord = function(c) {
     currentChord = c;
-    document.querySelectorAll('.btn-chord').forEach(b => b.classList.toggle('active', b.innerText === c));
+    document.querySelectorAll('.chord-btn').forEach(b => b.classList.toggle('active', b.innerText === c));
   }
-</script>
 
+  // Init Render
+  renderTimeline();
+
+</script>
 </body>
 </html>
