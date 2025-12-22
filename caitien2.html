@@ -3,112 +3,128 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>Bolero Studio Pro - Ultimate</title>
+  <title>Bolero Tea Room - Phòng Trà</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.18/Tone.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/soundfont-player@0.12.0/dist/soundfont-player.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto:wght@300;400&display=swap" rel="stylesheet">
 
   <style>
     :root {
-      --bg: #18181b; 
-      --panel: #27272a;
-      --accent: #00e676; /* Xanh lá neon */
-      --accent-dim: rgba(0, 230, 118, 0.2);
-      --cue-color: #ff3d00; /* Cam đỏ cho điểm nhấn */
-      --text: #e4e4e7;
-      --led-off: #3f3f46;
-      --led-on: #00e676;
-      --knob: #52525b;
+      --bg: #1a120b;         /* Nâu đen cafe */
+      --panel: #2e2018;      /* Nâu gỗ */
+      --gold: #d4af37;       /* Vàng kim loại cổ */
+      --gold-dim: #8c7322;
+      --cream: #f5f5dc;      /* Màu kem giấy cũ */
+      --text: #efebe9;
+      --highlight: #ffecb3;
+      --cue-color: #ff6f00;  /* Màu cam hổ phách */
+      
+      --shadow-soft: 0 4px 10px rgba(0,0,0,0.6);
+      --border-style: 2px solid var(--gold);
     }
 
     body {
       background: var(--bg);
+      background-image: radial-gradient(circle at center, #2c1e16 0%, #0d0805 100%);
       color: var(--text);
       font-family: 'Roboto', sans-serif;
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 10px;
+      padding: 15px;
       margin: 0;
       user-select: none;
+      min-height: 100vh;
     }
 
     h2 {
-      font-family: 'Orbitron', sans-serif;
-      color: var(--accent);
+      font-family: 'Playfair Display', serif;
+      color: var(--gold);
       margin: 10px 0;
-      text-shadow: 0 0 10px var(--accent-dim);
+      text-transform: uppercase;
       letter-spacing: 2px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+      font-size: 1.8rem;
+      border-bottom: 1px solid var(--gold-dim);
+      padding-bottom: 10px;
     }
 
     .studio-rack {
       background: var(--panel);
-      padding: 20px;
-      border-radius: 16px;
+      padding: 25px;
+      border-radius: 8px;
       width: 100%;
       max-width: 950px;
-      border: 1px solid #444;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      border: 1px solid #4e342e;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.7);
       position: relative;
+      /* Hiệu ứng vân gỗ giả */
+      background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 2px, transparent 2px, transparent 4px);
     }
 
-    /* === LED DISPLAY SECTION === */
+    /* === KHUNG HIỂN THỊ === */
     .display-section {
-      background: #000;
-      border: 2px solid #555;
-      border-radius: 8px;
+      background: #18100c;
+      border: 3px double var(--gold-dim);
+      border-radius: 4px;
       padding: 15px;
-      margin-bottom: 20px;
+      margin-bottom: 25px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+      box-shadow: inset 0 0 30px rgba(0,0,0,0.9);
     }
 
-    .eq-controls {
-      display: flex;
-      gap: 15px;
-    }
-    
     .knob-group {
       display: flex;
       flex-direction: column;
       align-items: center;
+      margin-right: 15px;
     }
     
-    .knob-label { font-size: 0.7rem; color: #888; margin-bottom: 5px; font-weight: bold; }
+    .knob-label { 
+      font-family: 'Playfair Display', serif; 
+      font-size: 0.8rem; 
+      color: var(--gold); 
+      margin-bottom: 5px; 
+      letter-spacing: 1px;
+    }
     
-    /* Range Slider styled as generic slider for EQ */
+    /* Slider kiểu cổ điển */
     input[type=range].eq-slider {
       -webkit-appearance: none;
-      width: 80px; height: 6px; background: #333; border-radius: 3px;
+      width: 100px; height: 4px; background: #4e342e; border-radius: 2px;
     }
     input[type=range].eq-slider::-webkit-slider-thumb {
-      -webkit-appearance: none; width: 14px; height: 14px; background: var(--accent); border-radius: 50%; cursor: pointer;
+      -webkit-appearance: none; width: 16px; height: 16px; 
+      background: var(--gold); border: 2px solid #fff; border-radius: 50%; cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.5);
     }
 
     .string-monitor {
-      font-family: 'Orbitron', monospace;
-      font-size: 2rem;
-      color: var(--led-on);
-      text-shadow: 0 0 10px var(--led-on);
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 1.8rem;
+      color: var(--highlight);
+      text-shadow: 0 0 5px var(--gold);
       min-width: 150px;
       text-align: right;
     }
-    .string-label { font-size: 0.8rem; color: #555; font-family: sans-serif; text-align: right; margin-top: -5px;}
+    .string-label { font-size: 0.7rem; color: #8d6e63; text-align: right; text-transform: uppercase; letter-spacing: 2px;}
 
-    /* === TIMELINE === */
+    /* === TIMELINE (BẢN NHẠC) === */
     .timeline-wrapper {
       position: relative;
-      height: 130px;
+      height: 140px;
       width: 100%;
-      background: #111;
-      border: 1px solid #333;
-      border-radius: 6px;
+      background: #231711;
+      border: 2px solid var(--gold-dim);
+      border-radius: 4px;
       display: flex;
       overflow: hidden;
-      margin-bottom: 20px;
+      margin-bottom: 25px;
+      box-shadow: inset 0 0 20px #000;
     }
 
     .segment {
@@ -118,91 +134,111 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      border-right: 1px solid #222;
+      border-right: 1px solid rgba(212, 175, 55, 0.2); /* Vàng mờ */
       transition: background 0.1s;
     }
 
-    /* Màu phân loại */
-    .type-bass { background: linear-gradient(180deg, #4a1c1c 0%, #2a0a0a 100%); color: #ff8a80; }
-    .type-fill { background: linear-gradient(180deg, #1c3a4a 0%, #0a1a2a 100%); color: #80d8ff; }
-    .type-chat { background: linear-gradient(180deg, #1a3a30 0%, #0a201a 100%); color: #a7ffeb; }
+    /* Màu sắc theo phong cách cổ điển */
+    .type-bass { background: linear-gradient(to bottom, #3e2723, #281815); color: #ffcc80; }
+    .type-fill { background: linear-gradient(to bottom, #263238, #161e22); color: #b0bec5; }
+    .type-chat { background: linear-gradient(to bottom, #1b5e20, #0d3311); color: #a5d6a7; }
 
-    /* Hiệu ứng đang chạy */
+    /* Hiệu ứng Playing (Sáng đèn vàng) */
     .segment.playing {
-      filter: brightness(1.8);
-      box-shadow: 0 0 15px currentColor;
+      filter: brightness(1.3);
+      box-shadow: inset 0 0 30px var(--gold);
+      border: 1px solid var(--gold);
       z-index: 2;
     }
 
-    /* Hiệu ứng CUE (Vào câu hát) */
+    /* Điểm nhấn (CUE) */
     .segment.cue-point {
-      border-top: 3px solid var(--cue-color);
-      border-bottom: 3px solid var(--cue-color);
+      border-top: 4px solid var(--cue-color);
     }
     .segment.cue-point.playing {
-      box-shadow: 0 0 20px var(--cue-color), inset 0 0 20px var(--cue-color);
-      border-color: #fff;
-      animation: cueFlash 0.2s infinite alternate;
-    }
-
-    @keyframes cueFlash {
-      from { border-color: var(--cue-color); }
-      to { border-color: #fff; }
+      background: var(--cue-color); /* Nháy cam */
+      color: #000;
     }
 
     .cue-icon {
-      position: absolute; top: 5px; right: 5px;
-      font-size: 0.7rem; color: var(--cue-color); font-weight: bold;
-      opacity: 0.8;
-      border: 1px solid var(--cue-color); padding: 1px 3px; border-radius: 3px;
+      position: absolute; top: 4px; right: 4px;
+      font-size: 0.6rem; color: var(--cue-color); 
+      border: 1px solid var(--cue-color); padding: 1px 3px; border-radius: 2px;
+      background: rgba(0,0,0,0.5);
     }
 
     .note-select {
-      background: rgba(0,0,0,0.5); border: 1px solid #444; color: #fff;
-      font-size: 0.7rem; margin-top: 5px; width: 90%; border-radius: 4px;
+      background: rgba(0,0,0,0.3); border: 1px solid var(--gold-dim); color: var(--cream);
+      font-size: 0.7rem; margin-top: 8px; width: 90%; border-radius: 2px;
+      font-family: 'Roboto', sans-serif;
     }
 
     /* === CONTROLS === */
     .control-deck {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
-      gap: 15px;
+      gap: 20px;
       align-items: center;
-      margin-bottom: 15px;
+      margin-bottom: 20px;
+      background: #241914;
+      padding: 15px;
+      border-radius: 6px;
+      border: 1px solid #3e2723;
     }
 
     .btn-main {
-      background: var(--accent); color: #000;
-      border: none; padding: 15px; font-size: 1.1rem; font-weight: bold;
+      background: linear-gradient(to bottom, #d4af37, #b08d26); /* Gradient Vàng */
+      color: #3e2723;
+      border: 1px solid #ffe082;
+      padding: 15px; font-size: 1.1rem; font-weight: bold;
       border-radius: 4px; cursor: pointer; width: 100%;
-      box-shadow: 0 4px 0 #00600f;
-      transition: transform 0.1s;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.5);
+      font-family: 'Playfair Display', serif;
+      text-transform: uppercase;
+      transition: all 0.1s;
     }
-    .btn-main:active { transform: translateY(4px); box-shadow: none; }
-    .btn-main.stop { background: #d32f2f; color: #fff; box-shadow: 0 4px 0 #9a0007; }
+    .btn-main:active { transform: translateY(2px); box-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+    .btn-main.stop { background: linear-gradient(to bottom, #c62828, #8e0000); color: #fff; border-color: #ff8a80; }
 
-    .chord-rack { display: flex; gap: 5px; background: #000; padding: 5px; border-radius: 6px; border: 1px solid #333; }
+    .chord-rack { 
+      display: flex; gap: 10px; 
+      background: #1a120b; padding: 10px; 
+      border-radius: 6px; border: 1px solid var(--gold-dim); 
+      justify-content: center;
+    }
     .btn-chord {
-      flex: 1; background: #222; border: 1px solid #333; color: #888;
-      padding: 10px; cursor: pointer; font-family: 'Orbitron', sans-serif;
+      flex: 1; background: #2e2018; border: 1px solid #5d4037; color: #a1887f;
+      padding: 12px; cursor: pointer; 
+      font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: bold;
+      transition: 0.2s;
     }
-    .btn-chord.active { background: var(--accent); color: #000; box-shadow: 0 0 10px var(--accent); border-color: var(--accent); }
+    .btn-chord.active { 
+      background: var(--gold); color: #2e2018; 
+      box-shadow: 0 0 15px rgba(212, 175, 55, 0.4); 
+      border-color: #fff; 
+    }
 
-    /* Overlay */
+    /* Overlay Loading */
     #overlay {
       position: absolute; top:0; left:0; width:100%; height:100%;
-      background: rgba(0,0,0,0.95); z-index: 999;
+      background: rgba(20, 10, 5, 0.95); z-index: 999;
       display: flex; flex-direction: column; justify-content: center; align-items: center;
-      border-radius: 16px;
+      border-radius: 8px;
     }
     .btn-load {
-      background: transparent; border: 2px solid var(--accent); color: var(--accent);
-      padding: 15px 40px; font-size: 1.5rem; font-family: 'Orbitron', sans-serif;
-      border-radius: 50px; cursor: pointer; transition: 0.3s;
+      background: transparent; border: 2px solid var(--gold); color: var(--gold);
+      padding: 15px 40px; font-size: 1.4rem; font-family: 'Playfair Display', serif;
+      border-radius: 0; cursor: pointer; transition: 0.3s;
+      text-transform: uppercase; letter-spacing: 2px;
     }
-    .btn-load:hover { background: var(--accent); color: #000; box-shadow: 0 0 20px var(--accent); }
+    .btn-load:hover { background: var(--gold); color: #1a120b; box-shadow: 0 0 20px var(--gold); }
 
-    .led-text { font-size: 0.8rem; color: #aaa; margin-top: 5px; }
+    .led-text { font-size: 0.9rem; color: #a1887f; margin-top: 15px; font-style: italic; }
+
+    /* Switch */
+    .switch input { display:none; }
+    .slider-toggle { background: #3e2723; border: 1px solid #5d4037; color: #888; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; }
+    input:checked + .slider-toggle { color: var(--gold); border-color: var(--gold); font-weight: bold; }
 
   </style>
 </head>
@@ -211,18 +247,18 @@
 <div class="studio-rack">
   
   <div id="overlay">
-    <h2>BOLERO STUDIO</h2>
-    <button class="btn-load" onclick="initAudio()">POWER ON</button>
-    <div class="led-text">Loading Sound Modules...</div>
+    <h2 style="font-size: 2.5rem; margin-bottom: 30px;">BOLERO PHÒNG TRÀ</h2>
+    <button class="btn-load" onclick="initAudio()">BẬT ĐÀN (POWER ON)</button>
+    <div class="led-text" id="load-text">Nhạc vàng muôn thuở...</div>
   </div>
 
-  <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom: 10px;">
-    <h2>PRO ARCHITECT V2</h2>
-    <button onclick="applyDefaultPreset()" style="background:#333; color:#fff; border:none; padding:5px 10px; cursor:pointer; font-size:0.7rem; border-radius:4px;">Reset Preset</button>
+  <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom: 15px; border-bottom: 1px solid #3e2723; padding-bottom: 10px;">
+    <h2>BOLERO STUDIO</h2>
+    <button onclick="applyDefaultPreset()" style="background:transparent; color:#8d6e63; border:1px solid #5d4037; padding:5px 10px; cursor:pointer; font-size:0.7rem;">↺ Reset Mặc Định</button>
   </div>
 
   <div class="display-section">
-    <div class="eq-controls">
+    <div class="eq-controls" style="display:flex; gap: 20px;">
       <div class="knob-group">
         <span class="knob-label">BASS</span>
         <input type="range" class="eq-slider" min="-10" max="10" value="4" oninput="updateEQ('low', this.value)">
@@ -235,41 +271,41 @@
 
     <div style="text-align:right;">
       <div class="string-monitor" id="str-display">---</div>
-      <div class="string-label">ACTIVE STRING</div>
+      <div class="string-label">DÂY ĐANG GẢY</div>
     </div>
   </div>
 
   <div class="timeline-wrapper" id="timeline"></div>
 
   <div class="control-deck">
-    <div style="background:#111; padding:10px; border-radius:6px; border:1px solid #333;">
-      <div class="knob-label">TEMPO (BPM)</div>
-      <div style="display:flex; align-items:center; gap:10px;">
-        <input type="range" id="bpm" min="50" max="120" value="75" style="width:100%; accent-color:var(--accent);" oninput="document.getElementById('bpm-v').innerText=this.value">
-        <span id="bpm-v" style="font-family:'Orbitron'; color:var(--accent);">75</span>
+    <div style="text-align:center;">
+      <div class="knob-label">TỐC ĐỘ (BPM)</div>
+      <div style="display:flex; align-items:center; gap:10px; justify-content:center;">
+        <input type="range" id="bpm" min="50" max="120" value="75" style="width:100%; accent-color:var(--gold);" oninput="document.getElementById('bpm-v').innerText=this.value">
+        <span id="bpm-v" style="font-family:'Playfair Display'; color:var(--gold); font-size: 1.2rem; font-weight:bold;">75</span>
       </div>
     </div>
 
-    <button id="btn-play" class="btn-main" onclick="togglePlay()">▶ START SEQUENCE</button>
+    <button id="btn-play" class="btn-main" onclick="togglePlay()">▶ BẮT ĐẦU CHƠI</button>
 
-    <div style="background:#111; padding:10px; border-radius:6px; border:1px solid #333; display:flex; align-items:center; justify-content:space-between;">
-      <span class="knob-label" style="margin:0;">AUTO CHORD</span>
-      <label class="switch" style="font-size:0.8rem; color:#fff; display:flex; align-items:center; gap:5px; cursor:pointer;">
+    <div style="text-align:right;">
+      <div class="knob-label">TỰ ĐỔI HỢP ÂM</div>
+      <label class="switch" style="cursor:pointer;">
         <input type="checkbox" id="chk-auto" checked> 
-        <span style="color:var(--accent)">ON</span> (Every 2 Bars)
+        <span class="slider-toggle">TẮT</span> / <span class="slider-toggle" style="color:var(--gold)">BẬT (2 Ô Nhịp)</span>
       </label>
     </div>
   </div>
 
   <div class="chord-rack">
-    <button class="btn-chord active" onclick="setChord('Am')">Am</button>
-    <button class="btn-chord" onclick="setChord('Dm')">Dm</button>
-    <button class="btn-chord" onclick="setChord('E7')">E7</button>
+    <button class="btn-chord active" onclick="setChord('Am')">Am (La Thứ)</button>
+    <button class="btn-chord" onclick="setChord('Dm')">Dm (Rê Thứ)</button>
+    <button class="btn-chord" onclick="setChord('E7')">E7 (Mi 7)</button>
   </div>
 
-  <div style="margin-top:10px; display:flex; justify-content:space-between; align-items:center;">
-    <div id="msg-box" style="font-size:0.8rem; color:#666;">Ready.</div>
-    <button onclick="applyNotesToPercent()" style="background:var(--accent-dim); color:var(--accent); border:1px solid var(--accent); padding:5px 15px; cursor:pointer; font-weight:bold; border-radius:4px;">RE-CALCULATE TIMELINE</button>
+  <div style="margin-top:15px; display:flex; justify-content:space-between; align-items:center;">
+    <div id="msg-box" style="font-size:0.8rem; color:#8d6e63; font-style:italic;">Sẵn sàng phục vụ...</div>
+    <button onclick="applyNotesToPercent()" style="background:#2e2018; color:var(--gold); border:1px solid var(--gold); padding:6px 15px; cursor:pointer; font-weight:bold; font-size:0.8rem; font-family:'Playfair Display';">CẬP NHẬT NHỊP</button>
   </div>
 
 </div>
@@ -284,8 +320,7 @@
     { label: "𝅘𝅥𝅯 Kép (0.25)", val: 0.25 }
   ];
 
-  // Preset theo yêu cầu: Đơn - Kép - Kép - Đơn ...
-  // Tổng = 4.0 Phách
+  // Preset Bolero: Đơn - Kép - Kép - Đơn ...
   const DEFAULT_PRESET = [
     { label: "BÙM", type: "bass", val: 0.5, cue: true },   // Đơn (Vào hát)
     { label: "1", type: "fill", val: 0.25 },  // Kép
@@ -326,7 +361,6 @@
     const totalVal = steps.reduce((sum, s) => sum + s.val, 0);
 
     steps.forEach((step, idx) => {
-      // Tính % width
       const pct = (step.val / totalVal) * 100;
       step.pct = pct; 
 
@@ -335,19 +369,17 @@
       el.id = `seg-${idx}`;
       el.style.width = `${pct}%`;
 
-      // Tạo Dropdown option
       let opts = "";
       NOTES_VAL.forEach(n => {
         const sel = (step.val === n.val) ? "selected" : "";
         opts += `<option value="${n.val}" ${sel}>${n.label}</option>`;
       });
 
-      // Cue Icon (Điểm vào hát)
-      const cueHtml = step.cue ? `<div class="cue-icon">CUE</div>` : '';
+      const cueHtml = step.cue ? `<div class="cue-icon">HÁT</div>` : '';
 
       el.innerHTML = `
         ${cueHtml}
-        <span style="font-weight:bold; font-size:0.8rem; margin-top:5px;">${step.label}</span>
+        <span style="font-weight:bold; font-size:0.75rem; margin-top:5px;">${step.label}</span>
         <select class="note-select" onchange="updateStepVal(${idx}, this.value)">
           ${opts}
         </select>
@@ -360,18 +392,17 @@
 
   function updateStepVal(idx, val) {
     steps[idx].val = parseFloat(val);
-    // Lưu ý: User phải bấm Re-Calculate để UI update width
-    document.getElementById('msg-box').innerText = "Changes pending. Click Re-Calculate.";
-    document.getElementById('msg-box').style.color = "#ff9f1c";
+    document.getElementById('msg-box').innerText = "Vui lòng bấm 'CẬP NHẬT NHỊP' để áp dụng.";
+    document.getElementById('msg-box').style.color = "#d4af37";
   }
 
   function validateTotal(total) {
     const msg = document.getElementById('msg-box');
     if(total === 4.0) {
-      msg.innerText = "✓ Perfect 4/4 Rhythm (4.0 Beats)";
-      msg.style.color = "#00e676";
+      msg.innerText = "✓ Nhịp 4/4 Chuẩn (4.0 Phách)";
+      msg.style.color = "#4caf50";
     } else {
-      msg.innerText = `⚠ Warning: Total is ${total} Beats (Standard is 4.0)`;
+      msg.innerText = `⚠ Lưu ý: Tổng đang là ${total} Phách (Chuẩn là 4.0)`;
       msg.style.color = "#ff5252";
     }
   }
@@ -386,49 +417,51 @@
     renderTimeline();
   }
 
-  // ================= 3. AUDIO ENGINE & EQ =================
+  // ================= 3. AUDIO ENGINE (FIXED ERROR) =================
   async function initAudio() {
-    document.querySelector('.led-text').innerText = "Connecting Audio Context...";
+    const loadText = document.getElementById('load-text');
+    loadText.innerText = "Đang kết nối bộ loa (Soundfont)...";
+    
     await Tone.start();
     
     try {
-      // Create EQ (Low, Mid, High)
       eq = new Tone.EQ3(0, 0, 0).toDestination();
       
-      // Load Guitar and connect to EQ
+      // Load Guitar - Sử dụng URL đáng tin cậy hoặc mặc định
+      // Thêm try catch trong quá trình load
       guitar = await Soundfont.instrument(Tone.context.rawContext, 'acoustic_guitar_nylon', { 
         destination: eq,
-        gain: 3.0 // Boost gain
+        gain: 3.0 
       });
 
-      // Set initial EQ values from sliders
+      // Default EQ
       updateEQ('low', 4);
       updateEQ('high', 2);
 
       document.getElementById('overlay').style.display = 'none';
       renderTimeline();
     } catch(e) {
-      alert("Audio Error: " + e);
+      alert("Lỗi tải âm thanh: " + e + ". Vui lòng làm mới trang.");
+      loadText.innerText = "Tải thất bại. Vui lòng thử lại.";
     }
   }
 
   window.updateEQ = function(band, val) {
     if(!eq) return;
-    // Tone EQ value range usually -10 to 10 db is good for sliders
     if(band === 'low') eq.low.value = val;
     if(band === 'high') eq.high.value = val;
   }
 
-  // ================= 4. PLAYBACK LOGIC =================
+  // ================= 4. PLAYBACK LOGIC (ROBUST) =================
   function togglePlay() {
     const btn = document.getElementById('btn-play');
     if(isPlaying) {
       isPlaying = false; clearTimeout(timer);
-      btn.innerHTML = "▶ START SEQUENCE"; btn.classList.remove('stop');
+      btn.innerHTML = "▶ BẮT ĐẦU CHƠI"; btn.classList.remove('stop');
       document.querySelectorAll('.segment').forEach(s => s.classList.remove('playing'));
       document.getElementById('str-display').innerText = "---";
     } else {
-      isPlaying = true; btn.innerHTML = "⏹ STOP SEQUENCE"; btn.classList.add('stop');
+      isPlaying = true; btn.innerHTML = "⏹ DỪNG LẠI"; btn.classList.add('stop');
       runLoop();
     }
   }
@@ -436,22 +469,17 @@
   function runLoop() {
     if(!isPlaying) return;
     
-    // Play & Visualize
     playStep(currentStep);
     
     // UI Highlight
     document.querySelectorAll('.segment').forEach(s => s.classList.remove('playing'));
-    document.getElementById(`seg-${currentStep}`).classList.add('playing');
+    const currentSeg = document.getElementById(`seg-${currentStep}`);
+    if(currentSeg) currentSeg.classList.add('playing');
 
-    // Calc Delay
     const bpm = document.getElementById('bpm').value;
-    const totalVal = steps.reduce((sum,s)=>sum+s.val,0); // Tổng số phách hiện tại
-    const beatDurMs = (60/bpm) * 1000; // 1 phách dài bao nhiêu ms
-    
-    // Duration của step hiện tại = giá trị nốt * độ dài 1 phách
+    const beatDurMs = (60/bpm) * 1000; 
     const delay = steps[currentStep].val * beatDurMs;
 
-    // Next Step
     currentStep++;
     if(currentStep >= steps.length) {
       currentStep = 0;
@@ -471,49 +499,80 @@
     const s = steps[idx];
     const c = CHORDS[currentChord];
     const now = Tone.now();
-    const getN = (str) => { let i=6-str; let f=c.f[i]; return (f===-1)?null:TUNING[i]+f; };
+    const getN = (str) => { 
+      let i=6-str; 
+      if(i < 0 || i >= TUNING.length) return null;
+      let f=c.f[i]; 
+      return (f===-1)?null:TUNING[i]+f; 
+    };
     
-    // Calculate Duration in seconds for Tone.js (Approximate based on value)
-    // 1.0 val ~ 0.5s at 120bpm. We use generic ratio here.
     const dur = s.val * 0.6; 
     let dispStr = "";
 
-    if(s.label === "BÙM") {
-      let n = getN(c.b);
-      playNotes([n], dur, 1.2);
-      dispStr = `STR ${c.b}`;
-    }
-    else if(s.label === "BÙM+1") {
-       let alt = c.b+1; if(alt>6) alt=c.b-1;
-       playNotes([getN(alt)], dur, 1.1);
-       dispStr = `STR ${alt}`;
-    }
-    else if(s.label === "1") {
-      playNotes([getN(c.b-1)], 0.3, 0.7);
-      dispStr = `STR ${c.b-1}`;
-    }
-    else if(s.label === "2") {
-      playNotes([getN(c.b-2)], 0.3, 0.7);
-      dispStr = `STR ${c.b-2}`;
-    }
-    else if(s.label === "3") { // Strum down
-       [3,2,1].forEach((st,i) => { let n=getN(st); if(n) guitar.play(n, now+i*0.015, {duration:dur, gain:0.8}); });
-       dispStr = "STR 3-2-1";
-    }
-    else if(s.label === "CHÁT") { // Strum up mute
-       [1,2,3].forEach((st,i) => { let n=getN(st); if(n) guitar.play(n, now+i*0.01, {duration:0.1, gain:0.9, release:0.05}); });
-       dispStr = "CHAT";
+    // === TRY CATCH BLOCK ĐỂ CHỐNG CRASH ===
+    try {
+      if(s.label === "BÙM") {
+        let n = getN(c.b);
+        safePlay([n], dur, 1.2);
+        dispStr = `DÂY ${c.b}`;
+      }
+      else if(s.label === "BÙM+1") {
+         let alt = c.b+1; if(alt>6) alt=c.b-1;
+         safePlay([getN(alt)], dur, 1.1);
+         dispStr = `DÂY ${alt}`;
+      }
+      else if(s.label === "1") {
+        safePlay([getN(c.b-1)], 0.3, 0.7);
+        dispStr = `DÂY ${c.b-1}`;
+      }
+      else if(s.label === "2") {
+        safePlay([getN(c.b-2)], 0.3, 0.7);
+        dispStr = `DÂY ${c.b-2}`;
+      }
+      else if(s.label === "3") { 
+         [3,2,1].forEach((st,i) => { 
+           let n=getN(st); 
+           if(n) safePlaySingle(n, now+i*0.015, dur, 0.8);
+         });
+         dispStr = "QUẠT 3-2-1";
+      }
+      else if(s.label === "CHÁT") { 
+         [1,2,3].forEach((st,i) => { 
+           let n=getN(st); 
+           if(n) safePlaySingle(n, now+i*0.01, 0.1, 0.9, 0.05);
+         });
+         dispStr = "CHÁT (LÊN)";
+      }
+    } catch(err) {
+      console.warn("Lỗi phát nốt (đã bỏ qua):", err);
     }
 
-    // Update LED Display
     document.getElementById('str-display').innerText = dispStr;
   }
   
-  function playNotes(ns, d, v) { ns.forEach(n => { if(n) guitar.play(n, Tone.now(), {duration:d, gain:v}); }); }
+  function safePlay(ns, d, v) { 
+    ns.forEach(n => { 
+      if(n !== null && n !== undefined) {
+        try { guitar.play(n, Tone.now(), {duration:d, gain:v}); } 
+        catch(e) { console.warn("Skip note:", n); }
+      }
+    }); 
+  }
+
+  function safePlaySingle(n, time, dur, gain, release) {
+    if(n !== null && n !== undefined) {
+      try { 
+        let opts = {duration:dur, gain:gain};
+        if(release) opts.release = release;
+        guitar.play(n, time, opts); 
+      } 
+      catch(e) { console.warn("Skip note:", n); }
+    }
+  }
 
   window.setChord = function(c) {
     currentChord = c;
-    document.querySelectorAll('.btn-chord').forEach(b => b.classList.toggle('active', b.innerText === c));
+    document.querySelectorAll('.btn-chord').forEach(b => b.classList.toggle('active', b.innerText.includes(c)));
   }
 </script>
 </body>
