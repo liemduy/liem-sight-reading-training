@@ -3,14 +3,13 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>Bolero Tea Room - Stable Audio</title>
+  <title>Bolero Tea Room - V3 Fixed</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.18/Tone.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/soundfont-player@0.12.0/dist/soundfont-player.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto:wght@300;400&display=swap" rel="stylesheet">
 
   <style>
-    /* GIỮ NGUYÊN GIAO DIỆN PHÒNG TRÀ */
     :root {
       --bg: #1a120b; --panel: #2e2018; --gold: #d4af37; --gold-dim: #8c7322;
       --cream: #f5f5dc; --text: #efebe9; --highlight: #ffecb3; --cue-color: #ff6f00;
@@ -107,6 +106,7 @@
     .switch input { display:none; }
     .slider-toggle { background: #3e2723; border: 1px solid #5d4037; color: #888; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; }
     input:checked + .slider-toggle { color: var(--gold); border-color: var(--gold); font-weight: bold; }
+    .err-msg { color: #ff5252; margin-top: 10px; font-size: 0.9rem; max-width: 80%; text-align: center; }
   </style>
 </head>
 <body>
@@ -116,7 +116,8 @@
   <div id="overlay">
     <h2 style="font-size: 2.5rem; margin-bottom: 30px;">BOLERO PHÒNG TRÀ</h2>
     <button class="btn-load" onclick="initAudio()">BẬT ĐÀN (POWER ON)</button>
-    <div class="led-text" id="load-text">Tuyệt phẩm nhạc vàng...</div>
+    <div class="led-text" id="load-text">Nhạc vàng muôn thuở...</div>
+    <div id="error-log" class="err-msg"></div>
   </div>
 
   <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom: 15px; border-bottom: 1px solid #3e2723; padding-bottom: 10px;">
@@ -241,48 +242,70 @@
   window.applyNotesToPercent = function() { renderTimeline(); }
   window.applyDefaultPreset = function() { if(isPlaying) togglePlay(); steps = JSON.parse(JSON.stringify(DEFAULT_PRESET)); renderTimeline(); }
 
-  // === AUDIO ENGINE (ROBUST LOAD) ===
+  // === AUDIO ENGINE (ROBUST LOAD V2) ===
   async function initAudio() {
     const loadText = document.getElementById('load-text');
+    const errLog = document.getElementById('error-log');
     const btnLoad = document.querySelector('.btn-load');
-    loadText.innerText = "Đang kết nối kho nhạc (MusyngKite)...";
+    
+    loadText.innerText = "Đang kết nối MusyngKite...";
+    errLog.innerText = "";
     btnLoad.disabled = true;
 
     await Tone.start();
 
-    // Cấu hình URL Soundfont ổn định từ CDN (MusyngKite)
+    // LOGIC TẢI NGUYÊN BẢN TỪ FILE MẪU CỦA BRO
     const SF_BASE = "https://cdn.jsdelivr.net/gh/gleitz/midi-js-soundfonts@gh-pages/";
     const nameToUrl = (name, soundfont, format) => `${SF_BASE}${soundfont}/${name}-${format}.js`;
 
     try {
       eq = new Tone.EQ3(0, 0, 0).toDestination();
 
-      // Cố gắng tải bộ Nylon chất lượng cao (MusyngKite)
+      // Thử 1: MusyngKite (Nylon) - Giống file mẫu
       try {
         guitar = await Soundfont.instrument(Tone.context.rawContext, "acoustic_guitar_nylon", {
-          soundfont: "MusyngKite",
-          format: "mp3",
-          nameToUrl: nameToUrl,
+          soundfont: "MusyngKite", // Soundfont xịn
+          nameToUrl: nameToUrl,    // Dùng URL builder của library
           destination: eq,
-          gain: 3.5 // Tăng gain vì bộ này tiếng hơi nhỏ nhưng ấm
+          gain: 3.5
         });
-      } catch (errFirst) {
-        console.warn("MusyngKite fail, trying fallback...", errFirst);
-        loadText.innerText = "Đang thử bộ dự phòng (Steel)...";
-        // Fallback sang bộ mặc định nếu bộ kia lỗi
-        guitar = await Soundfont.instrument(Tone.context.rawContext, 'acoustic_guitar_steel', { destination: eq, gain: 3.0 });
+        console.log("Loaded MusyngKite Nylon!");
+      } catch (e1) {
+        console.warn("MusyngKite failed, trying Fallback 1 (FluidR3 Nylon)...", e1);
+        loadText.innerText = "Thử bộ dự phòng 1...";
+        
+        // Thử 2: FluidR3_GM (Nylon) - Default
+        try {
+          guitar = await Soundfont.instrument(Tone.context.rawContext, "acoustic_guitar_nylon", {
+             destination: eq,
+             gain: 3.0
+          });
+          console.log("Loaded FluidR3 Nylon!");
+        } catch (e2) {
+           console.warn("FluidR3 Nylon failed, trying Fallback 2 (Steel)...", e2);
+           loadText.innerText = "Thử bộ dự phòng 2...";
+           
+           // Thử 3: Steel Guitar (Thường ít lỗi hơn)
+           guitar = await Soundfont.instrument(Tone.context.rawContext, "acoustic_guitar_steel", {
+             destination: eq,
+             gain: 3.0
+          });
+          console.log("Loaded Steel Guitar!");
+        }
       }
 
+      // Setup EQ Default
       updateEQ('low', 4);
       updateEQ('high', 2);
+      
       document.getElementById('overlay').style.display = 'none';
       renderTimeline();
 
     } catch (e) {
-      alert("Lỗi tải âm thanh. Vui lòng kiểm tra mạng và thử lại.");
-      loadText.innerText = "Lỗi kết nối. Vui lòng F5.";
+      loadText.innerText = "Thất bại toàn tập :(";
+      errLog.innerText = "Lỗi: " + e.message + ". Hãy kiểm tra mạng.";
       btnLoad.disabled = false;
-      console.error(e);
+      btnLoad.innerText = "THỬ LẠI";
     }
   }
 
@@ -343,8 +366,11 @@
     } catch(err) { console.warn("Skip step error", err); }
     document.getElementById('str-display').innerText = dispStr;
   }
+  
+  // SAFE PLAY HELPERS
   function safePlay(ns, d, v) { ns.forEach(n => { if(n!==null && n!==undefined) { try{ guitar.play(n, Tone.now(), {duration:d, gain:v}); }catch(e){} } }); }
   function safePlaySingle(n, time, dur, gain, release) { if(n!==null && n!==undefined) { try{ let opts={duration:dur, gain:gain}; if(release)opts.release=release; guitar.play(n, time, opts); }catch(e){} } }
+  
   window.setChord = function(c) { currentChord = c; document.querySelectorAll('.btn-chord').forEach(b => b.classList.toggle('active', b.innerText.includes(c))); }
 </script>
 </body>
