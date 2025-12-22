@@ -3,463 +3,836 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Guitar — Soundfont Player (Fix: HTTPS + Probe + Connect)</title>
-
-  <!-- CDN: soundfont-player -->
-  <script src="https://cdn.jsdelivr.net/npm/soundfont-player@0.12.0/dist/soundfont-player.min.js"></script>
-
+  <title>Click-to-Chord Đệm Hát (1 file HTML)</title>
   <style>
-    :root { color-scheme: light dark; }
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 16px; line-height: 1.35; }
-    .grid { display: grid; gap: 12px; grid-template-columns: 1fr; max-width: 980px; }
-    @media (min-width: 900px) { .grid { grid-template-columns: 1.2fr 0.8fr; } }
-    .card { border: 1px solid rgba(128,128,128,.35); border-radius: 10px; padding: 12px; }
-    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-    label { display: grid; gap: 6px; font-size: 13px; opacity: .95; }
-    input[type="number"], textarea, select {
-      width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(128,128,128,.35);
-      background: transparent; color: inherit;
+    :root { --bg:#0b0c10; --panel:#13151b; --text:#e9edf1; --muted:#a8b0bb; --line:#2a2f3a; --chip:#1d2230; --chip2:#2b3350; }
+    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; background:var(--bg); color:var(--text); }
+    .wrap { max-width:1100px; margin:0 auto; padding:18px; }
+    h1 { font-size:18px; margin:0 0 12px; font-weight:700; }
+    .grid { display:grid; grid-template-columns: 420px 1fr; gap:14px; }
+    @media (max-width: 980px){ .grid{ grid-template-columns:1fr; } }
+    .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px; }
+    .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    label { font-size:12px; color:var(--muted); display:block; margin-bottom:6px; }
+    input[type="range"]{ width:220px; }
+    input[type="number"], select, textarea, button {
+      background:#0f1117; color:var(--text); border:1px solid var(--line);
+      border-radius:10px; padding:8px 10px; font-size:14px;
     }
-    textarea { min-height: 120px; resize: vertical; }
-    input[type="range"] { width: 100%; }
-    button {
-      padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(128,128,128,.35);
-      background: rgba(128,128,128,.12); color: inherit; cursor: pointer;
-    }
-    button.primary { background: rgba(0,128,255,.18); border-color: rgba(0,128,255,.35); }
-    button:disabled { opacity: .55; cursor: not-allowed; }
-    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size: 12px; }
-    .status { white-space: pre-wrap; padding: 10px; border-radius: 8px; border: 1px dashed rgba(128,128,128,.45); }
-    .small { font-size: 12px; opacity: .85; }
-    .pill { display:inline-block; padding: 3px 8px; border-radius: 999px; border: 1px solid rgba(128,128,128,.35); font-size: 12px; opacity: .9; }
+    button { cursor:pointer; }
+    button.primary { background:#1a2240; border-color:#33406a; }
+    button.danger { background:#3a1a1a; border-color:#6a3333; }
+    textarea { width:100%; height:460px; resize:vertical; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size:12px; line-height:1.4; }
+    .status { display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-top:10px; color:var(--muted); font-size:13px; }
+    .pill { background:#0f1117; border:1px solid var(--line); padding:6px 10px; border-radius:999px; }
+    .beats { display:flex; gap:6px; }
+    .beat { width:18px; height:18px; border-radius:6px; border:1px solid var(--line); background:#0f1117; }
+    .beat.on { background:#2a3358; border-color:#46528c; }
+    .lyrics { white-space: pre-wrap; line-height: 1.9; font-size:16px; }
+    .chip { display:inline-block; padding:2px 8px; margin:0 4px 0 0; border-radius:999px; background:var(--chip); border:1px solid var(--line); cursor:pointer; font-weight:700; }
+    .chip.active { background:var(--chip2); border-color:#5464a6; }
+    .chip.pending { outline:2px dashed #6a84ff; outline-offset:2px; }
+    .marker { display:inline-block; padding:2px 8px; margin:0 4px; border-radius:10px; background:#2a1f10; border:1px solid #5a441f; cursor:pointer; font-weight:700; }
+    .help { color:var(--muted); font-size:12px; line-height:1.5; }
+    .split { height:1px; background:var(--line); margin:12px 0; }
   </style>
 </head>
-
 <body>
-  <h2>Guitar (Soundfont) — Fix: HTTPS + Probe + Connect</h2>
-  <div class="small">
-    <span class="pill">soundfont-player</span>
-    <span class="pill">mp3-only</span>
-    <span class="pill">probe URL</span>
-    <span class="pill">force connect</span>
-  </div>
+  <div class="wrap">
+    <h1>Web app đệm hát (1 file HTML): Click hợp âm trong lyric để phát đệm SlowRock 6/8</h1>
 
-  <div class="grid">
-    <div class="card">
-      <h3>Controls</h3>
+    <div class="grid">
+      <!-- LEFT: INPUT + CONTROLS -->
+      <div class="card">
+        <div class="row" style="justify-content:space-between;">
+          <div>
+            <label>Input (DSL text)</label>
+          </div>
+          <div class="row">
+            <button id="btnLoad" class="primary">Load Input</button>
+            <button id="btnReset">Reset Sample</button>
+          </div>
+        </div>
 
-      <div class="row3">
-        <label>
-          Instrument
-          <select id="inst">
-            <option value="acoustic_guitar_nylon" selected>Acoustic Guitar (Nylon)</option>
-            <option value="acoustic_guitar_steel">Acoustic Guitar (Steel)</option>
-            <option value="acoustic_grand_piano">Piano (debug)</option>
-          </select>
-          <div class="small">Thử “Piano (debug)” để loại trừ trường hợp guitar sample bị thiếu/mapping lỗi.</div>
-        </label>
+        <textarea id="txtInput"></textarea>
 
-        <label>
-          Soundfont set
-          <select id="sfset">
-            <option value="MusyngKite" selected>MusyngKite</option>
-            <option value="FluidR3_GM">FluidR3_GM</option>
-          </select>
-        </label>
+        <div class="split"></div>
 
-        <label>
-          Soundfont CDN (HTTPS)
-          <select id="cdn">
-            <option value="gleitz" selected>gleitz.github.io</option>
-            <option value="jsdelivr">jsDelivr (GitHub gh-pages)</option>
-            <option value="rawgh">raw.githubusercontent.com (fallback)</option>
-          </select>
-        </label>
+        <div class="row">
+          <button id="btnStart" class="primary">Start Audio</button>
+          <button id="btnStop" class="danger">Stop</button>
+          <button id="btnStrum">Gạt 1 lượt (STRUM)</button>
+        </div>
+
+        <div class="split"></div>
+
+        <div class="row">
+          <div>
+            <label>BPM (theo phách 1–6)</label>
+            <div class="row">
+              <input id="rngBpm" type="range" min="45" max="160" value="80" />
+              <input id="numBpm" type="number" min="45" max="160" value="80" style="width:90px;" />
+            </div>
+          </div>
+
+          <div>
+            <label>Đổi hợp âm</label>
+            <select id="selChangeMode">
+              <option value="quantize_bar">Quantize theo ô nhịp</option>
+              <option value="immediate">Immediate</option>
+            </select>
+          </div>
+
+          <div>
+            <label>Pattern</label>
+            <select id="selPattern">
+              <option value="slowrock_68">SlowRock 6/8: bass-3-2-1-2-3</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="split"></div>
+
+        <div class="row">
+          <div>
+            <label>Density (mỏng ↔ dày)</label>
+            <input id="rngDensity" type="range" min="0" max="100" value="55" />
+          </div>
+          <div>
+            <label>Humanize (máy ↔ người)</label>
+            <input id="rngHuman" type="range" min="0" max="100" value="45" />
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:6px;">
+          <div>
+            <label>Vocal Space (ít ↔ nhiều)</label>
+            <input id="rngVocal" type="range" min="0" max="100" value="60" />
+          </div>
+          <div>
+            <label>Tone (ấm ↔ sáng)</label>
+            <input id="rngTone" type="range" min="0" max="100" value="45" />
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:6px;">
+          <div>
+            <label>Volume</label>
+            <input id="rngVol" type="range" min="0" max="100" value="55" />
+          </div>
+          <div class="row" style="align-items:flex-end;">
+            <label style="margin:0 0 6px;">Metronome</label>
+            <input id="chkMetro" type="checkbox" />
+          </div>
+        </div>
+
+        <div class="status">
+          <div class="pill">Active chord: <span id="lblChord">—</span></div>
+          <div class="pill">Pending: <span id="lblPending">—</span></div>
+          <div class="pill">6/8</div>
+          <div class="beats" id="beatLeds"></div>
+        </div>
+
+        <div class="help" style="margin-top:10px;">
+          Gợi ý dùng “đệm hát nhậu”: Density 45–65, Humanize 35–60, Vocal Space 55–75, BPM tuỳ bài.
+        </div>
       </div>
 
-      <div class="row">
-        <label>
-          Output gain
-          <input id="outGain" type="range" min="0" max="100" value="80" />
-          <div class="small"><span id="outGainLabel">80</span>%</div>
-        </label>
+      <!-- RIGHT: LYRICS -->
+      <div class="card">
+        <div class="row" style="justify-content:space-between;">
+          <div>
+            <div style="font-weight:800; font-size:16px;" id="songTitle">—</div>
+            <div class="help" id="songMeta">—</div>
+          </div>
+          <div class="row">
+            <div class="pill">Click hợp âm trong lyric để đổi</div>
+          </div>
+        </div>
 
-        <label>
-          Tempo (BPM)
-          <input id="bpm" type="number" min="40" max="220" value="84" />
-        </label>
+        <div class="split"></div>
+        <div id="lyrics" class="lyrics"></div>
       </div>
-
-      <label>
-        Progression
-        <textarea id="prog">C | G | Am | F</textarea>
-      </label>
-
-      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top: 10px;">
-        <button class="primary" id="btnStart">Start Audio / Load</button>
-        <button id="btnProbe" disabled>Probe Soundfont URL</button>
-        <button id="btnNote" disabled>Play single note (C4)</button>
-        <button id="btnPlay" disabled>Play progression</button>
-        <button id="btnStop" disabled>Stop</button>
-        <button id="btnBeep">Beep test</button>
-      </div>
-
-      <div class="status mono" id="status">Ready.</div>
-    </div>
-
-    <div class="card">
-      <h3>Diagnostics (không cần DevTools)</h3>
-      <div class="small">
-        Nếu <b>Probe = FAIL</b> thì guitar chắc chắn không kêu (CDN/CORS/network filter). Nếu <b>Probe = OK</b> mà vẫn im lặng,
-        khả năng cao là instrument không connect đúng hoặc bị mute bởi gain (file này đã ép connect).
-      </div>
-
-      <label class="small">
-        Resolved soundfont JS URL
-        <div class="status mono" id="sfUrl">—</div>
-      </label>
-
-      <label class="small">
-        Probe result
-        <div class="status mono" id="probe">—</div>
-      </label>
-
-      <label class="small">
-        Play log
-        <div class="status mono" id="playlog">—</div>
-      </label>
     </div>
   </div>
 
 <script>
-(() => {
-  const $ = (id) => document.getElementById(id);
+/* ===========================
+   1) SAMPLE INPUT (toàn bộ)
+   =========================== */
+const SAMPLE_INPUT = `@meta:title=Biển Nhớ (Click-to-Chord)
+@meta:composer=Trịnh Công Sơn
+@meta:arrangement=Toản Guitar (beginner transcript)
+@meta:key=Em
+@meta:time_signature=6/8
+@meta:bpm_default=80
+@meta:mode=click_to_change_chord
+@meta:change_mode=quantize_bar
 
-  const ui = {
-    inst: $("inst"),
-    sfset: $("sfset"),
-    cdn: $("cdn"),
-    outGain: $("outGain"),
-    outGainLabel: $("outGainLabel"),
-    bpm: $("bpm"),
-    prog: $("prog"),
-    btnStart: $("btnStart"),
-    btnProbe: $("btnProbe"),
-    btnNote: $("btnNote"),
-    btnPlay: $("btnPlay"),
-    btnStop: $("btnStop"),
-    btnBeep: $("btnBeep"),
-    status: $("status"),
-    sfUrl: $("sfUrl"),
-    probe: $("probe"),
-    playlog: $("playlog"),
+@pattern:name=slowrock_68
+@pattern:steps=bass,3,2,1,2,3
+
+# Chord definitions
+# voicing: 6 ký tự theo thứ tự dây 6→1 (x = mute, số = fret). Nếu fret >= 10, dùng dạng comma: x,10,9,7,8,7
+# bass: dây bass chủ (5 hoặc 6) theo transcript.
+# pluck: các dây sẽ móc sau bass (đúng transcript là 3,2,1,2,3)
+# mute: dây không được phát (theo lời thầy: Em bỏ 5&4, G bỏ 5, ...)
+
+@chord:Em  bass=6 pluck=3,2,1,2,3 mute=5,4 voicing=022000 note=Trong bài này không gảy dây 5&4
+@chord:Am  bass=5 pluck=3,2,1,2,3 voicing=x02210
+@chord:C   bass=5 pluck=3,2,1,2,3 voicing=x32010
+@chord:G   bass=6 pluck=3,2,1,2,3 mute=5 voicing=320003 note=Trong bài này không gảy dây 5; có thể bỏ bấm dây 5
+@chord:C7  bass=5 pluck=3,2,1,2,3 mute=6 voicing=x21202 note=Transcript gọi C7 nhưng thế bấm khớp B7(x21202); giữ tên C7 để đúng video
+
+# Lyrics (trích theo transcript bạn cung cấp; dùng để demo click-to-chord)
+# {STRUM} = nút "gạt 1 lượt" tại vị trí đó (user tự bấm khi tới câu)
+
+[VERSE 1]
+[Em]Ngày mai em đi biển nhớ tên em gọi [Am]về
+[Em]Gọi hồn liễu rũ lê thê gọi bờ cát trắng [G]đêm khuya [Em](vào lại Em ở nhịp kế)
+[Em]Soi đá trông em từng giờ nghe buồn nhịp chân bơ vơ {STRUM}
+
+[VERSE 2 - mô tả trong transcript]
+[Em]Ngày mai em đi biển nhớ em quay về nguồn
+[Em]Gọi chung dương gió ngập hồn bàn tay chăn gió gió mưa sang
+
+[CHORUS]
+[C7]Hôm nào em về
+[C7]Bàn tay buông lối ngỏ
+[C7]Đàn lên cung phím chờ
+[C7]Sầu lên đây hoang vu {STRUM}
+
+[BACK TO VERSE]
+[Em]Ngày mai em đi biển nhớ tên em gọi [Am]về
+`;
+
+/* ===========================
+   2) DSL PARSER
+   =========================== */
+function parseDSL(text){
+  const lines = text.split(/\r?\n/);
+  const meta = {};
+  const patterns = {};
+  const chords = {};
+  const lyricLines = [];
+  let currentSection = null;
+
+  for (let raw of lines){
+    const line = raw.trimEnd();
+    if (!line.trim()) { lyricLines.push(""); continue; }
+    if (line.trim().startsWith("#")) continue;
+
+    if (line.startsWith("@meta:")){
+      const kv = line.substring(6);
+      const idx = kv.indexOf("=");
+      if (idx>=0) meta[kv.substring(0,idx).trim()] = kv.substring(idx+1).trim();
+      continue;
+    }
+    if (line.startsWith("@pattern:")){
+      const rest = line.substring(9);
+      // @pattern:name=slowrock_68 or @pattern:steps=...
+      const idx = rest.indexOf("=");
+      if (idx>=0){
+        const key = rest.substring(0,idx).trim();
+        const val = rest.substring(idx+1).trim();
+        patterns[key] = val;
+      }
+      continue;
+    }
+    if (line.startsWith("@chord:")){
+      // @chord:Em bass=6 pluck=3,2,1,2,3 mute=5,4 voicing=022000 note=...
+      const parts = line.split(/\s+/);
+      const name = parts[0].substring(7).trim();
+      const def = { name, bass:6, pluck:[3,2,1,2,3], mute:[], voicing:"xxxxxx", note:"" };
+      for (let i=1;i<parts.length;i++){
+        const p = parts[i];
+        const idx = p.indexOf("=");
+        if (idx<0) continue;
+        const k = p.substring(0,idx);
+        const v = p.substring(idx+1);
+        if (k==="bass") def.bass = Number(v);
+        if (k==="pluck") def.pluck = v.split(",").map(Number);
+        if (k==="mute") def.mute = v.split(",").filter(Boolean).map(Number);
+        if (k==="voicing") def.voicing = v;
+        if (k==="note") def.note = v; // phần note chỉ 1 token; nếu muốn dài, dùng underscore hoặc không cần
+      }
+      chords[name] = def;
+      continue;
+    }
+
+    // section lines like [VERSE 1]
+    if (/^\[[A-Z0-9 \-_.]+\]$/.test(line.trim()) && !line.trim().match(/^\[[A-G][#b]?(m|7|m7|maj7)?\]/)){
+      currentSection = line.trim();
+      lyricLines.push(currentSection);
+      continue;
+    }
+
+    lyricLines.push(line);
+  }
+
+  // Normalize pattern: only support slowrock_68 for now
+  const patternName = meta["pattern"] || patterns["name"] || "slowrock_68";
+  const steps = (patterns["steps"] || "bass,3,2,1,2,3").split(",").map(s=>s.trim());
+
+  return { meta, chords, patternName, steps, lyricLines };
+}
+
+/* ===========================
+   3) AUDIO ENGINE (WebAudio + Karplus-Strong)
+   =========================== */
+let audioCtx = null;
+let masterGain = null;
+let toneLP = null;
+let vocalNotch = null;
+let vocalComp = null;
+let metroGain = null;
+
+const TUNING_MIDI = {6:40,5:45,4:50,3:55,2:59,1:64};
+
+function midiToHz(m){ return 440 * Math.pow(2,(m-69)/12); }
+
+function ensureAudio(){
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+  masterGain = audioCtx.createGain();
+  masterGain.gain.value = 0.55;
+
+  // Tone: lowpass
+  toneLP = audioCtx.createBiquadFilter();
+  toneLP.type = "lowpass";
+  toneLP.frequency.value = 4500;
+
+  // Vocal space: notch around 3kHz (reduce guitar presence)
+  vocalNotch = audioCtx.createBiquadFilter();
+  vocalNotch.type = "peaking";
+  vocalNotch.frequency.value = 3000;
+  vocalNotch.Q.value = 1.1;
+  vocalNotch.gain.value = -6;
+
+  // light compression to tame transients (helps vocal)
+  vocalComp = audioCtx.createDynamicsCompressor();
+  vocalComp.threshold.value = -22;
+  vocalComp.knee.value = 20;
+  vocalComp.ratio.value = 3.2;
+  vocalComp.attack.value = 0.01;
+  vocalComp.release.value = 0.18;
+
+  // metronome
+  metroGain = audioCtx.createGain();
+  metroGain.gain.value = 0.0;
+
+  // Graph
+  // (voices) -> toneLP -> vocalNotch -> vocalComp -> masterGain -> destination
+  toneLP.connect(vocalNotch);
+  vocalNotch.connect(vocalComp);
+  vocalComp.connect(masterGain);
+  masterGain.connect(audioCtx.destination);
+
+  // Metro to master (through same chain)
+  metroGain.connect(toneLP);
+}
+
+function setMixFromUI(){
+  if (!audioCtx) return;
+
+  const vol = Number(document.getElementById("rngVol").value)/100;
+  masterGain.gain.setTargetAtTime(vol, audioCtx.currentTime, 0.02);
+
+  const tone = Number(document.getElementById("rngTone").value)/100; // 0 warm -> 1 bright
+  const cutoff = 2200 + tone*5200; // 2.2k..7.4k
+  toneLP.frequency.setTargetAtTime(cutoff, audioCtx.currentTime, 0.03);
+
+  const vocal = Number(document.getElementById("rngVocal").value)/100;
+  // notch depth -2..-12 dB
+  const notchGain = -2 - vocal*10;
+  vocalNotch.gain.setTargetAtTime(notchGain, audioCtx.currentTime, 0.03);
+
+  // compression a bit stronger when vocal space high
+  vocalComp.ratio.setTargetAtTime(2.2 + vocal*2.2, audioCtx.currentTime, 0.03);
+
+  // metro
+  const metroOn = document.getElementById("chkMetro").checked;
+  metroGain.gain.setTargetAtTime(metroOn ? 0.12 : 0.0, audioCtx.currentTime, 0.02);
+}
+
+function pluckKarplusStrong(hz, when, velocity=0.8, damp=0.6, decay=1.6){
+  // Karplus-Strong: noise burst -> delay feedback loop with lowpass (string damping)
+  // This is lightweight and works everywhere without external samples.
+  ensureAudio();
+
+  const now = audioCtx.currentTime;
+  const t0 = Math.max(when, now);
+
+  const burstDur = 0.015;
+  const noiseBuf = audioCtx.createBuffer(1, Math.floor(audioCtx.sampleRate * burstDur), audioCtx.sampleRate);
+  const data = noiseBuf.getChannelData(0);
+  for (let i=0;i<data.length;i++){
+    data[i] = (Math.random()*2 - 1) * velocity;
+  }
+  const noise = audioCtx.createBufferSource();
+  noise.buffer = noiseBuf;
+
+  const delay = audioCtx.createDelay();
+  delay.delayTime.value = 1/Math.max(50,hz);
+
+  const fb = audioCtx.createGain();
+  // feedback controls sustain; humanize/vocal will affect overall
+  fb.gain.value = 0.80 * (0.55 + damp*0.45);
+
+  const lp = audioCtx.createBiquadFilter();
+  lp.type = "lowpass";
+  lp.frequency.value = 1800 + damp*2800;
+
+  const env = audioCtx.createGain();
+  env.gain.value = 0.0001;
+
+  // connect loop: noise -> delay -> lp -> fb -> delay ...
+  noise.connect(delay);
+  delay.connect(lp);
+  lp.connect(fb);
+  fb.connect(delay);
+
+  // output: lp -> env -> tone chain
+  lp.connect(env);
+  env.connect(toneLP);
+
+  // envelope: fast attack, exponential-ish decay
+  env.gain.setValueAtTime(0.0001, t0);
+  env.gain.exponentialRampToValueAtTime(Math.max(0.02, velocity), t0 + 0.008);
+  env.gain.exponentialRampToValueAtTime(0.0008, t0 + decay);
+
+  noise.start(t0);
+  noise.stop(t0 + burstDur);
+
+  // Cleanup (best-effort)
+  setTimeout(()=>{ try{ noise.disconnect(); delay.disconnect(); lp.disconnect(); fb.disconnect(); env.disconnect(); }catch(e){} }, (decay+0.4)*1000);
+}
+
+/* ===========================
+   4) TRANSPORT / SCHEDULER
+   =========================== */
+let app = {
+  song: null,
+  steps: ["bass","3","2","1","2","3"],
+  bpm: 80,
+  stepIndex: 0,           // 0..5
+  nextStepTime: 0,
+  isRunning: false,
+  activeChordName: null,
+  pendingChordName: null,
+  changeMode: "quantize_bar",
+  lookaheadMs: 25,
+  scheduleAheadSec: 0.12
+};
+
+function getStepSeconds(){
+  // BPM defined as pulse for phách 1..6 (eighth-note pulses)
+  return 60 / Math.max(1, app.bpm);
+}
+
+function chordVoicingToMidiMap(chordDef){
+  // returns {1:midi,2:midi,...6:midi} or null for muted
+  const v = chordDef.voicing.trim();
+  let tokens = [];
+  if (v.includes(",")){
+    tokens = v.split(",").map(s=>s.trim());
+  } else {
+    // 6-char compact mode (only frets 0..9 or x)
+    tokens = v.split("");
+  }
+  if (tokens.length !== 6){
+    // pad/trim
+    while(tokens.length < 6) tokens.push("x");
+    tokens = tokens.slice(0,6);
+  }
+
+  const map = {};
+  // tokens: index0 = string6 ... index5 = string1
+  for (let i=0;i<6;i++){
+    const stringNum = 6 - i;
+    const tok = tokens[i].toLowerCase();
+    if (tok==="x") { map[stringNum] = null; continue; }
+    const fret = Number(tok);
+    if (!Number.isFinite(fret)) { map[stringNum] = null; continue; }
+    map[stringNum] = TUNING_MIDI[stringNum] + fret;
+  }
+  // Apply mute rule: force null
+  for (const m of (chordDef.mute || [])){
+    map[m] = null;
+  }
+  return map;
+}
+
+function pickStringsForDensity(strings){
+  // strings is like [3,2,1,2,3], density controls skipping some treble notes
+  const d = Number(document.getElementById("rngDensity").value)/100;
+  if (d >= 0.85) return strings.slice(); // full
+  if (d >= 0.60) {
+    // drop one in the middle sometimes
+    return strings.filter((_,i)=> (i!==2) || Math.random() < d);
+  }
+  if (d >= 0.35) {
+    // keep 1st, 3rd, 5th positions (sparser)
+    return strings.filter((_,i)=> i%2===0);
+  }
+  // very thin: only one treble note per bar (after bass)
+  return [strings[0]];
+}
+
+function humanParams(){
+  const h = Number(document.getElementById("rngHuman").value)/100;
+  return {
+    jitter: 0.000 + h*0.012,      // up to 12ms
+    velRand: 0.02 + h*0.14,       // +/- up to ~16%
+    spread: 0.003 + h*0.020,      // strum spread between notes (for STRUM button)
+    damp: 0.45 + h*0.35,          // damping factor (tone of pluck)
+  };
+}
+
+function scheduleMetronome(stepTime, stepIdx){
+  if (!document.getElementById("chkMetro").checked) return;
+  // simple click: short high sine burst through metroGain->toneLP chain
+  const osc = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  osc.type = "sine";
+  osc.frequency.value = (stepIdx===0) ? 1100 : 850;
+  g.gain.value = 0.0001;
+  osc.connect(g);
+  g.connect(metroGain);
+  g.gain.setValueAtTime(0.0001, stepTime);
+  g.gain.exponentialRampToValueAtTime(0.12, stepTime + 0.003);
+  g.gain.exponentialRampToValueAtTime(0.0001, stepTime + 0.05);
+  osc.start(stepTime);
+  osc.stop(stepTime + 0.06);
+}
+
+function scheduleStep(stepTime){
+  const song = app.song;
+  if (!song) return;
+
+  const chordName = app.activeChordName || Object.keys(song.chords)[0] || null;
+  if (!chordName) return;
+
+  const chordDef = song.chords[chordName];
+  const map = chordVoicingToMidiMap(chordDef);
+
+  const steps = app.steps;
+  const s = steps[app.stepIndex];
+
+  // Beat LED update is visual only; schedule it near stepTime by using setTimeout
+  const stepIdxCopy = app.stepIndex;
+  const now = audioCtx.currentTime;
+  const delayMs = Math.max(0, (stepTime - now) * 1000);
+  setTimeout(()=> setBeatLED(stepIdxCopy), delayMs);
+
+  // Apply pending chord at bar boundary if quantize_bar
+  if (app.changeMode === "quantize_bar" && app.stepIndex === 0 && app.pendingChordName){
+    app.activeChordName = app.pendingChordName;
+    app.pendingChordName = null;
+    refreshChordLabels();
+    renderLyrics(); // to update active highlight
+  }
+
+  // Metronome click
+  scheduleMetronome(stepTime, app.stepIndex);
+
+  // Play note(s)
+  const hp = humanParams();
+  const vocal = Number(document.getElementById("rngVocal").value)/100;
+  // as vocal space increases, reduce velocity a bit
+  const vocalVelScale = 1.0 - vocal*0.25;
+
+  function playMidi(midi, velBase){
+    if (midi == null) return;
+    const velJ = (Math.random()*2 - 1) * hp.velRand;
+    const vel = Math.min(1, Math.max(0.08, velBase * (1+velJ) * vocalVelScale));
+    const tJ = (Math.random()*2 - 1) * hp.jitter;
+    pluckKarplusStrong(midiToHz(midi), stepTime + tJ, vel, hp.damp, 1.55);
+  }
+
+  if (s === "bass"){
+    const bassStr = chordDef.bass;
+    playMidi(map[bassStr], 0.92);
+  } else {
+    // treble pattern strings (3,2,1,2,3) but allow density filtering
+    // Here each step is a single string number (like "3"), consistent with transcript.
+    const strNum = Number(s);
+    // density: if too thin, skip some treble steps randomly
+    const d = Number(document.getElementById("rngDensity").value)/100;
+    if (d < 0.35 && Math.random() > d*1.8) return; // skip more
+    const base = 0.62;
+    playMidi(map[strNum], base);
+  }
+
+  // advance
+  app.stepIndex = (app.stepIndex + 1) % app.steps.length;
+  app.nextStepTime += getStepSeconds();
+}
+
+function schedulerTick(){
+  if (!app.isRunning || !audioCtx) return;
+  const now = audioCtx.currentTime;
+  while (app.nextStepTime < now + app.scheduleAheadSec){
+    scheduleStep(app.nextStepTime);
+  }
+}
+
+let schedulerTimer = null;
+
+function startTransport(){
+  ensureAudio();
+  setMixFromUI();
+
+  app.isRunning = true;
+  app.stepIndex = 0;
+  app.nextStepTime = audioCtx.currentTime + 0.03; // slight delay
+  if (schedulerTimer) clearInterval(schedulerTimer);
+  schedulerTimer = setInterval(schedulerTick, app.lookaheadMs);
+
+  refreshChordLabels();
+}
+
+function stopTransport(){
+  app.isRunning = false;
+  if (schedulerTimer) clearInterval(schedulerTimer);
+  schedulerTimer = null;
+  setBeatLED(-1);
+}
+
+/* ===========================
+   5) STRUM (manual marker)
+   =========================== */
+function playStrumNow(){
+  const song = app.song;
+  if (!song || !audioCtx) return;
+  const chordName = app.activeChordName || Object.keys(song.chords)[0];
+  const chordDef = song.chords[chordName];
+  const map = chordVoicingToMidiMap(chordDef);
+
+  const hp = humanParams();
+  const density = Number(document.getElementById("rngDensity").value)/100;
+  const vocal = Number(document.getElementById("rngVocal").value)/100;
+  const vocalVelScale = 1.0 - vocal*0.30;
+
+  // choose strings: include bass + some treble depending on density
+  const allStrings = [6,5,4,3,2,1].filter(s=>map[s]!=null);
+  // avoid very low muddiness if vocal space high: drop string4 sometimes
+  const filtered = allStrings.filter(s=> !(vocal>0.6 && s===4 && Math.random()<0.7));
+
+  let chosen = filtered;
+  if (density < 0.4) chosen = filtered.filter(s=> s===chordDef.bass || s<=2); // bass + top strings
+  else if (density < 0.7) chosen = filtered.filter(s=> s!==4); // lighter mid
+
+  // strum direction: down (low->high)
+  const t0 = audioCtx.currentTime + 0.02;
+  const spread = hp.spread;
+  chosen.sort((a,b)=>b-a); // 6->1 is down-strum
+  chosen.forEach((s,i)=>{
+    const midi = map[s];
+    const velBase = (s===chordDef.bass) ? 0.95 : 0.70;
+    const velJ = (Math.random()*2 - 1) * hp.velRand;
+    const vel = Math.min(1, Math.max(0.10, velBase*(1+velJ)*vocalVelScale));
+    pluckKarplusStrong(midiToHz(midi), t0 + i*spread, vel, hp.damp, 1.25);
+  });
+}
+
+/* ===========================
+   6) UI RENDER
+   =========================== */
+function setBeatLED(idx){
+  const leds = document.querySelectorAll(".beat");
+  leds.forEach((el,i)=> el.classList.toggle("on", i===idx));
+}
+
+function initBeatLEDs(){
+  const cont = document.getElementById("beatLeds");
+  cont.innerHTML = "";
+  for (let i=0;i<6;i++){
+    const d = document.createElement("div");
+    d.className = "beat";
+    cont.appendChild(d);
+  }
+}
+
+function refreshChordLabels(){
+  document.getElementById("lblChord").textContent = app.activeChordName || "—";
+  document.getElementById("lblPending").textContent = app.pendingChordName || "—";
+}
+
+function renderLyrics(){
+  const song = app.song;
+  const out = document.getElementById("lyrics");
+  out.innerHTML = "";
+  if (!song) return;
+
+  const active = app.activeChordName;
+  const pending = app.pendingChordName;
+
+  const chordRegex = /\[([^\]]+)\]/g;
+
+  song.lyricLines.forEach(line=>{
+    const div = document.createElement("div");
+
+    // Section header line like [VERSE 1] should display as heading, not chord
+    if (/^\[[A-Z0-9 \-_.]+\]$/.test(line.trim()) && !line.trim().match(/^\[[A-G][#b]?(m|7|m7|maj7)?\]/)){
+      div.style.marginTop = "10px";
+      div.style.color = "#cbd5ff";
+      div.style.fontWeight = "800";
+      div.textContent = line.trim();
+      out.appendChild(div);
+      return;
+    }
+
+    // Replace chord tokens and STRUM marker
+    let idx = 0;
+    let m;
+    while ((m = chordRegex.exec(line)) !== null){
+      const before = line.substring(idx, m.index);
+      if (before) div.appendChild(document.createTextNode(before));
+
+      const chordName = m[1].trim();
+      const chip = document.createElement("span");
+      chip.className = "chip";
+      if (chordName === active) chip.classList.add("active");
+      if (chordName === pending) chip.classList.add("pending");
+      chip.textContent = chordName;
+      chip.title = "Click để đổi hợp âm";
+
+      chip.onclick = async ()=>{
+        ensureAudio();
+        await audioCtx.resume();
+        const exists = !!song.chords[chordName];
+        if (!exists){
+          alert(`Chord "${chordName}" chưa được định nghĩa trong @chord.`);
+          return;
+        }
+        const mode = document.getElementById("selChangeMode").value;
+        app.changeMode = mode;
+
+        if (mode === "immediate"){
+          app.activeChordName = chordName;
+          app.pendingChordName = null;
+        } else {
+          app.pendingChordName = chordName;
+        }
+        refreshChordLabels();
+        renderLyrics();
+      };
+
+      div.appendChild(chip);
+      idx = m.index + m[0].length;
+    }
+
+    let rest = line.substring(idx);
+    // STRUM marker
+    if (rest.includes("{STRUM}")){
+      const parts = rest.split("{STRUM}");
+      div.appendChild(document.createTextNode(parts[0] || ""));
+      const mk = document.createElement("span");
+      mk.className = "marker";
+      mk.textContent = "STRUM";
+      mk.title = "Bấm để gạt 1 lượt tại điểm này";
+      mk.onclick = async ()=>{
+        ensureAudio();
+        await audioCtx.resume();
+        playStrumNow();
+      };
+      div.appendChild(mk);
+      div.appendChild(document.createTextNode(parts.slice(1).join("{STRUM}") || ""));
+    } else {
+      div.appendChild(document.createTextNode(rest));
+    }
+
+    out.appendChild(div);
+  });
+}
+
+function loadFromInput(){
+  const txt = document.getElementById("txtInput").value;
+  const song = parseDSL(txt);
+
+  app.song = song;
+  app.steps = song.steps.map(String);
+  app.bpm = Number(song.meta["bpm_default"] || 80);
+  document.getElementById("rngBpm").value = String(app.bpm);
+  document.getElementById("numBpm").value = String(app.bpm);
+
+  const cm = song.meta["change_mode"] || "quantize_bar";
+  document.getElementById("selChangeMode").value = cm;
+  app.changeMode = cm;
+
+  // default active chord: first chord defined, else try Em
+  app.activeChordName = song.chords["Em"] ? "Em" : (Object.keys(song.chords)[0] || null);
+  app.pendingChordName = null;
+
+  document.getElementById("songTitle").textContent = song.meta["title"] || "—";
+  document.getElementById("songMeta").textContent =
+    `${song.meta["composer"] || ""}${song.meta["key"] ? " • Key: " + song.meta["key"] : ""} • ${song.meta["time_signature"] || "6/8"}`;
+
+  refreshChordLabels();
+  renderLyrics();
+}
+
+/* ===========================
+   7) WIRE UP EVENTS
+   =========================== */
+function bindUI(){
+  initBeatLEDs();
+
+  document.getElementById("btnReset").onclick = ()=>{
+    document.getElementById("txtInput").value = SAMPLE_INPUT;
   };
 
-  function log(msg) { ui.status.textContent = msg; }
-  function plog(msg) { ui.playlog.textContent = msg + "\n" + (ui.playlog.textContent || ""); }
-  function clamp(x, a, b) { return Math.max(a, Math.min(b, x)); }
-  function norm01(v) { return clamp(Number(v) / 100, 0, 1); }
-  function lerp(a, b, t) { return a + (b - a) * t; }
+  document.getElementById("btnLoad").onclick = ()=>{
+    loadFromInput();
+  };
 
-  function updateLabels() { ui.outGainLabel.textContent = ui.outGain.value; }
-  ui.outGain.addEventListener("input", updateLabels);
-  updateLabels();
+  document.getElementById("btnStart").onclick = async ()=>{
+    ensureAudio();
+    await audioCtx.resume();
+    setMixFromUI();
+    // apply bpm from UI
+    app.bpm = Number(document.getElementById("numBpm").value || 80);
+    startTransport();
+  };
 
-  // Audio
-  let ac = null;
-  let instrument = null;
+  document.getElementById("btnStop").onclick = ()=>{
+    stopTransport();
+  };
 
-  // simple output chain
-  const out = { pre: null, hp: null, lp: null, master: null };
+  document.getElementById("btnStrum").onclick = async ()=>{
+    ensureAudio();
+    await audioCtx.resume();
+    playStrumNow();
+  };
 
-  function ensureAudio() {
-    if (ac) return ac;
-    const AudioCtx = window.AudioContext || window.webkitAudioContext;
-    ac = new AudioCtx({ latencyHint: "interactive" });
+  const bpmSync = (val)=>{
+    const v = Math.max(45, Math.min(160, Number(val)));
+    app.bpm = v;
+    document.getElementById("rngBpm").value = String(v);
+    document.getElementById("numBpm").value = String(v);
+  };
+  document.getElementById("rngBpm").oninput = (e)=> bpmSync(e.target.value);
+  document.getElementById("numBpm").onchange = (e)=> bpmSync(e.target.value);
 
-    out.pre = ac.createGain();
-
-    out.hp = ac.createBiquadFilter();
-    out.hp.type = "highpass";
-    out.hp.frequency.value = 80;
-
-    out.lp = ac.createBiquadFilter();
-    out.lp.type = "lowpass";
-    out.lp.frequency.value = 12000;
-
-    out.master = ac.createGain();
-
-    out.pre.connect(out.hp);
-    out.hp.connect(out.lp);
-    out.lp.connect(out.master);
-    out.master.connect(ac.destination);
-
-    applyGain();
-    return ac;
-  }
-
-  async function unlock() {
-    const ctx = ensureAudio();
-    if (ctx.state !== "running") await ctx.resume();
-  }
-
-  function applyGain() {
-    if (!ac) return;
-    const g = Math.pow(norm01(ui.outGain.value), 1.4);
-    out.master.gain.setTargetAtTime(g, ac.currentTime, 0.01);
-  }
-  ui.outGain.addEventListener("input", applyGain);
-
-  // IMPORTANT: build HTTPS URL for midi-js-soundfonts js file
-  // soundfont-player documents nameToUrl + destination + notes option, etc.  [oai_citation:2‡GitHub](https://github.com/danigb/soundfont-player)
-  function soundfontBase() {
-    switch (ui.cdn.value) {
-      case "jsdelivr":
-        return "https://cdn.jsdelivr.net/gh/gleitz/midi-js-soundfonts@gh-pages/";
-      case "rawgh":
-        return "https://raw.githubusercontent.com/gleitz/midi-js-soundfonts/gh-pages/";
-      case "gleitz":
-      default:
-        return "https://gleitz.github.io/midi-js-soundfonts/";
-    }
-  }
-
-  function makeNameToUrl() {
-    const base = soundfontBase();
-    return (name, soundfont, format) => {
-      const sf = soundfont || "MusyngKite";
-      const fmt = format || "mp3";
-      const url = `${base}${sf}/${name}-${fmt}.js`;
-      ui.sfUrl.textContent = url;
-      return url;
-    };
-  }
-
-  async function probeUrl(url) {
-    // Try HEAD first (cheap), fallback to GET if blocked.
-    ui.probe.textContent = "Probing...";
-    try {
-      let r;
-      try {
-        r = await fetch(url, { method: "HEAD", mode: "cors", cache: "no-store" });
-      } catch (_) {
-        r = null;
-      }
-      if (r && r.ok) {
-        ui.probe.textContent = `OK (HEAD ${r.status})`;
-        return true;
-      }
-
-      const rg = await fetch(url, { method: "GET", mode: "cors", cache: "no-store" });
-      if (!rg.ok) {
-        ui.probe.textContent = `FAIL (GET ${rg.status})`;
-        return false;
-      }
-      // read small chunk to confirm it is JS, not an HTML error page
-      const text = await rg.text();
-      const head = (text || "").slice(0, 120).replace(/\s+/g, " ");
-      ui.probe.textContent = `OK (GET ${rg.status})\nFirst 120 chars:\n${head}`;
-      return true;
-    } catch (e) {
-      ui.probe.textContent = `FAIL (fetch error)\n${String(e)}`;
-      return false;
-    }
-  }
-
-  async function loadInstrument() {
-    const ctx = ensureAudio();
-    const name = ui.inst.value;
-    const sfset = ui.sfset.value;
-
-    const nameToUrl = makeNameToUrl();
-    const url = nameToUrl(name, sfset, "mp3");
-
-    // Probe first so bạn thấy rõ đang bị chặn hay không
-    const ok = await probeUrl(url);
-    if (!ok) {
-      log("Soundfont URL bị chặn/không truy cập được. Đổi CDN và thử lại.");
-      return false;
-    }
-
-    log("Loading instrument...");
-    try {
-      instrument = await window.Soundfont.instrument(ctx, name, {
-        soundfont: sfset,
-        format: "mp3",
-        nameToUrl,
-        destination: out.pre,
-        gain: 1.0,
-        attack: 0.003,
-        release: 0.18,
-        // NOTE: tạm thời KHÔNG giới hạn notes để loại trừ lỗi “decode thiếu note -> im lặng”
-      });
-
-      // Force connect (kể cả đã set destination)
-      if (instrument && typeof instrument.connect === "function") {
-        instrument.connect(out.pre);
-      }
-
-      // “ping” 1 nốt để xác nhận có tiếng thật
-      instrument.play(60, ctx.currentTime + 0.05, { gain: 0.8, duration: 0.35, attack: 0.002, release: 0.10 });
-
-      log(`Loaded: ${name} (${sfset}).`);
-      plog(`Loaded OK. connect=${typeof instrument.connect === "function"}`);
-
-      ui.btnProbe.disabled = false;
-      ui.btnNote.disabled = false;
-      ui.btnPlay.disabled = false;
-      return true;
-    } catch (e) {
-      console.error(e);
-      log("Load instrument FAILED (xem probe + thử đổi CDN).");
-      ui.probe.textContent += `\n\nInstrument load error:\n${String(e)}`;
-      return false;
-    }
-  }
-
-  // very small scheduler for progression (basic)
-  let timer = 0;
-  let step = 0;
-  let chords = [];
-
-  const NOTE_TO_PC = { "C":0,"C#":1,"Db":1,"D":2,"D#":3,"Eb":3,"E":4,"F":5,"F#":6,"Gb":6,"G":7,"G#":8,"Ab":8,"A":9,"A#":10,"Bb":10,"B":11 };
-
-  function chordToPCs(symbol) {
-    const s = symbol.trim();
-    const rootMatch = s.match(/^([A-G])(#{1}|b{1})?/);
-    if (!rootMatch) return null;
-    const rootName = rootMatch[1] + (rootMatch[2] || "");
-    const rootPc = NOTE_TO_PC[rootName];
-    if (rootPc == null) return null;
-
-    const rest = s.slice(rootMatch[0].length).trim().toLowerCase();
-    let third = 4, fifth = 7;
-    if (rest.startsWith("m") && !rest.startsWith("maj")) third = 3;
-    const pcs = [rootPc, (rootPc + third) % 12, (rootPc + fifth) % 12];
-    return [...new Set(pcs)];
-  }
-
-  function voice(pcs, center=60) {
-    const cand = [];
-    for (let oct=-2; oct<=3; oct++) {
-      for (const pc of pcs) {
-        const m = pc + 12*(Math.floor(center/12)+oct);
-        if (m>=36 && m<=84) cand.push(m);
-      }
-    }
-    cand.sort((a,b)=>a-b);
-    // pick 3 nearest to center
-    const pick = cand.map(m => ({m, d: Math.abs(m-center)})).sort((a,b)=>a.d-b.d).slice(0,3).map(x=>x.m).sort((a,b)=>a-b);
-    return pick;
-  }
-
-  function parseProg(text) {
-    return text.replace(/\r/g,"").split(/\n|[|]/g).map(s => s.trim()).filter(Boolean);
-  }
-
-  function playChord(symbol, when) {
-    if (!instrument) return;
-    const pcs = chordToPCs(symbol) || chordToPCs("C");
-    const notes = voice(pcs, 60);
-    const spread = 0.014;
-    notes.forEach((m,i) => instrument.play(m, when + i*spread, { gain: 0.75*(1-i*0.05), duration: 0.7, attack: 0.004, release: 0.12 }));
-  }
-
-  function startProg() {
-    if (!ac || !instrument) return;
-    chords = parseProg(ui.prog.value);
-    if (!chords.length) chords = ["C"];
-    step = 0;
-
-    const bpm = clamp(Number(ui.bpm.value)||84, 40, 220);
-    const beat = 60/bpm;
-    const bar = beat*4;
-
-    const startAt = ac.currentTime + 0.08;
-    playChord(chords[0], startAt);
-
-    timer = setInterval(() => {
-      step = (step + 1) % chords.length;
-      playChord(chords[step], ac.currentTime + 0.06);
-    }, bar*1000);
-
-    ui.btnPlay.disabled = true;
-    ui.btnStop.disabled = false;
-    log("Playing progression...");
-  }
-
-  function stopProg() {
-    if (timer) clearInterval(timer);
-    timer = 0;
-    try { instrument && instrument.stop && instrument.stop(); } catch (_) {}
-    ui.btnPlay.disabled = false;
-    ui.btnStop.disabled = true;
-    log("Stopped.");
-  }
-
-  // Buttons
-  ui.btnStart.addEventListener("click", async () => {
-    ui.btnStart.disabled = true;
-    try {
-      await unlock();
-      const ok = await loadInstrument();
-      if (!ok) ui.btnStart.disabled = false;
-      else {
-        ui.btnProbe.disabled = false;
-        ui.btnNote.disabled = false;
-        ui.btnPlay.disabled = false;
-      }
-    } catch (e) {
-      console.error(e);
-      log("Start/Load error.");
-      ui.btnStart.disabled = false;
-    }
+  ["rngDensity","rngHuman","rngVocal","rngTone","rngVol","chkMetro"].forEach(id=>{
+    const el = document.getElementById(id);
+    el.oninput = setMixFromUI;
+    el.onchange = setMixFromUI;
   });
 
-  ui.btnProbe.addEventListener("click", async () => {
-    await unlock();
-    const nameToUrl = makeNameToUrl();
-    const url = nameToUrl(ui.inst.value, ui.sfset.value, "mp3");
-    await probeUrl(url);
-  });
+  document.getElementById("selChangeMode").onchange = (e)=>{
+    app.changeMode = e.target.value;
+    refreshChordLabels();
+    renderLyrics();
+  };
+}
 
-  ui.btnNote.addEventListener("click", async () => {
-    await unlock();
-    if (!instrument) { log("Chưa load instrument."); return; }
-    instrument.play(60, ac.currentTime + 0.03, { gain: 0.9, duration: 0.45, attack: 0.002, release: 0.10 });
-    plog("Played single note: C4 (60).");
-  });
-
-  ui.btnPlay.addEventListener("click", async () => {
-    await unlock();
-    startProg();
-  });
-
-  ui.btnStop.addEventListener("click", () => stopProg());
-
-  ui.btnBeep.addEventListener("click", async () => {
-    await unlock();
-    const ctx = ensureAudio();
-    const osc = ctx.createOscillator();
-    const g = ctx.createGain();
-    osc.type = "sine";
-    osc.frequency.value = 880;
-    g.gain.value = 0.0001;
-    osc.connect(g);
-    g.connect(ctx.destination);
-    const t0 = ctx.currentTime;
-    g.gain.setValueAtTime(0.0001, t0);
-    g.gain.exponentialRampToValueAtTime(0.15, t0 + 0.02);
-    g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.18);
-    osc.start(t0);
-    osc.stop(t0 + 0.20);
-    log("Beep test fired.");
-  });
-
-  document.addEventListener("visibilitychange", () => {
-    if (document.hidden) stopProg();
-  });
+(function init(){
+  document.getElementById("txtInput").value = SAMPLE_INPUT;
+  bindUI();
+  loadFromInput();
 })();
 </script>
 </body>
