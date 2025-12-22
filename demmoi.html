@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Giả lập Bolero "Ăn Nhậu" (Quạt Chả)</title>
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.18/Tone.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/soundfont-player@0.12.0/dist/soundfont-player.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #1e1e24;
+      --card: #2b2b36;
+      --text: #e2e2e5;
+      --accent: #ffae42; /* Màu vàng bia */
+      --highlight: #ff4d4d;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      margin: 0;
+    }
+
+    h1 { margin-bottom: 5px; color: var(--accent); text-align: center; }
+    p.subtitle { margin-top: 0; color: #888; font-size: 0.9rem; text-align: center; max-width: 600px; }
+
+    .container {
+      background: var(--card);
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      width: 100%;
+      max-width: 500px;
+      border: 1px solid #444;
+    }
+
+    /* Controls area */
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      justify-content: center;
+    }
+
+    button.btn-main {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 50px;
+      font-weight: bold;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+    button.btn-main:active { transform: scale(0.95); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .tempo-control {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      background: #1a1a20;
+      padding: 10px;
+      border-radius: 8px;
+    }
+
+    /* Visualizer (Steps) */
+    .sequencer-display {
+      display: grid;
+      grid-template-columns: repeat(9, 1fr);
+      gap: 4px;
+      margin-bottom: 20px;
+    }
+
+    .step-box {
+      background: #1a1a20;
+      border: 1px solid #444;
+      border-radius: 4px;
+      text-align: center;
+      padding: 8px 2px;
+      font-size: 0.75rem;
+      color: #666;
+      transition: all 0.1s;
+    }
+    
+    .step-box.active {
+      background: var(--accent);
+      color: #000;
+      font-weight: bold;
+      transform: translateY(-2px);
+      box-shadow: 0 0 10px var(--accent);
+    }
+
+    .step-name { font-weight: bold; display: block; margin-bottom: 4px; font-size: 0.9rem; }
+    .step-desc { font-size: 0.65rem; }
+
+    /* Chord Buttons */
+    .chord-area {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .chord-btn {
+      background: #3a3a45;
+      border: 2px solid #555;
+      color: #fff;
+      padding: 15px;
+      border-radius: 12px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      cursor: pointer;
+      text-align: center;
+    }
+    
+    .chord-btn.active {
+      border-color: var(--accent);
+      background: #4a3b2a;
+      color: var(--accent);
+    }
+    
+    .chord-hint {
+      display: block;
+      font-size: 0.7rem;
+      font-weight: normal;
+      color: #aaa;
+      margin-top: 4px;
+    }
+
+    .status-bar {
+      margin-top: 15px;
+      font-size: 0.8rem;
+      color: #888;
+      text-align: center;
+      font-family: monospace;
+    }
+    .loading { color: #ffeb3b; }
+    .ready { color: #4caf50; }
+
+    /* Guide text */
+    .guide {
+      margin-top: 20px;
+      background: #222;
+      padding: 15px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      border-left: 3px solid var(--accent);
+    }
+    .highlight-text { color: var(--accent); font-weight: bold; }
+
+  </style>
+</head>
+<body>
+
+  <h1>Bolero "Ăn Nhậu" Simulator</h1>
+  <p class="subtitle">Mô phỏng kỹ thuật Guitar ngón cái: Bùm - 1 2 3 - Chát</p>
+
+  <div class="container">
+    
+    <div class="tempo-control">
+      <label for="tempo">Tốc độ:</label>
+      <input type="range" id="tempo" min="60" max="140" value="90">
+      <span id="tempo-val">90 BPM</span>
+    </div>
+
+    <div class="sequencer-display" id="sequencer">
+      </div>
+
+    <div class="controls">
+      <button id="btn-start" class="btn-main">① Tải Âm Thanh</button>
+      <button id="btn-stop" class="btn-main" style="background:#ff4d4d; color:white; display:none;">Dừng lại</button>
+    </div>
+
+    <div class="chord-area">
+      <button class="chord-btn active" onclick="setChord('Am')">
+        Am
+        <span class="chord-hint">La Thứ<br>(Bass 5)</span>
+      </button>
+      <button class="chord-btn" onclick="setChord('Dm')">
+        Dm
+        <span class="chord-hint">Rê Thứ<br>(Bass 4)</span>
+      </button>
+      <button class="chord-btn" onclick="setChord('E7')">
+        E7
+        <span class="chord-hint">Mi 7<br>(Bass 5)</span>
+      </button>
+    </div>
+
+    <div class="status-bar" id="status">Trạng thái: Chưa tải (Bấm nút Tải Âm Thanh)</div>
+
+    <div class="guide">
+      <b>Hướng dẫn:</b><br>
+      1. Bấm <b>Tải Âm Thanh</b> để load tiếng guitar.<br>
+      2. Tiếng sẽ tự động chạy theo vòng: <span class="highlight-text">Bùm → 1-2-3 → Chát...</span><br>
+      3. Bấm các nút hợp âm (Am, Dm, E7) để đổi tay.<br>
+      4. Để ý tiếng <b>"Chát"</b> sẽ cụt ngủn (do kỹ thuật nhả tay trái).
+    </div>
+
+  </div>
+
+<script>
+  // ============================================
+  // 1. DỮ LIỆU & CẤU HÌNH (DATA & CONFIG)
+  // ============================================
+  
+  // Tuning chuẩn MIDI (E2, A2, D3, G3, B3, E4)
+  const TUNING = [40, 45, 50, 55, 59, 64];
+
+  // Cơ sở dữ liệu hợp âm (Chỉ cần 3 hợp âm chính cho bài tập này)
+  const CHORDS = {
+    "Am": { frets: [-1, 0, 2, 2, 1, 0], bassString: 5 }, // La thứ: Bass dây 5
+    "Dm": { frets: [-1, -1, 0, 2, 3, 1], bassString: 4 }, // Rê thứ: Bass dây 4 (Quan trọng!)
+    "E7": { frets: [0, 2, 0, 1, 0, 0], bassString: 5 }   // Mi 7: Chọn Bass 5 cho dễ tập như video
+  };
+
+  // Khẩu quyết: Bùm - 1 - 2 - 3 - Chát - Bùm - Chát - Bùm - Chát
+  // Tổng cộng 9 bước (Steps). Để đơn giản, ta chạy loop qua 9 bước này.
+  // duration: Độ dài nốt nhạc (8n = móc đơn).
+  // action: Loại hành động.
+  const PATTERN = [
+    { name: "Bùm",  action: "bass", duration: "4n" },
+    { name: "1",    action: "pluck1", duration: "8n" },
+    { name: "2",    action: "pluck2", duration: "8n" },
+    { name: "3",    action: "pluck3", duration: "8n" },
+    { name: "Chát", action: "chat", duration: "4n" },
+    { name: "Bùm",  action: "bass", duration: "4n" },
+    { name: "Chát", action: "chat", duration: "4n" },
+    { name: "Bùm",  action: "bass", duration: "4n" },
+    { name: "Chát", action: "chat", duration: "4n" }
+  ];
+
+  // ============================================
+  // 2. LOGIC UI (GIAO DIỆN)
+  // ============================================
+  
+  const $ = (id) => document.getElementById(id);
+  let currentChordName = "Am";
+  let isPlaying = false;
+  let currentStep = 0;
+
+  // Render các ô hiển thị nhịp (Visualizer)
+  const sequencerEl = $('sequencer');
+  PATTERN.forEach((step, idx) => {
+    const div = document.createElement('div');
+    div.className = 'step-box';
+    div.id = `step-${idx}`;
+    div.innerHTML = `<span class="step-name">${step.name}</span>`;
+    sequencerEl.appendChild(div);
+  });
+
+  function highlightUI(idx) {
+    // Xóa active cũ
+    for(let i=0; i<PATTERN.length; i++) {
+      $(`step-${i}`).classList.remove('active');
+    }
+    // Set active mới
+    if (idx !== -1) {
+      $(`step-${idx}`).classList.add('active');
+    }
+  }
+
+  function setChord(name) {
+    currentChordName = name;
+    // Update UI buttons
+    document.querySelectorAll('.chord-btn').forEach(btn => {
+      btn.classList.remove('active');
+      if(btn.innerText.includes(name)) btn.classList.add('active');
+    });
+  }
+
+  $('tempo').addEventListener('input', (e) => {
+    const val = e.target.value;
+    $('tempo-val').innerText = `${val} BPM`;
+    if(Tone.Transport) Tone.Transport.bpm.value = val;
+  });
+
+  // ============================================
+  // 3. LOGIC ÂM THANH (AUDIO ENGINE)
+  // ============================================
+  
+  let guitar = null;
+  let audioContext = null;
+
+  async function initAudio() {
+    $('status').innerHTML = '<span class="loading">Đang tải bộ tiếng Guitar... vui lòng đợi</span>';
+    $('btn-start').disabled = true;
+
+    await Tone.start();
+    audioContext = Tone.context.rawContext;
+
+    // Tải Soundfont acoustic_guitar_nylon (nhẹ, phù hợp bolero)
+    try {
+      guitar = await Soundfont.instrument(audioContext, 'acoustic_guitar_nylon');
+      
+      $('status').innerHTML = '<span class="ready">Đã tải xong! Đang chơi...</span>';
+      $('btn-start').style.display = 'none';
+      $('btn-stop').style.display = 'inline-block';
+      
+      startLoop();
+    } catch (e) {
+      $('status').innerText = 'Lỗi tải âm thanh. Hãy refresh trang.';
+      console.error(e);
+    }
+  }
+
+  // Hàm tính toán nốt nhạc từ hợp âm và dây
+  function getMidiNote(chordName, stringIndex) {
+    // stringIndex: 1 (dây e) -> 6 (dây E)
+    // Array tuning index: 0 (dây 6) -> 5 (dây 1)
+    const chord = CHORDS[chordName];
+    const arrayIdx = 6 - stringIndex; 
+    const fret = chord.frets[arrayIdx];
+    
+    if (fret === -1) return null; // Dây bịt
+    return TUNING[arrayIdx] + fret;
+  }
+
+  // Hàm chơi 1 nốt
+  function playNote(midi, duration, time, velocity = 1.0, release = 0.1) {
+    if (!guitar || !midi) return;
+    guitar.play(midi, time, { 
+      duration: duration, 
+      gain: velocity,
+      attack: 0.01,
+      release: release // Release thấp tạo cảm giác ngắt âm
+    });
+  }
+
+  // Hàm thực hiện hành động (step)
+  function executeStep(time) {
+    const step = PATTERN[currentStep];
+    const chord = CHORDS[currentChordName];
+    
+    highlightUI(currentStep);
+
+    // Xử lý logic từng loại hành động dựa trên hướng dẫn
+    switch (step.action) {
+      case "bass":
+        // Bùm: Đánh dây Bass (5 hoặc 4)
+        const bassMidi = getMidiNote(currentChordName, chord.bassString);
+        playNote(bassMidi, 1.0, time, 1.2); // Bass đánh mạnh hơn
+        break;
+
+      case "pluck1":
+        // 1: Gảy dây dưới dây bass (Ví dụ bass 5 thì gảy 4)
+        // Logic đơn giản: Bass - 1
+        playNote(getMidiNote(currentChordName, chord.bassString - 1), 0.5, time, 0.9);
+        break;
+
+      case "pluck2":
+        // 2: Gảy dây dưới nữa
+        playNote(getMidiNote(currentChordName, chord.bassString - 2), 0.5, time, 0.9);
+        break;
+
+      case "pluck3":
+        // 3: Vuốt (Quạt nhẹ xuống các dây còn lại)
+        // Giả lập bằng cách đánh nhanh 2-3 nốt dây cao
+        [3, 2, 1].forEach((s, i) => {
+            const m = getMidiNote(currentChordName, s);
+            playNote(m, 0.5, time + (i*0.02), 0.8);
+        });
+        break;
+
+      case "chat":
+        // Chát: Hất lên + Ngắt tiếng (Mute)
+        // Đánh 3 dây dưới (1,2,3) ngược lên
+        // release cực ngắn (0.05) để tạo tiếng "bụp"
+        const strings = [1, 2, 3];
+        strings.forEach((s, i) => {
+          const m = getMidiNote(currentChordName, s);
+          // time + i*0.01: rải nhẹ để nghe ra tiếng quạt
+          playNote(m, 0.1, time + (i*0.015), 1.0, 0.05); 
+        });
+        break;
+    }
+
+    // Tăng bước
+    currentStep = (currentStep + 1) % PATTERN.length;
+  }
+
+  function startLoop() {
+    if (isPlaying) return;
+    isPlaying = true;
+    currentStep = 0;
+    Tone.Transport.bpm.value = $('tempo').value;
+    
+    // Lên lịch loop
+    // Vì Pattern có độ dài nốt khác nhau, ta dùng Tone.Loop với interval nhỏ nhất
+    // Tuy nhiên để đơn giản cho demo này, ta sẽ gọi đệ quy schedule
+    // Hoặc dùng Tone.Sequence nếu lưới đều.
+    // Ở đây pattern khá đều về mặt cảm nhận, ta set 1 tick chung là 8n (móc đơn)
+    
+    const loopId = Tone.Transport.scheduleRepeat((time) => {
+      executeStep(time);
+    }, "8n"); // Tốc độ cơ bản là móc đơn
+
+    Tone.Transport.start();
+  }
+
+  function stopLoop() {
+    Tone.Transport.stop();
+    Tone.Transport.cancel();
+    isPlaying = false;
+    highlightUI(-1);
+    $('btn-start').style.display = 'inline-block';
+    $('btn-start').innerText = 'Tiếp tục chơi';
+    $('btn-start').disabled = false;
+    $('btn-stop').style.display = 'none';
+    $('status').innerText = 'Đã dừng.';
+  }
+
+  // Events
+  $('btn-start').onclick = initAudio;
+  $('btn-stop').onclick = stopLoop;
+
+</script>
+</body>
+</html>
