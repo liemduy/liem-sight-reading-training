@@ -3,34 +3,49 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>Bolero Tea Room - V3 Fixed</title>
+  <title>Bolero Tea Room - V4 Final</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.18/Tone.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/soundfont-player@0.12.0/dist/soundfont-player.min.js"></script>
+  
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto:wght@300;400&display=swap" rel="stylesheet">
 
   <style>
+    /* === GIAO DIỆN & MÀU SẮC === */
     :root {
-      --bg: #1a120b; --panel: #2e2018; --gold: #d4af37; --gold-dim: #8c7322;
-      --cream: #f5f5dc; --text: #efebe9; --highlight: #ffecb3; --cue-color: #ff6f00;
+      --bg: #1a120b; 
+      --panel: #2e2018; 
+      --gold: #d4af37; 
+      --gold-dim: #8c7322;
+      --cream: #f5f5dc; 
+      --text: #efebe9; 
+      --highlight: #ffecb3; 
+      --cue-color: #ff6f00;
     }
     body {
       background: var(--bg);
       background-image: radial-gradient(circle at center, #2c1e16 0%, #0d0805 100%);
-      color: var(--text); font-family: 'Roboto', sans-serif;
+      color: var(--text); 
+      font-family: 'Roboto', sans-serif;
       display: flex; flex-direction: column; align-items: center;
       padding: 15px; margin: 0; user-select: none; min-height: 100vh;
     }
+    
+    /* Typography */
     h2 {
       font-family: 'Playfair Display', serif; color: var(--gold); margin: 10px 0;
       text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 2px 4px rgba(0,0,0,0.8);
       font-size: 1.8rem; border-bottom: 1px solid var(--gold-dim); padding-bottom: 10px;
     }
+
+    /* Khung chính */
     .studio-rack {
       background: var(--panel); padding: 25px; border-radius: 8px; width: 100%; max-width: 950px;
       border: 1px solid #4e342e; box-shadow: 0 15px 40px rgba(0,0,0,0.7); position: relative;
       background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 2px, transparent 2px, transparent 4px);
     }
+
+    /* Màn hình hiển thị */
     .display-section {
       background: #18100c; border: 3px double var(--gold-dim); border-radius: 4px;
       padding: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center;
@@ -38,15 +53,21 @@
     }
     .knob-group { display: flex; flex-direction: column; align-items: center; margin-right: 15px; }
     .knob-label { font-family: 'Playfair Display', serif; font-size: 0.8rem; color: var(--gold); margin-bottom: 5px; letter-spacing: 1px; }
+    
+    /* Sliders EQ */
     input[type=range].eq-slider { -webkit-appearance: none; width: 100px; height: 4px; background: #4e342e; border-radius: 2px; }
     input[type=range].eq-slider::-webkit-slider-thumb {
       -webkit-appearance: none; width: 16px; height: 16px; background: var(--gold); border: 2px solid #fff; border-radius: 50%; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.5);
     }
+
+    /* Hiển thị dây */
     .string-monitor {
       font-family: 'Playfair Display', serif; font-style: italic; font-size: 1.8rem; color: var(--highlight);
       text-shadow: 0 0 5px var(--gold); min-width: 150px; text-align: right;
     }
     .string-label { font-size: 0.7rem; color: #8d6e63; text-align: right; text-transform: uppercase; letter-spacing: 2px;}
+
+    /* Timeline (Thanh nhịp điệu) */
     .timeline-wrapper {
       position: relative; height: 140px; width: 100%; background: #231711;
       border: 2px solid var(--gold-dim); border-radius: 4px; display: flex; overflow: hidden; margin-bottom: 25px;
@@ -59,9 +80,10 @@
     .type-bass { background: linear-gradient(to bottom, #3e2723, #281815); color: #ffcc80; }
     .type-fill { background: linear-gradient(to bottom, #263238, #161e22); color: #b0bec5; }
     .type-chat { background: linear-gradient(to bottom, #1b5e20, #0d3311); color: #a5d6a7; }
-    .segment.playing { filter: brightness(1.3); box-shadow: inset 0 0 30px var(--gold); border: 1px solid var(--gold); z-index: 2; }
+    
+    .segment.playing { filter: brightness(1.5); box-shadow: inset 0 0 30px var(--gold); border: 1px solid var(--gold); z-index: 2; }
     .segment.cue-point { border-top: 4px solid var(--cue-color); }
-    .segment.cue-point.playing { background: var(--cue-color); color: #000; }
+    
     .cue-icon {
       position: absolute; top: 4px; right: 4px; font-size: 0.6rem; color: var(--cue-color);
       border: 1px solid var(--cue-color); padding: 1px 3px; border-radius: 2px; background: rgba(0,0,0,0.5);
@@ -70,6 +92,8 @@
       background: rgba(0,0,0,0.3); border: 1px solid var(--gold-dim); color: var(--cream);
       font-size: 0.7rem; margin-top: 8px; width: 90%; border-radius: 2px; font-family: 'Roboto', sans-serif;
     }
+
+    /* Control Deck */
     .control-deck {
       display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; align-items: center; margin-bottom: 20px;
       background: #241914; padding: 15px; border-radius: 6px; border: 1px solid #3e2723;
@@ -80,7 +104,10 @@
       box-shadow: 0 4px 6px rgba(0,0,0,0.5); font-family: 'Playfair Display', serif; text-transform: uppercase; transition: all 0.1s;
     }
     .btn-main:active { transform: translateY(2px); box-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+    .btn-main:disabled { filter: grayscale(1); cursor: not-allowed; }
     .btn-main.stop { background: linear-gradient(to bottom, #c62828, #8e0000); color: #fff; border-color: #ff8a80; }
+
+    /* Hợp âm */
     .chord-rack {
       display: flex; gap: 10px; background: #1a120b; padding: 10px; border-radius: 6px;
       border: 1px solid var(--gold-dim); justify-content: center;
@@ -92,21 +119,24 @@
     .btn-chord.active {
       background: var(--gold); color: #2e2018; box-shadow: 0 0 15px rgba(212, 175, 55, 0.4); border-color: #fff;
     }
+
+    /* Màn hình chờ (Overlay) */
     #overlay {
-      position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(20, 10, 5, 0.95); z-index: 999;
+      position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(20, 10, 5, 0.98); z-index: 999;
       display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 8px;
     }
     .btn-load {
       background: transparent; border: 2px solid var(--gold); color: var(--gold); padding: 15px 40px;
-      font-size: 1.4rem; font-family: 'Playfair Display', serif; border-radius: 0; cursor: pointer;
+      font-size: 1.4rem; font-family: 'Playfair Display', serif; cursor: pointer;
       transition: 0.3s; text-transform: uppercase; letter-spacing: 2px;
     }
     .btn-load:hover { background: var(--gold); color: #1a120b; box-shadow: 0 0 20px var(--gold); }
-    .led-text { font-size: 0.9rem; color: #a1887f; margin-top: 15px; font-style: italic; }
+    .led-text { font-size: 1rem; color: #a1887f; margin-top: 20px; font-style: italic; min-height: 20px; }
+    
+    /* Toggle Switch */
     .switch input { display:none; }
     .slider-toggle { background: #3e2723; border: 1px solid #5d4037; color: #888; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; }
     input:checked + .slider-toggle { color: var(--gold); border-color: var(--gold); font-weight: bold; }
-    .err-msg { color: #ff5252; margin-top: 10px; font-size: 0.9rem; max-width: 80%; text-align: center; }
   </style>
 </head>
 <body>
@@ -114,10 +144,9 @@
 <div class="studio-rack">
   
   <div id="overlay">
-    <h2 style="font-size: 2.5rem; margin-bottom: 30px;">BOLERO PHÒNG TRÀ</h2>
-    <button class="btn-load" onclick="initAudio()">BẬT ĐÀN (POWER ON)</button>
+    <h2 style="font-size: 2.5rem; margin-bottom: 30px; border:none;">BOLERO PHÒNG TRÀ</h2>
+    <button class="btn-load" onclick="initAudio()">BẬT ĐÀN (START)</button>
     <div class="led-text" id="load-text">Nhạc vàng muôn thuở...</div>
-    <div id="error-log" class="err-msg"></div>
   </div>
 
   <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom: 15px; border-bottom: 1px solid #3e2723; padding-bottom: 10px;">
@@ -128,17 +157,17 @@
   <div class="display-section">
     <div class="eq-controls" style="display:flex; gap: 20px;">
       <div class="knob-group">
-        <span class="knob-label">BASS</span>
+        <span class="knob-label">BASS EQ</span>
         <input type="range" class="eq-slider" min="-10" max="10" value="4" oninput="updateEQ('low', this.value)">
       </div>
       <div class="knob-group">
-        <span class="knob-label">TREBLE</span>
+        <span class="knob-label">TREBLE EQ</span>
         <input type="range" class="eq-slider" min="-10" max="10" value="2" oninput="updateEQ('high', this.value)">
       </div>
     </div>
     <div style="text-align:right;">
       <div class="string-monitor" id="str-display">---</div>
-      <div class="string-label">DÂY ĐANG GẢY</div>
+      <div class="string-label">TRẠNG THÁI</div>
     </div>
   </div>
 
@@ -152,7 +181,9 @@
         <span id="bpm-v" style="font-family:'Playfair Display'; color:var(--gold); font-size: 1.2rem; font-weight:bold;">75</span>
       </div>
     </div>
+    
     <button id="btn-play" class="btn-main" onclick="togglePlay()">▶ BẮT ĐẦU CHƠI</button>
+    
     <div style="text-align:right;">
       <div class="knob-label">TỰ ĐỔI HỢP ÂM</div>
       <label class="switch" style="cursor:pointer;">
@@ -175,12 +206,16 @@
 </div>
 
 <script>
-  // CONFIG
+  /* =========================================
+     1. CẤU HÌNH DỮ LIỆU & LOGIC BAN ĐẦU
+     ========================================= */
   const NOTES_VAL = [
     { label: "𝅝 Tròn (4.0)", val: 4.0 }, { label: "𝅗𝅥 Trắng (2.0)", val: 2.0 },
     { label: "♩ Đen (1.0)", val: 1.0 }, { label: "♪ Đơn (0.5)", val: 0.5 },
     { label: "𝅘𝅥𝅯 Kép (0.25)", val: 0.25 }
   ];
+
+  // Preset Bolero chuẩn
   const DEFAULT_PRESET = [
     { label: "BÙM", type: "bass", val: 0.5, cue: true },
     { label: "1", type: "fill", val: 0.25 },
@@ -192,8 +227,8 @@
     { label: "BÙM+1", type: "bass", val: 0.5 },
     { label: "CHÁT", type: "chat", val: 0.5 }
   ];
-  let steps = JSON.parse(JSON.stringify(DEFAULT_PRESET));
   
+  let steps = JSON.parse(JSON.stringify(DEFAULT_PRESET));
   let guitar = null;
   let eq = null;
   let isPlaying = false;
@@ -202,108 +237,108 @@
   let currentChord = "Am";
   let barCount = 0;
 
-  const TUNING = [40, 45, 50, 55, 59, 64];
-  const CHORDS = { "Am":{b:5,f:[0,0,2,2,1,0]}, "Dm":{b:4,f:[-1,0,0,2,3,1]}, "E7":{b:5,f:[0,2,0,1,0,0]} };
-  const LOOP = ["Am","Dm","E7"];
+  // Dữ liệu hợp âm và nốt
+  const TUNING = [40, 45, 50, 55, 59, 64]; // E A D G B E
+  const CHORDS = { 
+    "Am":{b:5,f:[0,0,2,2,1,0]}, 
+    "Dm":{b:4,f:[-1,0,0,2,3,1]}, 
+    "E7":{b:5,f:[0,2,0,1,0,0]} 
+  };
+  const LOOP_SEQUENCE = ["Am","Dm","E7"];
 
-  // UI RENDERING
+  /* =========================================
+     2. HỆ THỐNG GIAO DIỆN (UI RENDER)
+     ========================================= */
   const timeline = document.getElementById('timeline');
+  
   function renderTimeline() {
     timeline.innerHTML = '';
     const totalVal = steps.reduce((sum, s) => sum + s.val, 0);
+    
     steps.forEach((step, idx) => {
       const pct = (step.val / totalVal) * 100;
-      step.pct = pct; 
       const el = document.createElement('div');
       el.className = `segment type-${step.type} ${step.cue ? 'cue-point' : ''}`;
       el.id = `seg-${idx}`;
       el.style.width = `${pct}%`;
+      
       let opts = "";
       NOTES_VAL.forEach(n => {
         const sel = (step.val === n.val) ? "selected" : "";
         opts += `<option value="${n.val}" ${sel}>${n.label}</option>`;
       });
+      
       const cueHtml = step.cue ? `<div class="cue-icon">HÁT</div>` : '';
-      el.innerHTML = `${cueHtml}<span style="font-weight:bold; font-size:0.75rem; margin-top:5px;">${step.label}</span><select class="note-select" onchange="updateStepVal(${idx}, this.value)">${opts}</select>`;
+      el.innerHTML = `${cueHtml}
+        <span style="font-weight:bold; font-size:0.75rem; margin-top:5px;">${step.label}</span>
+        <select class="note-select" onchange="updateStepVal(${idx}, this.value)">${opts}</select>`;
       timeline.appendChild(el);
     });
     validateTotal(totalVal);
   }
+
   function updateStepVal(idx, val) {
     steps[idx].val = parseFloat(val);
-    document.getElementById('msg-box').innerText = "Vui lòng bấm 'CẬP NHẬT NHỊP' để áp dụng.";
+    document.getElementById('msg-box').innerText = "⚠ Dữ liệu thay đổi. Vui lòng bấm 'CẬP NHẬT NHỊP'";
     document.getElementById('msg-box').style.color = "#d4af37";
   }
+
   function validateTotal(total) {
     const msg = document.getElementById('msg-box');
-    if(total === 4.0) { msg.innerText = "✓ Nhịp 4/4 Chuẩn (4.0 Phách)"; msg.style.color = "#4caf50"; }
-    else { msg.innerText = `⚠ Lưu ý: Tổng đang là ${total} Phách (Chuẩn là 4.0)`; msg.style.color = "#ff5252"; }
+    if(total === 4.0) { 
+        msg.innerText = "✓ Nhịp 4/4 Chuẩn (Tổng: 4.0 Phách)"; 
+        msg.style.color = "#4caf50"; 
+    } else { 
+        msg.innerText = `⚠ Lưu ý: Tổng nhịp là ${total} (Chuẩn Bolero là 4.0)`; 
+        msg.style.color = "#ff5252"; 
+    }
   }
-  window.applyNotesToPercent = function() { renderTimeline(); }
-  window.applyDefaultPreset = function() { if(isPlaying) togglePlay(); steps = JSON.parse(JSON.stringify(DEFAULT_PRESET)); renderTimeline(); }
 
-  // === AUDIO ENGINE (ROBUST LOAD V2) ===
+  window.applyNotesToPercent = function() { renderTimeline(); }
+  window.applyDefaultPreset = function() { 
+    if(isPlaying) togglePlay(); 
+    steps = JSON.parse(JSON.stringify(DEFAULT_PRESET)); 
+    renderTimeline(); 
+  }
+
+  /* =========================================
+     3. AUDIO ENGINE (FIXED & ROBUST)
+     ========================================= */
   async function initAudio() {
     const loadText = document.getElementById('load-text');
-    const errLog = document.getElementById('error-log');
     const btnLoad = document.querySelector('.btn-load');
     
-    loadText.innerText = "Đang kết nối MusyngKite...";
-    errLog.innerText = "";
+    loadText.innerText = "Đang khởi động Tone.js...";
     btnLoad.disabled = true;
 
+    // 1. Khởi động Audio Context
     await Tone.start();
-
-    // LOGIC TẢI NGUYÊN BẢN TỪ FILE MẪU CỦA BRO
-    const SF_BASE = "https://cdn.jsdelivr.net/gh/gleitz/midi-js-soundfonts@gh-pages/";
-    const nameToUrl = (name, soundfont, format) => `${SF_BASE}${soundfont}/${name}-${format}.js`;
+    loadText.innerText = "Đang tải bộ tiếng Guitar (Nylon)...";
 
     try {
+      // 2. Tạo EQ
       eq = new Tone.EQ3(0, 0, 0).toDestination();
 
-      // Thử 1: MusyngKite (Nylon) - Giống file mẫu
-      try {
-        guitar = await Soundfont.instrument(Tone.context.rawContext, "acoustic_guitar_nylon", {
-          soundfont: "MusyngKite", // Soundfont xịn
-          nameToUrl: nameToUrl,    // Dùng URL builder của library
-          destination: eq,
-          gain: 3.5
-        });
-        console.log("Loaded MusyngKite Nylon!");
-      } catch (e1) {
-        console.warn("MusyngKite failed, trying Fallback 1 (FluidR3 Nylon)...", e1);
-        loadText.innerText = "Thử bộ dự phòng 1...";
-        
-        // Thử 2: FluidR3_GM (Nylon) - Default
-        try {
-          guitar = await Soundfont.instrument(Tone.context.rawContext, "acoustic_guitar_nylon", {
-             destination: eq,
-             gain: 3.0
-          });
-          console.log("Loaded FluidR3 Nylon!");
-        } catch (e2) {
-           console.warn("FluidR3 Nylon failed, trying Fallback 2 (Steel)...", e2);
-           loadText.innerText = "Thử bộ dự phòng 2...";
-           
-           // Thử 3: Steel Guitar (Thường ít lỗi hơn)
-           guitar = await Soundfont.instrument(Tone.context.rawContext, "acoustic_guitar_steel", {
-             destination: eq,
-             gain: 3.0
-          });
-          console.log("Loaded Steel Guitar!");
-        }
-      }
+      // 3. Tải Guitar (Sử dụng cách tải đơn giản, ổn định nhất)
+      // Không dùng URL custom để tránh lỗi 404
+      guitar = await Soundfont.instrument(Tone.context.rawContext, "acoustic_guitar_nylon", {
+        destination: eq,
+        gain: 3.0 // Tăng âm lượng mặc định
+      });
 
-      // Setup EQ Default
+      // 4. Áp dụng EQ mặc định
       updateEQ('low', 4);
       updateEQ('high', 2);
       
+      // Hoàn tất
+      console.log("Audio Loaded Successfully");
       document.getElementById('overlay').style.display = 'none';
       renderTimeline();
 
     } catch (e) {
-      loadText.innerText = "Thất bại toàn tập :(";
-      errLog.innerText = "Lỗi: " + e.message + ". Hãy kiểm tra mạng.";
+      console.error(e);
+      loadText.innerText = "Lỗi kết nối! Vui lòng tải lại trang.";
+      loadText.style.color = "#ff5252";
       btnLoad.disabled = false;
       btnLoad.innerText = "THỬ LẠI";
     }
@@ -315,63 +350,153 @@
     if(band === 'high') eq.high.value = val;
   }
 
-  // PLAYBACK
+  /* =========================================
+     4. LOGIC CHƠI NHẠC (PLAYBACK LOOP)
+     ========================================= */
   function togglePlay() {
     const btn = document.getElementById('btn-play');
     if(isPlaying) {
-      isPlaying = false; clearTimeout(timer);
-      btn.innerHTML = "▶ BẮT ĐẦU CHƠI"; btn.classList.remove('stop');
-      document.querySelectorAll('.segment').forEach(s => s.classList.remove('playing'));
-      document.getElementById('str-display').innerText = "---";
+      stopPlaying();
     } else {
-      isPlaying = true; btn.innerHTML = "⏹ DỪNG LẠI"; btn.classList.add('stop');
+      if(!guitar) { alert("Chưa tải âm thanh!"); return; }
+      isPlaying = true; 
+      btn.innerHTML = "⏹ DỪNG LẠI"; 
+      btn.classList.add('stop');
+      currentStep = 0;
       runLoop();
     }
   }
+
+  function stopPlaying() {
+    isPlaying = false; 
+    clearTimeout(timer);
+    const btn = document.getElementById('btn-play');
+    btn.innerHTML = "▶ BẮT ĐẦU CHƠI"; 
+    btn.classList.remove('stop');
+    
+    // Xóa highlight
+    document.querySelectorAll('.segment').forEach(s => s.classList.remove('playing'));
+    document.getElementById('str-display').innerText = "---";
+  }
+
   function runLoop() {
     if(!isPlaying) return;
+
+    // 1. Chơi nốt hiện tại
     playStep(currentStep);
+    
+    // 2. Highlight UI
     document.querySelectorAll('.segment').forEach(s => s.classList.remove('playing'));
     const currentSeg = document.getElementById(`seg-${currentStep}`);
     if(currentSeg) currentSeg.classList.add('playing');
 
+    // 3. Tính toán thời gian delay cho bước kế tiếp
     const bpm = document.getElementById('bpm').value;
     const beatDurMs = (60/bpm) * 1000; 
     const delay = steps[currentStep].val * beatDurMs;
 
+    // 4. Chuẩn bị bước sau
     currentStep++;
     if(currentStep >= steps.length) {
-      currentStep = 0; barCount++;
+      currentStep = 0; // Quay lại đầu
+      barCount++;
+      
+      // Logic tự đổi hợp âm sau 2 ô nhịp (2 Bar)
       if(document.getElementById('chk-auto').checked && barCount >= 2) {
-        barCount = 0; let i = LOOP.indexOf(currentChord); setChord(LOOP[(i+1)%LOOP.length]);
+        barCount = 0; 
+        let i = LOOP_SEQUENCE.indexOf(currentChord); 
+        let nextChord = LOOP_SEQUENCE[(i+1) % LOOP_SEQUENCE.length];
+        setChord(nextChord);
       }
     }
+
+    // 5. Set timer
     timer = setTimeout(runLoop, delay);
   }
+
+  /* =========================================
+     5. KỸ THUẬT GUITAR (TECHNIQUE)
+     ========================================= */
   function playStep(idx) {
     if(!guitar) return;
-    const s = steps[idx]; const c = CHORDS[currentChord]; const now = Tone.now();
+    
+    const s = steps[idx]; 
+    const c = CHORDS[currentChord]; 
+    const now = Tone.now();
+
+    // Helper: Lấy MIDI note từ số dây (1-6)
     const getN = (str) => { 
-      let i=6-str; if(i<0||i>=TUNING.length)return null; 
-      let f=c.f[i]; return (f===-1)?null:TUNING[i]+f; 
+      let i = 6 - str; // Chuyển dây 6->index 0
+      if(i < 0 || i >= TUNING.length) return null; 
+      let f = c.f[i]; 
+      return (f === -1) ? null : TUNING[i] + f; 
     };
-    const dur = s.val * 0.6; let dispStr = "";
+
+    const dur = s.val * 0.6; // Độ dài ngân vang
+    let dispStr = "";
+
     try {
-      if(s.label === "BÙM") { let n = getN(c.b); safePlay([n], dur, 1.2); dispStr = `DÂY ${c.b}`; }
-      else if(s.label === "BÙM+1") { let alt = c.b+1; if(alt>6) alt=c.b-1; safePlay([getN(alt)], dur, 1.1); dispStr = `DÂY ${alt}`; }
-      else if(s.label === "1") { safePlay([getN(c.b-1)], 0.3, 0.7); dispStr = `DÂY ${c.b-1}`; }
-      else if(s.label === "2") { safePlay([getN(c.b-2)], 0.3, 0.7); dispStr = `DÂY ${c.b-2}`; }
-      else if(s.label === "3") { [3,2,1].forEach((st,i) => { let n=getN(st); if(n) safePlaySingle(n, now+i*0.015, dur, 0.8); }); dispStr = "QUẠT 3-2-1"; }
-      else if(s.label === "CHÁT") { [1,2,3].forEach((st,i) => { let n=getN(st); if(n) safePlaySingle(n, now+i*0.01, 0.1, 0.9, 0.05); }); dispStr = "CHÁT (LÊN)"; }
-    } catch(err) { console.warn("Skip step error", err); }
+      // --- XỬ LÝ CÁC KIỂU ĐÁNH ---
+      
+      if(s.label === "BÙM") { 
+        // Đánh dây Bass chủ
+        let n = getN(c.b); 
+        safePlay(n, now, dur, 1.2); 
+        dispStr = `BASS (DÂY ${c.b})`; 
+      }
+      else if(s.label === "BÙM+1") { 
+        // Đánh dây Bass phụ (đảo bass)
+        let alt = c.b + 1; if(alt > 5) alt = c.b - 1; 
+        safePlay(getN(alt), now, dur, 1.1); 
+        dispStr = `BASS ĐẢO`; 
+      }
+      else if(s.label === "1") { 
+        // Móc dây 3
+        safePlay(getN(3), now, 0.3, 0.8); 
+        dispStr = `MÓC DÂY 3`; 
+      }
+      else if(s.label === "2") { 
+        // Móc dây 2
+        safePlay(getN(2), now, 0.3, 0.8); 
+        dispStr = `MÓC DÂY 2`; 
+      }
+      else if(s.label === "3") { 
+        // Quạt xuống nhẹ (3 dây dưới)
+        [3,2,1].forEach((st, i) => { 
+            let n = getN(st); 
+            if(n) safePlay(n, now + i*0.015, dur, 0.7); 
+        }); 
+        dispStr = "QUẠT NHẸ"; 
+      }
+      else if(s.label === "CHÁT") { 
+        // Chát (Móc lên 3 dây + ngắt tiếng)
+        [1,2,3].forEach((st, i) => { 
+            let n = getN(st); 
+            // Release ngắn (0.05) để tạo tiếng 'chát' khô
+            if(n) guitar.play(n, now + i*0.01, { duration: 0.1, gain: 1.0, release: 0.05 });
+        }); 
+        dispStr = "CHÁT!"; 
+      }
+      
+    } catch(err) { console.warn("Lỗi phát nốt:", err); }
+    
     document.getElementById('str-display').innerText = dispStr;
   }
   
-  // SAFE PLAY HELPERS
-  function safePlay(ns, d, v) { ns.forEach(n => { if(n!==null && n!==undefined) { try{ guitar.play(n, Tone.now(), {duration:d, gain:v}); }catch(e){} } }); }
-  function safePlaySingle(n, time, dur, gain, release) { if(n!==null && n!==undefined) { try{ let opts={duration:dur, gain:gain}; if(release)opts.release=release; guitar.play(n, time, opts); }catch(e){} } }
+  // Wrapper chơi nhạc an toàn
+  function safePlay(note, time, duration, gain) {
+    if(note !== null && note !== undefined) {
+       guitar.play(note, time, { duration: duration, gain: gain });
+    }
+  }
   
-  window.setChord = function(c) { currentChord = c; document.querySelectorAll('.btn-chord').forEach(b => b.classList.toggle('active', b.innerText.includes(c))); }
+  window.setChord = function(c) { 
+    currentChord = c; 
+    document.querySelectorAll('.btn-chord').forEach(b => {
+        if(b.innerText.includes(c)) b.classList.add('active');
+        else b.classList.remove('active');
+    });
+  }
 </script>
 </body>
 </html>
