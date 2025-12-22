@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Bolero Architect - Chuẩn Nhịp</title>
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.18/Tone.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/soundfont-player@0.12.0/dist/soundfont-player.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #121214; --card: #1e1e24; --accent: #00e676; --text: #eee; --err: #ff5252;
+      --seg-bass: #e63946; --seg-fill: #457b9d; --seg-chat: #1d3557;
+    }
+    body { background: var(--bg); color: var(--text); font-family: sans-serif; padding: 10px; margin: 0; user-select: none; display: flex; flex-direction: column; align-items: center; }
+
+    .container {
+      background: var(--card); padding: 15px; border-radius: 12px;
+      width: 100%; max-width: 950px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); border: 1px solid #333;
+    }
+    
+    h2 { color: var(--accent); margin: 0 0 10px 0; font-size: 1.2rem; text-transform: uppercase; letter-spacing: 1px; }
+
+    /* THEORY SECTION */
+    .theory-box {
+      background: #232328; border: 1px solid #444; border-radius: 8px; padding: 15px;
+      margin-bottom: 15px; display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end;
+    }
+    
+    .input-group { display: flex; flex-direction: column; gap: 5px; }
+    .input-group label { font-size: 0.8rem; color: #aaa; font-weight: bold; }
+    .input-group select, .input-group input {
+      background: #111; color: #fff; border: 1px solid #555; padding: 8px; border-radius: 4px; font-size: 0.9rem; text-align: center;
+    }
+    
+    .calc-btn {
+      background: #ff9f1c; color: #000; border: none; padding: 10px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; flex-grow: 1;
+    }
+    .calc-btn:hover { filter: brightness(1.1); }
+
+    .status-msg { width: 100%; font-size: 0.9rem; margin-top: 10px; font-family: monospace; text-align: center; padding: 8px; border-radius: 4px; display: none; }
+    .status-ok { background: rgba(0, 230, 118, 0.2); color: #00e676; display: block; }
+    .status-err { background: rgba(255, 82, 82, 0.2); color: #ff5252; display: block; }
+
+    /* TIMELINE */
+    .timeline-container {
+      display: flex; height: 140px; width: 100%; background: #000;
+      border: 2px solid #555; border-radius: 8px; overflow: hidden; margin-bottom: 10px; position: relative;
+    }
+    
+    .segment {
+      position: relative; height: 100%; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; border-right: 1px solid rgba(0,0,0,0.5);
+      font-size: 0.75rem; transition: background 0.1s; min-width: 35px;
+    }
+    .segment.playing { filter: brightness(1.4); box-shadow: inset 0 0 20px #fff; }
+    
+    .type-bass { background: var(--seg-bass); color: #fff; }
+    .type-fill { background: var(--seg-fill); color: #fff; }
+    .type-chat { background: var(--seg-chat); color: #fff; }
+
+    /* Note Dropdown in Segment */
+    .note-select {
+      margin-top: 5px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 4px; font-size: 0.75rem; padding: 2px; cursor: pointer; width: 95%;
+    }
+
+    /* CONTROLS */
+    .controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; background: #2a2a2e; padding: 10px; border-radius: 8px; }
+    
+    .btn-play { background: var(--accent); color: #000; padding: 12px; font-size: 1rem; width: 100%; font-weight: bold; border:none; border-radius:4px; cursor:pointer;}
+    .btn-play:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-play.stop { background: #e63946; color: #fff; }
+    
+    .chord-row { display: flex; gap: 5px; margin-bottom: 15px; }
+    .chord-btn { flex: 1; padding: 10px; background: #333; color: #fff; border: 1px solid #555; cursor:pointer; font-weight:bold; }
+    .chord-btn.active { background: var(--accent); color: #000; }
+    
+    /* Overlay */
+    #overlay {
+      position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9);
+      z-index: 999; display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 12px;
+    }
+    .btn-load { font-size: 1.5rem; padding: 20px 40px; border-radius: 50px; background: var(--accent); border:none; font-weight:bold; cursor:pointer; }
+  </style>
+</head>
+<body>
+
+<div class="container" style="position: relative;">
+  
+  <div id="overlay">
+    <h2>BOLERO ARCHITECT</h2>
+    <button class="btn-load" onclick="initAudio()">TẢI SOUNDFONT</button>
+    <p style="color:#aaa; margin-top:10px;">Cần tải tiếng guitar (~5s)</p>
+  </div>
+
+  <h2>Cấu Hình Nhịp & Nốt</h2>
+
+  <div class="theory-box">
+    <div class="input-group">
+      <label>Nhịp (Time Sig)</label>
+      <select id="time-sig">
+        <option value="4">4/4 (Bolero Chuẩn)</option>
+        <option value="2">2/4 (Bolero Nhanh)</option>
+        <option value="3">3/4 (Valse)</option>
+        <option value="6">6/8 (Slow)</option>
+      </select>
+    </div>
+
+    <div class="input-group">
+      <label>Số ô nhịp (X Bars)</label>
+      <input type="number" id="bar-count" value="1" min="1" max="4" style="width: 50px;">
+    </div>
+
+    <button class="calc-btn" onclick="validateAndApply()">🧮 TÍNH TOÁN & ÁP DỤNG</button>
+    
+    <div id="audit-msg" class="status-msg"></div>
+  </div>
+
+  <div class="timeline-container" id="timeline"></div>
+
+  <div class="controls">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <span style="font-size:0.9rem;">Tốc độ:</span>
+      <input type="range" id="bpm" min="40" max="140" value="70" oninput="document.getElementById('bpm-v').innerText=this.value">
+      <span id="bpm-v" style="font-weight:bold; color:var(--accent);">70</span> BPM
+    </div>
+    
+    <label style="font-size:0.9rem; cursor:pointer;">
+      <input type="checkbox" id="chk-auto" checked> Tự đổi hợp âm
+    </label>
+  </div>
+
+  <div class="chord-row">
+    <button class="chord-btn active" onclick="setChord('Am')">Am</button>
+    <button class="chord-btn" onclick="setChord('Dm')">Dm</button>
+    <button class="chord-btn" onclick="setChord('E7')">E7</button>
+  </div>
+
+  <button id="btn-play" class="btn-play" onclick="togglePlay()">▶ CHẠY AUTO (SPACE)</button>
+
+</div>
+
+<script>
+  // ================= DATA =================
+  const NOTES_VAL = [
+    { label: "𝅝 Tròn (4.0)", val: 4.0 },
+    { label: "𝅗𝅥. Trắng chấm (3.0)", val: 3.0 },
+    { label: "𝅗𝅥 Trắng (2.0)", val: 2.0 },
+    { label: "♩. Đen chấm (1.5)", val: 1.5 },
+    { label: "♩ Đen (1.0)", val: 1.0 },
+    { label: "♪. Đơn chấm (0.75)", val: 0.75 },
+    { label: "♪ Đơn (0.5)", val: 0.5 },
+    { label: "𝅘𝅥𝅯. Kép chấm (0.375)", val: 0.375 },
+    { label: "𝅘𝅥𝅯 Kép (0.25)", val: 0.25 },
+    { label: "𝅘𝅥𝅯𝅘𝅥𝅯 Tam (0.125)", val: 0.125 }
+  ];
+
+  // Default pattern khớp với 4/4 (Tổng = 4.0)
+  const DEFAULT_STEPS = [
+    { label: "BÙM", type: "bass", val: 0.5 },    // Đơn
+    { label: "1", type: "fill", val: 0.125 },    // Tam
+    { label: "2", type: "fill", val: 0.125 },    // Tam
+    { label: "3", type: "fill", val: 0.25 },     // Kép (Cộng lại cụm này là 0.5 -> Hết phách 1)
+    { label: "CHÁT", type: "chat", val: 0.5 },   // Đơn
+    { label: "BÙM", type: "bass", val: 0.5 },    // Đơn (Hết phách 2)
+    { label: "CHÁT", type: "chat", val: 1.0 },   // Đen (Hết phách 3 - nghỉ)
+    { label: "BÙM+1", type: "bass", val: 0.5 },  // Đơn
+    { label: "CHÁT", type: "chat", val: 0.5 }    // Đơn (Hết phách 4)
+  ];
+
+  let steps = JSON.parse(JSON.stringify(DEFAULT_STEPS));
+  let guitar = null;
+  let isPlaying = false;
+  let currentStepIdx = 0;
+  let timer = null;
+  let currentChord = "Am";
+  let barCounter = 0;
+
+  const TUNING = [40, 45, 50, 55, 59, 64];
+  const CHORDS = { "Am":{b:5,f:[0,0,2,2,1,0]}, "Dm":{b:4,f:[-1,0,0,2,3,1]}, "E7":{b:5,f:[0,2,0,1,0,0]} };
+  const LOOP = ["Am","Dm","E7"];
+
+  // ================= VALIDATION LOGIC =================
+  function validateAndApply() {
+    const timeSig = parseInt(document.getElementById('time-sig').value); // 4 hoặc 2
+    const bars = parseInt(document.getElementById('bar-count').value);
+    const msgBox = document.getElementById('audit-msg');
+    
+    // 1. Tính Target (Đích)
+    // Giả sử mẫu số nhịp luôn là 4 (Quarter note gets the beat)
+    const targetBeats = timeSig * bars;
+
+    // 2. Tính Actual (Thực tế)
+    // Lấy giá trị từ các dropdown hiện tại trên màn hình
+    let currentTotal = 0;
+    const selects = document.querySelectorAll('.note-select');
+    selects.forEach((sel, idx) => {
+      const val = parseFloat(sel.value);
+      steps[idx].val = val; // Cập nhật state
+      currentTotal += val;
+    });
+
+    // 3. So sánh
+    // Dùng toFixed để tránh lỗi Floating point (0.1 + 0.2 != 0.3)
+    const diff = parseFloat((currentTotal - targetBeats).toFixed(3));
+
+    if (diff === 0) {
+      // THÀNH CÔNG
+      msgBox.className = "status-msg status-ok";
+      msgBox.innerText = `✅ CHÍNH XÁC! Tổng: ${currentTotal} phách. Đã cập nhật Timeline.`;
+      
+      // Tính lại % cho UI
+      steps.forEach(s => {
+        s.pct = (s.val / currentTotal) * 100;
+      });
+      renderTimeline(); // Vẽ lại với chiều rộng mới
+      
+      // Hiệu ứng blink xanh
+      document.querySelector('.timeline-container').style.borderColor = "#00e676";
+      setTimeout(() => document.querySelector('.timeline-container').style.borderColor = "#555", 500);
+    } else {
+      // THẤT BẠI
+      msgBox.className = "status-msg status-err";
+      const status = diff > 0 ? `Dư ${diff}` : `Thiếu ${Math.abs(diff)}`;
+      msgBox.innerText = `❌ KHÔNG HỢP LỆ! Yêu cầu: ${targetBeats} phách. Hiện tại: ${currentTotal}. (${status})`;
+    }
+  }
+
+  // ================= UI BUILDER =================
+  const timeline = document.getElementById('timeline');
+
+  function renderTimeline() {
+    timeline.innerHTML = '';
+    
+    // Nếu chưa có pct (lần đầu), tính tạm
+    const totalVal = steps.reduce((a,b) => a + b.val, 0);
+
+    steps.forEach((step, idx) => {
+      if(!step.pct) step.pct = (step.val / totalVal) * 100;
+
+      const el = document.createElement('div');
+      el.className = `segment type-${step.type}`;
+      el.id = `seg-${idx}`;
+      el.style.width = `${step.pct}%`;
+      
+      let opts = "";
+      NOTES_VAL.forEach(n => {
+        const sel = (step.val === n.val) ? "selected" : "";
+        opts += `<option value="${n.val}" ${sel}>${n.label}</option>`;
+      });
+
+      el.innerHTML = `
+        <span style="font-weight:bold; margin-top:5px;">${step.label}</span>
+        <select class="note-select">
+          ${opts}
+        </select>
+      `;
+      timeline.appendChild(el);
+    });
+  }
+
+  // ================= AUDIO ENGINE =================
+  async function initAudio() {
+    document.querySelector('.btn-load').innerText = "ĐANG TẢI...";
+    await Tone.start();
+    try {
+      guitar = await Soundfont.instrument(Tone.context.rawContext, 'acoustic_guitar_nylon');
+      document.getElementById('overlay').style.display = 'none';
+      renderTimeline();
+      // Auto validate lần đầu cho hiện xanh
+      setTimeout(validateAndApply, 100);
+    } catch(e) { alert(e); }
+  }
+
+  function togglePlay() {
+    const btn = document.getElementById('btn-play');
+    if(isPlaying) {
+      isPlaying = false; clearTimeout(timer);
+      btn.innerHTML = "▶ CHẠY AUTO (SPACE)"; btn.classList.remove('stop');
+      document.querySelectorAll('.segment').forEach(s => s.classList.remove('playing'));
+    } else {
+      // Trước khi chạy, validate lại phát cho chắc
+      const msg = document.getElementById('audit-msg');
+      if (msg.classList.contains('status-err')) {
+        alert("Nhịp đang sai kìa Bro! Sửa lại tổng nốt cho đúng đã.");
+        return;
+      }
+      isPlaying = true; btn.innerHTML = "⏹ DỪNG LẠI"; btn.classList.add('stop');
+      runLoop();
+    }
+  }
+
+  // Spacebar trigger
+  document.body.onkeydown = (e) => {
+    if(e.code === 'Space') { e.preventDefault(); togglePlay(); }
+  }
+
+  function runLoop() {
+    if(!isPlaying) return;
+    
+    playStep(currentStepIdx);
+    
+    // UI Highlight
+    document.querySelectorAll('.segment').forEach(s => s.classList.remove('playing'));
+    document.getElementById(`seg-${currentStepIdx}`).classList.add('playing');
+
+    // Calc Delay
+    const bpm = document.getElementById('bpm').value;
+    const timeSig = parseInt(document.getElementById('time-sig').value);
+    const bars = parseInt(document.getElementById('bar-count').value);
+    
+    // Tổng số phách = timeSig * bars. Mỗi phách = 60/bpm giây.
+    const totalDuration = (60/bpm) * (timeSig * bars) * 1000;
+    
+    // Thời lượng của bước hiện tại = % của tổng
+    const stepPct = steps[currentStepIdx].pct;
+    const delay = totalDuration * (stepPct / 100);
+
+    // Next
+    currentStepIdx++;
+    if(currentStepIdx >= steps.length) {
+      currentStepIdx = 0;
+      barCounter++;
+      checkAutoChord();
+    }
+    
+    timer = setTimeout(runLoop, delay);
+  }
+
+  function playStep(idx) {
+    if(!guitar) return;
+    const s = steps[idx];
+    const c = CHORDS[currentChord];
+    const now = Tone.now();
+    const getN = (str) => { let i=6-str; let f=c.f[i]; return (f===-1)?null:TUNING[i]+f; };
+
+    // Duration logic: nốt càng dài, ngân càng lâu
+    // Mapping: val 1.0 (Đen) ~ 0.5s ở 120bpm. Để đơn giản, duration = val * 0.5
+    const dur = s.val * 0.5; 
+
+    if(s.label === "BÙM") playNotes([getN(c.b)], dur, 1.2);
+    else if(s.label === "BÙM+1") {
+       let alt = c.b+1; if(alt>6) alt=c.b-1;
+       playNotes([getN(alt)], dur, 1.1);
+    }
+    else if(s.label.match(/\d/)) { // 1, 2, 3
+       if(s.label==="3") { // Strum down
+          [3,2,1].forEach((st,i) => { let n=getN(st); if(n) guitar.play(n, now+i*0.015, {duration:dur, gain:0.8}); });
+       } else { // Single pluck
+          playNotes([getN(c.b - parseInt(s.label))], 0.2, 0.7);
+       }
+    }
+    else if(s.label === "CHÁT") { // Strum up mute
+       [1,2,3].forEach((st,i) => { let n=getN(st); if(n) guitar.play(n, now+i*0.01, {duration:0.1, gain:0.9, release:0.05}); });
+    }
+  }
+  
+  function playNotes(ns, d, v) { ns.forEach(n => { if(n) guitar.play(n, Tone.now(), {duration:d, gain:v}); }); }
+
+  function checkAutoChord() {
+    if(document.getElementById('chk-auto').checked && barCounter >= 1) { // Đổi mỗi bar cho máu
+      barCounter = 0;
+      let i = LOOP.indexOf(currentChord);
+      setChord(LOOP[(i+1)%LOOP.length]);
+    }
+  }
+
+  window.setChord = function(c) {
+    currentChord = c;
+    document.querySelectorAll('.chord-btn').forEach(b => b.classList.toggle('active', b.innerText === c));
+  }
+</script>
+</body>
+</html>
