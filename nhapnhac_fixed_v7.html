@@ -1,0 +1,1708 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trình Soạn Nhạc Nhanh ABC</title>
+    
+    <!-- Tải Tailwind CSS để trang trí giao diện -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Tải thư viện React -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Tải Babel để trình duyệt hiểu được cú pháp React JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-slate-50">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useCallback, useReducer } = React;
+
+        // --- CÁC BIỂU TƯỢNG (ICONS) ---
+        const Icon = ({ children, size = 24, className = '' }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{children}</svg>
+        );
+        const Music = (p) => <Icon {...p}><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></Icon>;
+        const Play = (p) => <Icon {...p}><polygon points="5 3 19 12 5 21 5 3"></polygon></Icon>;
+        const Pause = (p) => <Icon {...p}><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></Icon>;
+        const Square = (p) => <Icon {...p}><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></Icon>;
+        const Plus = (p) => <Icon {...p}><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></Icon>;
+        const Settings = (p) => <Icon {...p}><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></Icon>;
+
+        const Sparkles = (p) => <Icon {...p}>
+            <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5L12 2z"></path>
+            <path d="M4 14l.9 2.6L7.5 17.5 4.9 18.4 4 21 3.1 18.4.5 17.5 3.1 16.6 4 14z"></path>
+        </Icon>;
+
+        const XIcon = (p) => <Icon {...p}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></Icon>;
+        const Edit3 = (p) => <Icon {...p}><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></Icon>;
+        const AlignLeft = (p) => <Icon {...p}><line x1="21" y1="6" x2="3" y2="6"></line><line x1="15" y1="12" x2="3" y2="12"></line><line x1="17" y1="18" x2="3" y2="18"></line></Icon>;
+        const Layers = (p) => <Icon {...p}><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></Icon>;
+        const CopyIcon = (p) => <Icon {...p}><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></Icon>;
+        const Check = (p) => <Icon {...p}><polyline points="20 6 9 17 4 12"></polyline></Icon>;
+
+        const UndoIcon = (p) => <Icon {...p}><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 0 0-9-9H3"></path></Icon>;
+        const RedoIcon = (p) => <Icon {...p}><path d="M21 7v6h-6"></path><path d="M3 17a9 9 0 0 1 9-9h9"></path></Icon>;
+
+        // --- CẤU HÌNH & HẰNG SỐ ---
+        const DEFAULT_ABC = `X: 1
+T: Bài Hát Mới
+C: Tác giả
+M: 4/4
+L: 1/4
+Q: 1/4=120
+K: C
+V:1 clef=treble
+[V:1] C D E F | G A B c |
+`;
+
+
+        // --- UNDO/REDO (tối đa 5 bước) ---
+        const MAX_UNDO_STEPS = 5;
+        const abcHistoryReducer = (state, action) => {
+            switch (action.type) {
+                case 'SET': {
+                    const next = action.text ?? '';
+                    if (next === state.text) return state;
+                    const undo = [...state.undo, state.text].slice(-MAX_UNDO_STEPS);
+                    return { text: next, undo, redo: [] };
+                }
+                case 'SET_FN': {
+                    const fn = action.fn;
+                    const next = typeof fn === 'function' ? fn(state.text) : state.text;
+                    if (next === state.text) return state;
+                    const undo = [...state.undo, state.text].slice(-MAX_UNDO_STEPS);
+                    return { text: next, undo, redo: [] };
+                }
+                case 'UNDO': {
+                    if (!state.undo.length) return state;
+                    const prev = state.undo[state.undo.length - 1];
+                    const undo = state.undo.slice(0, -1);
+                    const redo = [state.text, ...state.redo].slice(0, MAX_UNDO_STEPS);
+                    return { text: prev, undo, redo };
+                }
+                case 'REDO': {
+                    if (!state.redo.length) return state;
+                    const next = state.redo[0];
+                    const redo = state.redo.slice(1);
+                    const undo = [...state.undo, state.text].slice(-MAX_UNDO_STEPS);
+                    return { text: next, undo, redo };
+                }
+                default:
+                    return state;
+            }
+        };
+
+
+        const OCTAVES = [
+            { id: 2, label: 'Octave 2', suffix: ',,' },
+            { id: 3, label: 'Octave 3', suffix: ',' },
+            { id: 4, label: 'Octave 4', suffix: '' },
+            { id: 5, label: 'Octave 5', suffix: '', lowerCase: true },
+            { id: 6, label: 'Octave 6', suffix: "'", lowerCase: true },
+            { id: 7, label: 'Octave 7', suffix: "''", lowerCase: true },
+        ];
+
+        const NOTES = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+
+        const SYMBOLS = [
+            { label: '|', val: '|', title: 'Vạch nhịp' },
+            { label: '𝄽', val: 'z', title: 'Lặng đen' },
+            { label: '𝄾', val: 'z/2', title: 'Lặng đơn' },
+            { label: '𝄆', val: '|:', title: 'Bắt đầu lặp' },
+            { label: '𝄇', val: ':|', title: 'Kết thúc lặp' },
+            { label: '‿', val: '-', title: 'Nối nốt' },
+        ];
+
+        // --- MAIN APP COMPONENT ---
+        function App() {
+            const [abcState, dispatchAbc] = useReducer(abcHistoryReducer, { text: DEFAULT_ABC, undo: [], redo: [] });
+            const abcText = abcState.text;
+            const canUndo = abcState.undo.length > 0;
+            const canRedo = abcState.redo.length > 0;
+
+            // Wrapper để giữ nguyên API setState cũ (hỗ trợ cả function updater)
+            const setAbcText = (updater) => {
+                if (typeof updater === 'function') dispatchAbc({ type: 'SET_FN', fn: updater });
+                else dispatchAbc({ type: 'SET', text: updater });
+            };
+            const [abcjsLoaded, setAbcjsLoaded] = useState(false);
+            const [isPlaying, setIsPlaying] = useState(false);
+            const [cursorPos, setCursorPos] = useState(0);
+            
+            // Global Editor State
+            const [title, setTitle] = useState('Bài Hát Mới');
+            const [composer, setComposer] = useState('Tác giả');
+            const [meter, setMeter] = useState('4/4');
+            const [duration, setDuration] = useState('4'); 
+            const [isDotted, setIsDotted] = useState(false);
+            const [tempo, setTempo] = useState('120');
+
+            // Voicing State
+            const [voices, setVoices] = useState([{ id: 1, clef: 'treble' }]);
+            const [activeVoice, setActiveVoice] = useState(1);
+            const [showAddVoice, setShowAddVoice] = useState(false);
+            const [isCopied, setIsCopied] = useState(false);
+            const [voiceMenu, setVoiceMenu] = useState(null); // { x, y, voiceId }
+
+            const [optReport, setOptReport] = useState(null); // { actions: string[], before: string, after: string }
+
+            // Long press for accidentals
+            const [longPressTarget, setLongPressTarget] = useState(null);
+            const pressTimer = useRef(null);
+
+            // Refs
+            const textAreaRef = useRef(null);
+            const renderAreaRef = useRef(null);
+            const synthRef = useRef(null);
+
+            // --- TẢI THƯ VIỆN ABCJS ĐỘNG ---
+            useEffect(() => {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/abcjs@6.3.0/dist/abcjs-basic-min.js';
+                script.async = true;
+                script.onload = () => {
+                    setAbcjsLoaded(true);
+                    renderSheetMusic(DEFAULT_ABC);
+                };
+                document.body.appendChild(script);
+
+                return () => {
+                    document.body.removeChild(script);
+                    if (synthRef.current) synthRef.current.stop();
+                };
+            }, []);
+
+            // --- Đồng bộ tabs bè theo nội dung abcText (two-way với khung text) ---
+            useEffect(() => {
+                const clef1Match = abcText.match(/^V:1\b[^\n]*\bclef=([^\s]+)/m);
+                const clef1 = clef1Match ? (clef1Match[1] || '').trim() : 'treble';
+
+                const hasV2 = /^V:2\b/m.test(abcText) || /\[V:2\]/.test(abcText);
+                const clef2Match = abcText.match(/^V:2\b[^\n]*\bclef=([^\s]+)/m);
+                const clef2 = clef2Match ? (clef2Match[1] || '').trim() : 'bass';
+
+                setVoices(prev => {
+                    const next = hasV2 ? [{ id: 1, clef: clef1 }, { id: 2, clef: clef2 }] : [{ id: 1, clef: clef1 }];
+                    const same = prev.length === next.length && prev.every((v, i) => v.id === next[i].id && v.clef === next[i].clef);
+                    return same ? prev : next;
+                });
+
+                if (!hasV2 && activeVoice === 2) setActiveVoice(1);
+            }, [abcText, activeVoice]);
+
+            // --- Đóng context menu của tab bè khi click ra ngoài / scroll ---
+            useEffect(() => {
+                const close = () => setVoiceMenu(null);
+                window.addEventListener('click', close);
+                window.addEventListener('scroll', close, true);
+                window.addEventListener('resize', close);
+                return () => {
+                    window.removeEventListener('click', close);
+                    window.removeEventListener('scroll', close, true);
+                    window.removeEventListener('resize', close);
+                };
+            }, []);
+
+
+            // --- HÀM PHÂN TÍCH CHUẨN K: TỪ TEXT SANG UI ---
+            const parseKeySignature = (kVal) => {
+                const sharpOrder = [3, 0, 4, 1, 5, 2, 6]; 
+                const flatOrder  = [6, 2, 5, 1, 4, 0, 3]; 
+                const keyMap = {
+                    'G': { type: '^', count: 1 }, 'D': { type: '^', count: 2 },
+                    'A': { type: '^', count: 3 }, 'E': { type: '^', count: 4 },
+                    'B': { type: '^', count: 5 }, 'F#': { type: '^', count: 6 },
+                    'C#': { type: '^', count: 7 },
+                    'F': { type: '_', count: 1 }, 'Bb': { type: '_', count: 2 },
+                    'Eb': { type: '_', count: 3 }, 'Ab': { type: '_', count: 4 },
+                    'Db': { type: '_', count: 5 }, 'Gb': { type: '_', count: 6 },
+                    'Cb': { type: '_', count: 7 },
+                    'C': { type: '^', count: 0 }
+                };
+
+                const exactKey = kVal.split(' ')[0]; 
+                if (keyMap[exactKey] && kVal.indexOf('^') === -1 && kVal.indexOf('_') === -1) {
+                    const info = keyMap[exactKey];
+                    const sigs = [];
+                    const order = info.type === '^' ? sharpOrder : flatOrder;
+                    for (let i = 0; i < info.count; i++) {
+                        sigs.push({ type: info.type, noteIndex: order[i] });
+                    }
+                    return sigs;
+                }
+
+                const parts = kVal.split(/\s+/);
+                const sigs = [];
+                parts.forEach((p) => {
+                    if (p.startsWith('^') || p.startsWith('_') || p.startsWith('=')) {
+                        const type = p[0];
+                        const note = p[1].toUpperCase();
+                        const noteIndex = NOTES.indexOf(note);
+                        if (noteIndex !== -1) {
+                            sigs.push({ type, noteIndex });
+                        }
+                    }
+                });
+                return sigs;
+            };
+
+            // --- THUẬT TOÁN NHẬN DIỆN KHÓA CHUẨN ---
+            const getStandardKey = (sigs) => {
+                if (sigs.length === 0) return 'C';
+                
+                const sharps = sigs.filter(s => s.type === '^').map(s => s.noteIndex);
+                const flats = sigs.filter(s => s.type === '_').map(s => s.noteIndex);
+                
+                if (sharps.length > 0 && flats.length > 0) return null;
+                if (sigs.some(s => s.type === '=')) return null;
+
+                const sharpOrder = [3, 0, 4, 1, 5, 2, 6]; 
+                const flatOrder  = [6, 2, 5, 1, 4, 0, 3]; 
+                
+                if (sharps.length > 0) {
+                    if (sharps.length > 7) return null;
+                    const standardSet = new Set(sharpOrder.slice(0, sharps.length));
+                    const currentSet = new Set(sharps);
+                    if (standardSet.size !== currentSet.size) return null;
+                    for (let note of currentSet) {
+                        if (!standardSet.has(note)) return null;
+                    }
+                    const keys = ['G', 'D', 'A', 'E', 'B', 'F#', 'C#'];
+                    return keys[sharps.length - 1];
+                }
+                
+                if (flats.length > 0) {
+                    if (flats.length > 7) return null;
+                    const standardSet = new Set(flatOrder.slice(0, flats.length));
+                    const currentSet = new Set(flats);
+                    if (standardSet.size !== currentSet.size) return null;
+                    for (let note of currentSet) {
+                        if (!standardSet.has(note)) return null;
+                    }
+                    const keys = ['F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Cb'];
+                    return keys[flats.length - 1];
+                }
+                
+                return null;
+            };
+
+            // --- GHÉP CHUỖI K: (PORTABLE, KHÔNG "MỌC" DẤU HOÁ ẨN) ---
+            // Lý do: nếu dùng "K: D exp ^F ^E ..." thì nhiều parser sẽ vẫn áp dụng dấu hoá ngầm của D (F# C#)
+            // rồi mới áp "exp" => nhìn như tự mọc thêm C# (hoặc dấu khác). Vì vậy custom key luôn neo về C.
+            const composeKeyString = (sigs, currentK) => {
+                const standardKey = getStandardKey(sigs);
+                if (standardKey) return standardKey;
+
+                const baseKeyForExplicit = 'C';
+                if (!sigs || sigs.length === 0) return baseKeyForExplicit;
+
+                return `${baseKeyForExplicit} exp ${sigs.map(s => `${s.type}${NOTES[s.noteIndex]}`).join(' ')}`.trim();
+            };
+
+
+            // Dẫn xuất state UI ngay từ abcText
+            const currentKMatch = abcText.match(/^K:\s*(.*)$/m);
+            let kVal = currentKMatch ? currentKMatch[1].trim() : 'C';
+            if (kVal.startsWith('K:')) kVal = kVal.replace(/^K:\s*/, '');
+            const customSigs = parseKeySignature(kVal);
+
+            // =========================================================================
+            // TRÌNH TIỀN XỬ LÝ (PRE-PROCESSOR): Sửa lỗi đồ họa của ABCJS, giữ đúng âm thanh
+            // =========================================================================
+                        const getProcessedAbcText = (rawText) => {
+                let text = rawText;
+                const match = text.match(/^K:\s*(.*)$/m);
+                if (!match) return text;
+
+                let keyVal = match[1].trim();
+                if (keyVal.startsWith('K:')) keyVal = keyVal.replace(/^K:\s*/, '').trim();
+
+                const sigs = parseKeySignature(keyVal);
+                if (!sigs || sigs.length === 0) return text;
+
+                // Lấy tonic gốc để giữ đúng ngữ nghĩa (playback/chords), còn phần hiển thị sẽ được "tiêm" theo từng bè.
+                const baseKey = (keyVal.split(/\s+/)[0] || 'C').trim();
+                const parts = sigs.map(s => `${s.type}${NOTES[s.noteIndex]}`);
+
+                // Cung cấp chính xác cao độ hiển thị cho từng khóa để ABCJS không bị lỗi (case + octave markers)
+                const TREBLE_PITCHES = { 'C': 'c',  'D': 'd',  'E': 'e',  'F': 'f',  'G': 'G',   'A': 'A',   'B': 'B' };
+                const BASS_PITCHES   = { 'C': 'C',  'D': 'D',  'E': 'E',  'F': 'F',  'G': 'G',  'A': 'A',  'B': 'B' };
+
+                const getVoiceClef = (voiceId, fallback) => {
+                    const re = new RegExp(`^V:${voiceId}\\b[^\\n]*\\bclef=([^\\s]+)`, 'm');
+                    const m = text.match(re);
+                    return m ? (m[1] || '').trim() : fallback;
+                };
+
+                const clef1 = getVoiceClef(1, 'treble');
+                const clef2 = getVoiceClef(2, 'bass');
+
+                const mapForClef = (clef) => (clef && clef.toLowerCase() === 'bass') ? BASS_PITCHES : TREBLE_PITCHES;
+
+                const sigs1 = parts.map(p => p[0] + (mapForClef(clef1)[p[1].toUpperCase()] || p[1])).join(' ');
+                const sigs2 = parts.map(p => p[0] + (mapForClef(clef2)[p[1].toUpperCase()] || p[1])).join(' ');
+
+                // Xóa key signature ở header chung để tránh bị đè hiển thị kép
+                text = text.replace(/^K:\s*.*$/m, 'K: C');
+
+                // IMPORTANT:
+                // - K: có thể reset clef về mặc định nếu không ghi rõ => luôn nhét clef=... theo từng bè.
+                // - Dùng "exp" để ABCJS coi đây là key signature thật sự (không phải accidental rải rác).
+                const standardKey = getStandardKey(sigs);
+                const effectiveKey = standardKey || baseKey;
+                const useExplicit = !standardKey;
+
+                const keyInline1 = useExplicit
+                    ? `[K: ${effectiveKey} exp ${sigs1} clef=${clef1}]`
+                    : `[K: ${effectiveKey} clef=${clef1}]`;
+                const keyInline2 = useExplicit
+                    ? `[K: ${effectiveKey} exp ${sigs2} clef=${clef2}]`
+                    : `[K: ${effectiveKey} clef=${clef2}]`;
+if (text.includes('[V:1]')) {
+                    text = text.replace(/(\[V:1\][ \t]*)/, `$1${keyInline1} `);
+                } else {
+                    // Trường hợp chỉ có 1 bè và không dùng [V:1] trong thân bài
+                    text = text.replace(/^K:\s*C\s*$/m, `K: C\n${keyInline1}`);
+                }
+
+                if (text.includes('[V:2]')) {
+                    text = text.replace(/(\[V:2\][ \t]*)/, `$1${keyInline2} `);
+                }
+
+                return text;
+            };
+
+            // --- HÀM RENDER & AUDIO (LIVE PREVIEW) ---
+            const renderSheetMusic = useCallback((text) => {
+                if (!window.ABCJS || !renderAreaRef.current) return;
+                try {
+                    // Dùng văn bản đã được Tiền xử lý để vẽ
+                    const processedText = getProcessedAbcText(text);
+                    window.ABCJS.renderAbc(renderAreaRef.current, processedText, {
+                        responsive: 'resize',
+                        add_classes: true,
+                        staffwidth: 800,
+                        paddingtop: 10,
+                        paddingbottom: 10,
+                    });
+                } catch (err) {
+                    console.warn("Đang chờ người dùng nhập đúng cú pháp...");
+                }
+            }, []);
+
+            useEffect(() => {
+                if (abcjsLoaded) {
+                    renderSheetMusic(abcText);
+                }
+            }, [abcText, abcjsLoaded, renderSheetMusic]);
+
+            const togglePlay = () => {
+                if (!window.ABCJS) return;
+                
+                if (isPlaying) {
+                    if (synthRef.current) synthRef.current.pause();
+                    setIsPlaying(false);
+                    return;
+                }
+
+                if (!synthRef.current) {
+                    synthRef.current = new window.ABCJS.synth.CreateSynth();
+                }
+
+                // Dùng văn bản đã được Tiền xử lý để phát nhạc cho đúng cao độ
+                const processedText = getProcessedAbcText(abcText);
+                const visualObj = window.ABCJS.renderAbc("*", processedText)[0];
+                
+                synthRef.current.init({
+                    audioContext: new (window.AudioContext || window.webkitAudioContext)(),
+                    visualObj: visualObj,
+                }).then(() => {
+                    synthRef.current.prime().then(() => {
+                        synthRef.current.start();
+                        setIsPlaying(true);
+                    });
+                });
+            };
+
+            const stopAudio = () => {
+                if (synthRef.current) {
+                    synthRef.current.stop();
+                    setIsPlaying(false);
+                }
+            };
+
+            // --- UNDO/REDO actions ---
+            const focusClampCursor = () => {
+                const ta = textAreaRef.current;
+                if (!ta) return;
+                const pos = Math.min(cursorPos, ta.value.length);
+                setCursorPos(pos);
+                ta.focus();
+                try { ta.setSelectionRange(pos, pos); } catch (e) {}
+            };
+
+            const handleUndo = () => {
+                if (!canUndo) return;
+                dispatchAbc({ type: 'UNDO' });
+                setTimeout(focusClampCursor, 0);
+            };
+
+            const handleRedo = () => {
+                if (!canRedo) return;
+                dispatchAbc({ type: 'REDO' });
+                setTimeout(focusClampCursor, 0);
+            };
+
+
+            // --- HÀM XỬ LÝ TEXT & CURSOR THÔNG MINH ---
+            const updateTextAndSync = (newText, newPos) => {
+                setAbcText(newText);
+                setCursorPos(newPos);
+                setTimeout(() => {
+                    if (textAreaRef.current) {
+                        textAreaRef.current.focus();
+                        textAreaRef.current.setSelectionRange(newPos, newPos);
+                    }
+                }, 10);
+            };
+
+            const handleTextAreaChange = (e) => {
+                setAbcText(e.target.value);
+                setCursorPos(e.target.selectionStart);
+            };
+
+            const handleTextAreaClickOrKey = (e) => {
+                const pos = e.target.selectionStart;
+                setCursorPos(pos);
+                
+                const textBeforeCursor = e.target.value.substring(0, pos);
+                const voiceMatches = [...textBeforeCursor.matchAll(/\[V:(\d+)\]/g)];
+                if (voiceMatches.length > 0) {
+                    const lastMatch = voiceMatches[voiceMatches.length - 1];
+                    setActiveVoice(parseInt(lastMatch[1]));
+                }
+            };
+
+            const insertSmartText = (textToInsert, targetVoiceId = activeVoice) => {
+                let currentPos = cursorPos;
+                const voiceMarker = `[V:${targetVoiceId}]`;
+                const startIndex = abcText.indexOf(voiceMarker);
+
+                let finalInsertPos = currentPos;
+
+                if (startIndex !== -1) {
+                    const restOfText = abcText.substring(startIndex + voiceMarker.length);
+                    const nextVoiceMatch = restOfText.match(/\[V:\d+\]/);
+                    let endIndex = nextVoiceMatch 
+                        ? startIndex + voiceMarker.length + nextVoiceMatch.index 
+                        : abcText.length;
+
+                    if (currentPos < startIndex + voiceMarker.length || currentPos > endIndex) {
+                        finalInsertPos = endIndex;
+                        while (abcText[finalInsertPos - 1] === ' ' || abcText[finalInsertPos - 1] === '\n') {
+                            finalInsertPos--;
+                        }
+                    }
+                } else {
+                    finalInsertPos = abcText.length;
+                }
+
+                const before = abcText.substring(0, finalInsertPos);
+                const after = abcText.substring(finalInsertPos);
+                
+                const prefix = (before.endsWith(' ') || before.endsWith('\n') || before === '') ? '' : ' ';
+                const insertStr = prefix + textToInsert + ' ';
+                
+                const newText = before + insertStr + after;
+                updateTextAndSync(newText, finalInsertPos + insertStr.length);
+            };
+
+            // --- HÀM XỬ LÝ GLOBAL EDITOR ---
+            const updateHeaderField = (field, value) => {
+                setAbcText(prev => {
+                    const lines = prev.split('\n');
+                    let found = false;
+                    const newLines = lines.map(line => {
+                        if (line.startsWith(`${field}:`)) {
+                            found = true;
+                            return `${field}: ${value}`;
+                        }
+                        return line;
+                    });
+                    if (!found) newLines.splice(1, 0, `${field}: ${value}`);
+                    return newLines.join('\n');
+                });
+            };
+
+            // --- LOGIC XỬ LÝ DẤU HÓA TỰ DO SIÊU MƯỢT ---
+            const addSig = (type) => {
+                setAbcText(prevText => {
+                    const match = prevText.match(/^K:\s*(.*)$/m);
+                    let currentK = match ? match[1].trim() : 'C';
+                    if (currentK.startsWith('K:')) currentK = currentK.replace(/^K:\s*/, '');
+                    
+                    const sigs = parseKeySignature(currentK);
+                    
+                    const sharpOrder = [3, 0, 4, 1, 5, 2, 6];
+                    const flatOrder  = [6, 2, 5, 1, 4, 0, 3];
+                    const existing = sigs.filter(s => s.type === type).map(s => s.noteIndex);
+                    const order = type === '^' ? sharpOrder : flatOrder;
+                    
+                    let nextNote = order[0];
+                    for (let note of order) {
+                        if (!existing.includes(note)) {
+                            nextNote = note;
+                            break;
+                        }
+                    }
+                    
+                    sigs.push({ type, noteIndex: nextNote });
+                    const newK = composeKeyString(sigs, currentK);
+
+                    const lines = prevText.split('\n');
+                    let found = false;
+                    const newLines = lines.map(line => {
+                        if (line.startsWith(`K:`)) {
+                            found = true;
+                            return `K: ${newK}`;
+                        }
+                        return line;
+                    });
+                    if (!found) newLines.splice(1, 0, `K: ${newK}`);
+                    return newLines.join('\n');
+                });
+            };
+
+            const moveSig = (index, delta) => {
+                setAbcText(prevText => {
+                    const match = prevText.match(/^K:\s*(.*)$/m);
+                    let currentK = match ? match[1].trim() : 'C';
+                    if (currentK.startsWith('K:')) currentK = currentK.replace(/^K:\s*/, '');
+                    
+                    const sigs = parseKeySignature(currentK);
+                    if (!sigs[index]) return prevText;
+
+                    let newNoteIndex = (sigs[index].noteIndex + delta) % 7;
+                    if (newNoteIndex < 0) newNoteIndex += 7;
+                    sigs[index].noteIndex = newNoteIndex;
+
+                    const newK = composeKeyString(sigs, currentK);
+
+                    const lines = prevText.split('\n');
+                    let found = false;
+                    const newLines = lines.map(line => {
+                        if (line.startsWith(`K:`)) {
+                            found = true;
+                            return `K: ${newK}`;
+                        }
+                        return line;
+                    });
+                    if (!found) newLines.splice(1, 0, `K: ${newK}`);
+                    return newLines.join('\n');
+                });
+            };
+
+            const removeSig = (index) => {
+                setAbcText(prevText => {
+                    const match = prevText.match(/^K:\s*(.*)$/m);
+                    let currentK = match ? match[1].trim() : 'C';
+                    if (currentK.startsWith('K:')) currentK = currentK.replace(/^K:\s*/, '');
+                    
+                    const sigs = parseKeySignature(currentK);
+                    sigs.splice(index, 1);
+
+                    const newK = composeKeyString(sigs, currentK);
+
+                    const lines = prevText.split('\n');
+                    let found = false;
+                    const newLines = lines.map(line => {
+                        if (line.startsWith(`K:`)) {
+                            found = true;
+                            return `K: ${newK}`;
+                        }
+                        return line;
+                    });
+                    if (!found) newLines.splice(1, 0, `K: ${newK}`);
+                    return newLines.join('\n');
+                });
+            };
+
+            // --- TÍNH TOÁN NỐT NHẠC ---
+            const getNoteString = (baseNote, octaveObj, accidental = '') => {
+                let note = baseNote;
+                if (octaveObj.lowerCase) note = note.toLowerCase();
+                
+                let lengthStr = '';
+                if (duration === '1') lengthStr = isDotted ? '6' : '4'; 
+                else if (duration === '2') lengthStr = isDotted ? '3' : '2'; 
+                else if (duration === '4') lengthStr = isDotted ? '3/2' : ''; 
+                else if (duration === '8') lengthStr = isDotted ? '3/4' : '/2'; 
+
+                return `${accidental}${note}${octaveObj.suffix}${lengthStr}`;
+            };
+
+            // --- SỰ KIỆN CLICK & PRESS NỐT ---
+            const handleNoteDoubleClick = (baseNote, octaveObj) => {
+                const noteStr = getNoteString(baseNote, octaveObj);
+                insertSmartText(noteStr);
+            };
+
+            const handleMouseDown = (e, baseNote, octaveObj) => {
+                e.preventDefault();
+                const rect = e.currentTarget.getBoundingClientRect();
+                pressTimer.current = setTimeout(() => {
+                    setLongPressTarget({
+                        baseNote,
+                        octaveObj,
+                        x: rect.left + rect.width / 2,
+                        y: rect.top - 40
+                    });
+                }, 400); 
+            };
+
+            const handleMouseUpOrLeave = () => {
+                if (pressTimer.current) {
+                    clearTimeout(pressTimer.current);
+                    pressTimer.current = null;
+                }
+            };
+
+            const selectAccidental = (accidental) => {
+                if (longPressTarget) {
+                    const noteStr = getNoteString(longPressTarget.baseNote, longPressTarget.octaveObj, accidental);
+                    insertSmartText(noteStr);
+                    setLongPressTarget(null);
+                }
+            };
+
+            // --- VOICING TABS ---
+
+            const openVoiceContextMenu = (e, voiceId) => {
+                e.preventDefault();
+                if (voices.length <= 1) return; // không cho xóa bè cuối cùng
+                setVoiceMenu({ x: e.clientX, y: e.clientY, voiceId });
+            };
+
+            const deleteVoice = (voiceId) => {
+                if (voices.length <= 1) return;
+                setVoiceMenu(null);
+
+                setVoices(prevVoices => {
+                    if (prevVoices.length <= 1) return prevVoices;
+                    const exists = prevVoices.some(v => v.id === voiceId);
+                    if (!exists) return prevVoices;
+
+                    let remaining = prevVoices.filter(v => v.id !== voiceId);
+
+                    // Nếu xóa bè 1 và còn bè 2 -> đổi 2 -> 1 để giữ kiến trúc app ổn định
+                    const renumber = (voiceId === 1 && remaining.length === 1 && remaining[0].id === 2);
+
+                    setAbcText(prevText => {
+                        let t = prevText;
+
+                        // Xóa dòng khai báo V:<id>
+                        const declRe = new RegExp(`^V:${voiceId}\\b.*\\n?`, 'mg');
+                        t = t.replace(declRe, '');
+
+                        // Xóa vùng thân bài [V:id] ... (đến [V:...] tiếp theo hoặc EOF)
+                        const marker = `[V:${voiceId}]`;
+                        const start = t.indexOf(marker);
+                        if (start !== -1) {
+                            const after = start + marker.length;
+                            const rest = t.substring(after);
+                            const next = rest.match(/\[V:\d+\]/);
+                            const end = next ? after + next.index : t.length;
+                            t = t.substring(0, start) + t.substring(end);
+                        }
+
+                        if (renumber) {
+                            t = t.replace(/^V:2\\b/gm, 'V:1');
+                            t = t.replace(/\[V:2\]/g, '[V:1]');
+                        }
+
+                        t = t.replace(/\\n{3,}/g, '\\n\\n').trimEnd();
+                        if (!t.endsWith('\\n')) t += '\\n';
+
+                        // Đảm bảo còn ít nhất 1 marker voice để insert/preview không hỏng
+                        if (!/\[V:1\]/.test(t)) t = t.trimEnd() + '\\n[V:1] ';
+
+                        return t;
+                    });
+
+                    if (renumber) remaining = [{ ...remaining[0], id: 1 }];
+                    return remaining;
+                });
+
+                setActiveVoice(1);
+                setTimeout(() => {
+                    const ta = textAreaRef.current;
+                    if (!ta) return;
+                    const p = Math.min(cursorPos, ta.value.length);
+                    setCursorPos(p);
+                    try { ta.setSelectionRange(p, p); } catch (e) {}
+                    ta.focus();
+                }, 0);
+            };
+
+            const addVoice = (clef) => {
+                if (voices.length >= 2) return;
+                const newVoiceId = voices.length + 1;
+                setVoices([...voices, { id: newVoiceId, clef }]);
+                setShowAddVoice(false);
+                setActiveVoice(newVoiceId);
+
+                const voiceDecl = `V:${newVoiceId} clef=${clef}`;
+                const lines = abcText.split('\n');
+                let insertIdx = lines.findIndex(l => l.startsWith('V:'));
+                if (insertIdx === -1) insertIdx = lines.findIndex(l => l.startsWith('K:'));
+                
+                if (insertIdx !== -1) {
+                    let lastVIdx = insertIdx;
+                    for (let i = insertIdx; i < lines.length; i++) {
+                        if (lines[i].startsWith('V:')) lastVIdx = i;
+                        else if (!lines[i].startsWith('V:') && i > insertIdx) break;
+                    }
+                    lines.splice(lastVIdx + 1, 0, voiceDecl);
+                } else {
+                    lines.unshift(voiceDecl);
+                }
+                
+                let newText = lines.join('\n');
+                newText = newText.trimEnd() + `\n[V:${newVoiceId}] `;
+                updateTextAndSync(newText, newText.length);
+            };
+
+            const changeVoiceTab = (id) => {
+                setActiveVoice(id);
+                const voiceMarker = `[V:${id}]`;
+                const matchPos = abcText.indexOf(voiceMarker);
+                if (matchPos !== -1) {
+                    const searchStart = matchPos + voiceMarker.length;
+                    const restText = abcText.substring(searchStart);
+                    const nextVoiceMatch = restText.match(/\[V:\d+\]/);
+                    let endPos = nextVoiceMatch 
+                        ? searchStart + nextVoiceMatch.index 
+                        : abcText.length;
+                    
+                    while (endPos > searchStart && (abcText[endPos - 1] === ' ' || abcText[endPos - 1] === '\n')) {
+                        endPos--;
+                    }
+                    
+                    updateTextAndSync(abcText, endPos);
+                }
+            };
+
+            // --- OPTIMIZE & RENDER (SMART AUTOBAR + WRAP) ---
+// Mục tiêu:
+// - Nếu user lười gõ vạch nhịp: tự chèn '|' dựa trên M: + L: (không đổi nốt, chỉ format)
+// - Giữ đúng barline đặc biệt: |: :| || |] [|
+// - Ngắt dòng theo 4 ô nhịp / dòng (giữ [V:n] ở đầu mỗi dòng)
+const gcdInt = (a, b) => {
+    a = Math.abs(a || 0); b = Math.abs(b || 0);
+    while (b) { const t = a % b; a = b; b = t; }
+    return a || 1;
+};
+const frac = (n, d = 1) => {
+    if (!Number.isFinite(n) || !Number.isFinite(d) || d === 0) return { n: 0, d: 1 };
+    if (d < 0) { n = -n; d = -d; }
+    const g = gcdInt(n, d);
+    return { n: n / g, d: d / g };
+};
+const fracAdd = (a, b) => frac(a.n * b.d + b.n * a.d, a.d * b.d);
+const fracMul = (a, b) => frac(a.n * b.n, a.d * b.d);
+const fracCmp = (a, b) => {
+    const left = a.n * b.d;
+    const right = b.n * a.d;
+    return left === right ? 0 : (left > right ? 1 : -1);
+};
+const fracIsZero = (a) => a.n === 0;
+
+const parseFracStr = (s) => {
+    const m = (s || '').trim();
+    if (!m) return null;
+    const mm = m.match(/^(\d+)\s*\/\s*(\d+)$/);
+    if (mm) return { n: parseInt(mm[1], 10), d: parseInt(mm[2], 10) };
+    return null;
+};
+
+const parseMeter = (mStr) => {
+    const m = (mStr || '').trim();
+    if (!m) return { n: 4, d: 4 };
+    if (m === 'C') return { n: 4, d: 4 };
+    if (m === 'C|') return { n: 2, d: 2 };
+    const f = parseFracStr(m);
+    return f || { n: 4, d: 4 };
+};
+
+// ABC default: nếu không có L:, thường là 1/8 (M >= 3/4) hoặc 1/16 (M < 3/4)
+const inferDefaultL = (meter) => {
+    const m = meter || { n: 4, d: 4 };
+    // so sánh m < 3/4  => 4*m.n < 3*m.d
+    const isShort = (4 * m.n) < (3 * m.d);
+    return isShort ? { n: 1, d: 16 } : { n: 1, d: 8 };
+};
+
+const parseTiming = (text) => {
+    const mMatch = (text || '').match(/^M:\s*(.*)$/m);
+    const lMatch = (text || '').match(/^L:\s*(.*)$/m);
+
+    const meter = parseMeter(mMatch ? (mMatch[1] || '').trim() : '4/4');
+    const L = (lMatch ? parseFracStr((lMatch[1] || '').trim()) : null) || inferDefaultL(meter);
+
+    // barUnits = (meter) / (L)  => (m.n/m.d) / (L.n/L.d) = (m.n*L.d)/(m.d*L.n)
+    const barUnits = frac(meter.n * L.d, meter.d * L.n);
+
+    return { meter, L, barUnits };
+};
+
+const detectBarTokenAt = (s, i) => {
+    if (s.startsWith('|:', i)) return '|:';
+    if (s.startsWith(':|', i)) return ':|';
+    if (s.startsWith('||', i)) return '||';
+    if (s.startsWith('|]', i)) return '|]';
+    if (s.startsWith('[|', i)) return '[|';
+    if (s[i] === '|') return '|';
+    return null;
+};
+
+const parseLengthMultiplier = (s, i) => {
+    let j = i;
+    const start = j;
+    let numStr = '';
+    while (j < s.length && /\d/.test(s[j])) { numStr += s[j]; j++; }
+
+    let slashCount = 0;
+    while (j < s.length && s[j] === '/') { slashCount++; j++; }
+
+    let denStr = '';
+    while (j < s.length && /\d/.test(s[j])) { denStr += s[j]; j++; }
+
+    if (!numStr && slashCount === 0) return { lenStr: '', mult: frac(1, 1), nextIndex: i };
+
+    let mult = frac(1, 1);
+    if (slashCount === 0) {
+        mult = frac(parseInt(numStr, 10) || 1, 1);
+    } else {
+        if (denStr) {
+            const den = parseInt(denStr, 10) || 2;
+            const num = numStr ? (parseInt(numStr, 10) || 1) : 1;
+            mult = frac(num, den);
+        } else {
+            const den = Math.pow(2, slashCount);
+            const num = numStr ? (parseInt(numStr, 10) || 1) : 1;
+            mult = frac(num, den);
+        }
+    }
+
+    return { lenStr: s.slice(start, j), mult, nextIndex: j };
+};
+
+const parseBrokenRhythm = (s, i) => {
+    let j = i;
+    if (j >= s.length) return { text: '', nextIndex: i, has: false };
+    const ch = s[j];
+    if (ch !== '>' && ch !== '<') return { text: '', nextIndex: i, has: false };
+
+    let count = 0;
+    while (j < s.length && s[j] === ch) { count++; j++; }
+    const pow = Math.pow(2, count);
+    const num1 = Math.pow(2, count + 1) - 1;
+
+    const first = (ch === '>') ? frac(num1, pow) : frac(1, pow);
+    const second = (ch === '>') ? frac(1, pow) : frac(num1, pow);
+
+    return { text: ch.repeat(count), nextIndex: j, has: true, first, second };
+};
+
+const parseNoteOrRestToken = (s, i) => {
+    let j = i;
+    let acc = '';
+    while (j < s.length && (s[j] === '^' || s[j] === '_' || s[j] === '=')) { acc += s[j]; j++; }
+    if (j >= s.length) return null;
+
+    const ch = s[j];
+    if (!/[A-Ga-gzZxX]/.test(ch)) return null;
+
+    let token = acc + ch;
+    j++;
+
+    while (j < s.length && (s[j] === "'" || s[j] === ',')) { token += s[j]; j++; }
+
+    const lm = parseLengthMultiplier(s, j);
+    token += lm.lenStr;
+    j = lm.nextIndex;
+
+    const br = parseBrokenRhythm(s, j);
+    token += br.text;
+    j = br.nextIndex;
+
+    if (j < s.length && s[j] === '-') { token += '-'; j++; }
+
+    return { tokenText: token, dur: lm.mult, broken: br.has ? { first: br.first, second: br.second } : null, nextIndex: j };
+};
+
+const insertBarsByDuration = (music, barUnits) => {
+    const s = (music || '').replace(/\s+/g, ' ').trim();
+    if (!s) return '';
+    if (!barUnits || barUnits.n <= 0 || barUnits.d <= 0) return s; // fallback
+
+    let out = '';
+    let cur = frac(0, 1);
+    let pendingSecond = null;
+    let tuplet = null; // chỉ hỗ trợ (3 ... đơn giản
+
+    const append = (tok) => {
+        if (!tok) return;
+        if (!out) { out = tok; return; }
+        const needsSpace = !out.endsWith(' ') && !tok.startsWith(' ') && !tok.startsWith('|') && !tok.startsWith(':|') && !tok.startsWith('||') && !tok.startsWith('|:') && !tok.startsWith('|]') && !tok.startsWith('[|');
+        out += (needsSpace ? ' ' : '') + tok;
+    };
+
+    const resetBar = () => { cur = frac(0, 1); pendingSecond = null; tuplet = null; };
+
+    let i = 0;
+    const skipWs = () => { while (i < s.length && /\s/.test(s[i])) i++; };
+
+    while (i < s.length) {
+        skipWs();
+        if (i >= s.length) break;
+
+        // Comment
+        if (s[i] === '%') { append(s.slice(i)); break; }
+
+        // Barline (nếu user đã có)
+        const barTok = detectBarTokenAt(s, i);
+        if (barTok) {
+            append(barTok);
+            i += barTok.length;
+            resetBar();
+            continue;
+        }
+
+        // Decoration !...! or "..."  (không có duration)
+        if (s[i] === '!') {
+            const j = s.indexOf('!', i + 1);
+            if (j !== -1) { append(s.slice(i, j + 1)); i = j + 1; continue; }
+        }
+        if (s[i] === '"') {
+            const j = s.indexOf('"', i + 1);
+            if (j !== -1) { append(s.slice(i, j + 1)); i = j + 1; continue; }
+        }
+
+        // Tuplet (chỉ hỗ trợ (3 )
+        if (s[i] === '(' && i + 1 < s.length && /\d/.test(s[i + 1])) {
+            const m = s.slice(i).match(/^\((\d+)/);
+            if (m) {
+                const n = parseInt(m[1], 10);
+                const tok = `(${n}`;
+                append(tok);
+                i += tok.length;
+                if (n === 3) tuplet = { remain: 3, factor: frac(2, 3) };
+                else tuplet = null;
+                continue;
+            }
+        }
+
+        // Grace notes { ... } (0 duration)
+        if (s[i] === '{') {
+            const j = s.indexOf('}', i + 1);
+            if (j !== -1) { append(s.slice(i, j + 1)); i = j + 1; continue; }
+        }
+
+        // Inline field [V:..], [K:..], [M:..] ...
+        if (s[i] === '[') {
+            const close = s.indexOf(']', i + 1);
+            if (close !== -1) {
+                const inside = s.slice(i + 1, close);
+                if (/^[A-Za-z]:/.test(inside.trim())) {
+                    append(s.slice(i, close + 1));
+                    i = close + 1;
+                    continue;
+                }
+                // Chord [CEG]...
+                let j = close + 1;
+                const lm = parseLengthMultiplier(s, j);
+                j = lm.nextIndex;
+                const br = parseBrokenRhythm(s, j);
+                j = br.nextIndex;
+                let tie = '';
+                if (j < s.length && s[j] === '-') { tie = '-'; j++; }
+
+                let dur = lm.mult;
+                if (tuplet) {
+                    dur = fracMul(dur, tuplet.factor);
+                    tuplet.remain -= 1;
+                    if (tuplet.remain <= 0) tuplet = null;
+                }
+                if (pendingSecond) { dur = fracMul(dur, pendingSecond); pendingSecond = null; }
+                if (br.has) { dur = fracMul(dur, br.first); pendingSecond = br.second; }
+
+                if (!fracIsZero(cur) && fracCmp(fracAdd(cur, dur), barUnits) > 0) { append('|'); resetBar(); }
+                append(s.slice(i, close + 1) + lm.lenStr + br.text + tie);
+                cur = fracAdd(cur, dur);
+                if (fracCmp(cur, barUnits) === 0) { append('|'); resetBar(); }
+                i = j;
+                continue;
+            }
+        }
+
+        // Note / Rest
+        const note = parseNoteOrRestToken(s, i);
+        if (note) {
+            let dur = note.dur;
+
+            if (tuplet) {
+                dur = fracMul(dur, tuplet.factor);
+                tuplet.remain -= 1;
+                if (tuplet.remain <= 0) tuplet = null;
+            }
+
+            if (pendingSecond) { dur = fracMul(dur, pendingSecond); pendingSecond = null; }
+            if (note.broken) { dur = fracMul(dur, note.broken.first); pendingSecond = note.broken.second; }
+
+            if (!fracIsZero(cur) && fracCmp(fracAdd(cur, dur), barUnits) > 0) { append('|'); resetBar(); }
+            append(note.tokenText);
+            cur = fracAdd(cur, dur);
+            if (fracCmp(cur, barUnits) === 0) { append('|'); resetBar(); }
+
+            i = note.nextIndex;
+            continue;
+        }
+
+        // Fallback: ký tự khác (slur, tie rời, v.v.)
+        append(s[i]);
+        i += 1;
+    }
+
+    const normalized = out.replace(/\s+/g, ' ').trim();
+    return normalized;
+};
+
+const endsWithBarline = (s) => /(\|\:|\:\||\|\]|\[\||\|\||\|)\s*$/.test((s || '').trim());
+
+// --- Optimize helpers: auto-bar theo M/L nhưng vẫn giữ barline đặc biệt (|:, :|, ||, |], [|) ---
+const isSpecialBarToken = (tok) => {
+    if (!tok) return false;
+    if (tok === '|') return false;
+    // mọi barline không phải '|' thường được xem là đặc biệt
+    return tok.length > 1 || tok.includes(':') || tok.includes(']') || tok.includes('[');
+};
+
+// Re-bar theo duration trong từng đoạn nhạc, nhưng không xoá/đổi vị trí các barline đặc biệt.
+// Trả về { text, insertedBars, hadAnyBars, hadSpecialBars, rebarred }
+const autoBarPreserveSpecials = (music, barUnits) => {
+    const s = (music || '').replace(/\s+/g, ' ').trim();
+    if (!s) return { text: '', insertedBars: 0, hadAnyBars: false, hadSpecialBars: false, rebarred: false };
+
+    let i = 0;
+    const parts = [];
+    let buf = '';
+    let hadAnyBars = false;
+    let hadSpecialBars = false;
+
+    while (i < s.length) {
+        const barTok = detectBarTokenAt(s, i);
+        if (barTok) {
+            hadAnyBars = true;
+            if (isSpecialBarToken(barTok)) hadSpecialBars = true;
+            if (buf.trim() !== '') parts.push({ type: 'music', text: buf.trim() });
+            buf = '';
+            parts.push({ type: 'bar', tok: barTok });
+            i += barTok.length;
+            continue;
+        }
+        buf += s[i];
+        i += 1;
+    }
+    if (buf.trim() !== '') parts.push({ type: 'music', text: buf.trim() });
+
+    // nếu có barline thường '|' rải rác, ta sẽ "tái chia nhịp" (re-bar) cho gọn, nhưng vẫn giữ barline đặc biệt.
+    const rebarred = hadAnyBars;
+
+    const append = (out, tok) => {
+        if (!tok) return out;
+        if (!out) return tok;
+        const needsSpace = !out.endsWith(' ') && !tok.startsWith(' ') && !tok.startsWith('|') && !tok.startsWith(':|') && !tok.startsWith('||') && !tok.startsWith('|:') && !tok.startsWith('|]') && !tok.startsWith('[|');
+        return out + (needsSpace ? ' ' : '') + tok;
+    };
+
+    let out = '';
+    let insertedBars = 0;
+
+    for (let p = 0; p < parts.length; p++) {
+        const part = parts[p];
+        const next = parts[p + 1];
+
+        if (part.type === 'bar') {
+            out = append(out, part.tok);
+            continue;
+        }
+
+        // strip mọi '|' thường trong đoạn nhạc để re-bar theo M/L
+        const seg = (part.text || '').replace(/\|/g, ' ').replace(/\s+/g, ' ').trim();
+        if (!seg) continue;
+
+        let segAfter = insertBarsByDuration(seg, barUnits);
+        const segBars = (segAfter.match(/\|/g) || []).length;
+        insertedBars += segBars;
+
+        // nếu ngay sau đó là barline đặc biệt, bỏ bớt '|' cuối đoạn để tránh "| |:".
+        if (next && next.type === 'bar' && isSpecialBarToken(next.tok)) {
+            segAfter = segAfter.replace(/\|\s*$/g, '').trim();
+        }
+
+        out = append(out, segAfter);
+    }
+
+    const normalized = out.replace(/\s+/g, ' ').trim();
+    return { text: normalized, insertedBars, hadAnyBars, hadSpecialBars, rebarred };
+};
+
+
+const splitToMeasuresAndBars = (music) => {
+    const s = (music || '').trim();
+    const items = [];
+    let buf = '';
+    let i = 0;
+
+    const push = (barTok) => {
+        items.push({ measure: buf.trim(), bar: barTok });
+        buf = '';
+    };
+
+    while (i < s.length) {
+        const barTok = detectBarTokenAt(s, i);
+        if (barTok) {
+            push(barTok);
+            i += barTok.length;
+            continue;
+        }
+        buf += s[i];
+        i += 1;
+    }
+
+    if (buf.trim() !== '') items.push({ measure: buf.trim(), bar: null });
+    return items;
+};
+
+const wrapVoiceMusic = (voiceId, music, barsPerLine = 4) => {
+    let s = (music || '').replace(/\s+/g, ' ').trim();
+    if (!s) return [`[V:${voiceId}]`];
+
+    // Đảm bảo có barline cuối để dễ đọc (nếu đã có barline trong bài)
+    if (s.includes('|') && !endsWithBarline(s)) s = s + ' |';
+
+    const items = splitToMeasuresAndBars(s);
+    const outLines = [];
+    let line = `[V:${voiceId}] `;
+    let barCount = 0;
+
+    const flush = () => {
+        const t = line.trim();
+        if (t && t !== `[V:${voiceId}]`) outLines.push(t);
+        line = `[V:${voiceId}] `;
+    };
+
+    for (let k = 0; k < items.length; k++) {
+        const it = items[k];
+        if (it.measure) line += it.measure + ' ';
+        if (it.bar) {
+            line += it.bar + ' ';
+            // wrap theo "ô nhịp" thực tế: đếm barline kết thúc ô nhịp (|, ||, |], [|) và bỏ qua repeat marker (|:, :|)
+            const shouldCount = (tok) => tok === '|' || tok === '||' || tok === '|]' || tok === '[|';
+            if (shouldCount(it.bar)) {
+                barCount += 1;
+                if (barCount % barsPerLine === 0) flush();
+            }
+        }
+    }
+
+    flush();
+    return outLines.length ? outLines : [`[V:${voiceId}] ${s}`];
+};
+
+const optimizeAbcSmart = (raw) => {
+    const timing = parseTiming(raw);
+    const barUnits = timing.barUnits;
+
+    const lines = (raw || '').split('\n');
+    const header = [];
+    const body = [];
+    let inBody = false;
+
+    for (const line of lines) {
+        const isHeader = /^[A-Za-z]:/.test(line) || line.trim() === '' || line.trim().startsWith('%%');
+        if (!inBody && isHeader) header.push(line);
+        else {
+            inBody = true;
+            body.push(line);
+        }
+    }
+
+    // Gom theo voice (ưu tiên đúng với cấu trúc app)
+    const voiceOrder = [];
+    const voiceBuf = {};
+    const misc = [];
+    let currentVoice = null;
+
+    for (const line of body) {
+        const m = line.match(/^\s*\[V:(\d+)\]\s*(.*)$/);
+        if (m) {
+            currentVoice = parseInt(m[1], 10);
+            if (!voiceBuf[currentVoice]) { voiceBuf[currentVoice] = ''; voiceOrder.push(currentVoice); }
+            const rest = (m[2] || '').trim();
+            if (rest) voiceBuf[currentVoice] += (voiceBuf[currentVoice] ? ' ' : '') + rest;
+        } else if (currentVoice && line.trim() !== '') {
+            voiceBuf[currentVoice] += (voiceBuf[currentVoice] ? ' ' : '') + line.trim();
+        } else {
+            misc.push(line);
+        }
+    }
+
+    const out = [...header];
+
+    // giữ lại các dòng body lạ (nếu có)
+    const hasMisc = misc.some(l => l.trim() !== '');
+    if (hasMisc) out.push(...misc);
+
+    for (const vid of voiceOrder) {
+        let music = (voiceBuf[vid] || '').trim();
+        if (!music) { out.push(`[V:${vid}]`); continue; }
+
+        const auto = autoBarPreserveSpecials(music, barUnits);
+        music = auto.text;
+        if (music && music.includes('|') && !endsWithBarline(music)) music = music + ' |';
+
+        out.push(...wrapVoiceMusic(vid, music, 4));
+    }
+
+    return out.join('\n').replace(/\n{3,}/g, '\n\n').trimEnd();
+};
+
+
+const optimizeAbcSmartWithReport = (raw) => {
+    const timing = parseTiming(raw);
+    const barUnits = timing.barUnits;
+
+    const hasM = /^M:\s*/m.test(raw || '');
+    const hasL = /^L:\s*/m.test(raw || '');
+
+    const meterStr = `${timing.meter.n}/${timing.meter.d}`;
+    const LStr = `${timing.L.n}/${timing.L.d}`;
+
+    const lines = (raw || '').split('\n');
+    const header = [];
+    const body = [];
+    let inBody = false;
+
+    for (const line of lines) {
+        const isHeader = /^[A-Za-z]:/.test(line) || line.trim() === '' || line.trim().startsWith('%%');
+        if (!inBody && isHeader) header.push(line);
+        else {
+            inBody = true;
+            body.push(line);
+        }
+    }
+
+    // Gom theo voice (ưu tiên đúng với cấu trúc app)
+    const voiceOrder = [];
+    const voiceBuf = {};
+    const misc = [];
+    let currentVoice = null;
+
+    for (const line of body) {
+        const m = line.match(/^\s*\[V:(\d+)\]\s*(.*)$/);
+        if (m) {
+            currentVoice = parseInt(m[1], 10);
+            if (!voiceBuf[currentVoice]) { voiceBuf[currentVoice] = ''; voiceOrder.push(currentVoice); }
+            const rest = (m[2] || '').trim();
+            if (rest) voiceBuf[currentVoice] += (voiceBuf[currentVoice] ? ' ' : '') + rest;
+        } else if (currentVoice && line.trim() !== '') {
+            voiceBuf[currentVoice] += (voiceBuf[currentVoice] ? ' ' : '') + line.trim();
+        } else {
+            misc.push(line);
+        }
+    }
+
+    const out = [...header];
+
+    // giữ lại các dòng body lạ (nếu có)
+    const preservedMisc = misc.some(l => l.trim() !== '');
+    if (preservedMisc) out.push(...misc);
+
+    const report = { hasM, hasL, meterStr, LStr, barsPerLine: 4, preservedMisc, voices: [] };
+
+    for (const vid of voiceOrder) {
+        let music = (voiceBuf[vid] || '').trim();
+        if (!music) {
+            out.push(`[V:${vid}]`);
+            report.voices.push({ voiceId: vid, hadBarsBefore: false, hadSpecialBars: false, rebarred: false, insertedBars: 0, outLines: 1 });
+            continue;
+        }
+
+        // Auto-bar thông minh theo M/L (kể cả khi user có/không có vạch nhịp), nhưng vẫn giữ barline đặc biệt.
+        const auto = autoBarPreserveSpecials(music, barUnits);
+        const hadBars = auto.hadAnyBars;
+        const hadSpecialBars = auto.hadSpecialBars;
+        const rebarred = auto.rebarred;
+        let insertedBars = auto.insertedBars;
+
+        music = auto.text;
+        // đảm bảo có barline cuối để dễ đọc
+        if (music && music.includes('|') && !endsWithBarline(music)) music = music + ' |';
+
+        const wrapped = wrapVoiceMusic(vid, music, 4);
+        out.push(...wrapped);
+        report.voices.push({ voiceId: vid, hadBarsBefore: hadBars, hadSpecialBars, rebarred, insertedBars, outLines: wrapped.length });
+    }
+
+    const optimized = out.join('\n').replace(/\n{3,}/g, '\n\n').trimEnd();
+    return { text: optimized, report };
+};
+
+
+const handleOptimize = () => {
+    const before = abcText;
+    const { text: after, report } = optimizeAbcSmartWithReport(before);
+
+    const actions = [];
+    actions.push(`Đọc nhịp: M: ${report.meterStr}${report.hasM ? '' : ' (suy mặc định)'}; L: ${report.LStr}${report.hasL ? '' : ' (suy mặc định)'}.`);
+
+    const voices = (report.voices || []);
+    if (voices.length) {
+        voices.forEach(v => {
+            const vid = v.voiceId;
+            const ins = v.insertedBars || 0;
+            const rb = !!v.rebarred;
+            const hadSpec = !!v.hadSpecialBars;
+            if (rb) {
+                actions.push(`Tái chia nhịp cho Bè ${vid} theo M/L${hadSpec ? ' (giữ barline đặc biệt)' : ''}. Chèn/chuẩn hoá ${ins} vạch "|".`);
+            } else if (ins > 0) {
+                actions.push(`Tự chia nhịp cho Bè ${vid}: chèn ${ins} vạch "|" (theo M/L).`);
+            } else {
+                actions.push(`Bè ${vid}: không có gì để chia hoặc không suy được trường độ (giữ nguyên).`);
+            }
+        });
+    } else {
+        actions.push('Không tìm thấy bè để tối ưu.');
+    }
+
+    actions.push(`Ngắt dòng: ${report.barsPerLine} ô nhịp / dòng (mỗi bè giữ [V:n] ở đầu dòng).`);
+    actions.push('Chuẩn hoá khoảng trắng trong phần nhạc (gộp nhiều space thành 1).');
+    actions.push('Giữ nguyên các barline đặc biệt nếu có: |:, :|, ||, |], [|.');
+
+    if (report.preservedMisc) actions.push('Giữ nguyên các dòng body “lẻ” không thuộc voice (nếu có).');
+
+    setAbcText(after);
+    setOptReport({ actions, before, after });
+};
+
+
+            // --- COPY CLIPBOARD ---
+            const handleCopy = () => {
+                const textArea = document.createElement("textarea");
+                textArea.value = abcText;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    setIsCopied(true);
+                    setTimeout(() => setIsCopied(false), 2000);
+                } catch (err) {
+                    console.error('Copy failed', err);
+                }
+                document.body.removeChild(textArea);
+            };
+
+
+            const copyPlainText = (val) => {
+                const ta = document.createElement("textarea");
+                ta.value = val ?? '';
+                document.body.appendChild(ta);
+                ta.select();
+                try { document.execCommand('copy'); } catch (e) {}
+                document.body.removeChild(ta);
+            };
+
+            // --- UI RENDER ---
+            return (
+                <div className="flex flex-col h-screen font-sans text-slate-800">
+                    <header className="flex items-center justify-between px-6 py-3 bg-white border-b border-slate-200 shadow-sm h-16 shrink-0 z-10">
+                        <div className="flex items-center space-x-3">
+                            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-indigo-200 shadow-lg">
+                                <Music size={20} className="text-white" />
+                            </div>
+                            <h1 className="text-xl font-bold tracking-tight text-slate-900">Composer<span className="text-indigo-600">Pro</span></h1>
+                        </div>
+                        
+                        <div className="flex items-center bg-slate-100 rounded-lg p-1 space-x-1">
+                            <button onClick={togglePlay} className="p-2 hover:bg-white hover:shadow-sm rounded-md text-indigo-600 transition-all">
+                                {isPlaying ? <Pause size={18} /> : <Play size={18} className="ml-0.5" />}
+                            </button>
+                            <button onClick={stopAudio} className="p-2 hover:bg-white hover:shadow-sm rounded-md text-slate-600 transition-all">
+                                <Square size={18} />
+                            </button>
+                            <div className="w-px h-6 bg-slate-200 mx-1"></div>
+                            <button onClick={handleUndo} disabled={!canUndo} className={`p-2 rounded-md transition-all ${canUndo ? 'hover:bg-white hover:shadow-sm text-slate-600' : 'text-slate-300 cursor-not-allowed'}`} title="Undo (tối đa 5 bước)">
+                                <UndoIcon size={18} />
+                            </button>
+                            <button onClick={handleRedo} disabled={!canRedo} className={`p-2 rounded-md transition-all ${canRedo ? 'hover:bg-white hover:shadow-sm text-slate-600' : 'text-slate-300 cursor-not-allowed'}`} title="Redo (tối đa 5 bước)">
+                                <RedoIcon size={18} />
+                            </button>
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                            <button onClick={handleCopy} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-lg transition-colors flex items-center shadow-sm border border-slate-200">
+                                {isCopied ? <Check size={16} className="mr-2 text-green-600" /> : <CopyIcon size={16} className="mr-2" />}
+                                {isCopied ? 'Đã Copy!' : 'Copy ABC'}
+                            </button>
+                            
+                            <button onClick={handleOptimize} title="Optimize: tự chia nhịp + ngắt dòng" className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium rounded-lg transition-colors flex items-center shadow-md shadow-slate-200">
+                                <Sparkles size={16} className="mr-2" />
+                                Optimize
+                            </button>
+                        </div>
+                    </header>
+
+
+                        {optReport && (
+                            <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onMouseDown={() => setOptReport(null)}>
+                                <div className="bg-white w-full max-w-6xl rounded-xl shadow-xl border border-slate-200 overflow-hidden" onMouseDown={(e) => e.stopPropagation()}>
+                                    <div className="flex items-center justify-between px-5 py-3 border-b border-slate-200">
+                                        <div className="flex items-center">
+                                            <Sparkles size={18} className="mr-2 text-indigo-600" />
+                                            <div>
+                                                <div className="font-semibold text-slate-900">Optimize report</div>
+                                                <div className="text-xs text-slate-500">Before / After + những thay đổi vừa áp dụng</div>
+                                            </div>
+                                        </div>
+                                        <button onClick={() => setOptReport(null)} className="p-2 hover:bg-slate-100 rounded-lg text-slate-600">
+                                            <XIcon size={18} />
+                                        </button>
+                                    </div>
+
+                                    <div className="p-5 space-y-4 max-h-[80vh] overflow-auto">
+                                        <div className="text-sm">
+                                            <div className="font-medium text-slate-900 mb-2">Nó đã làm:</div>
+                                            <ul className="list-disc ml-5 space-y-1 text-slate-700">
+                                                {optReport.actions.map((a, i) => <li key={i}>{a}</li>)}
+                                            </ul>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                            <div className="bg-slate-50 border border-slate-200 rounded-xl overflow-hidden">
+                                                <div className="flex items-center justify-between px-4 py-2 border-b border-slate-200 bg-white">
+                                                    <div className="font-medium text-slate-900 text-sm">Before</div>
+                                                    <button onClick={() => copyPlainText(optReport.before)} className="text-xs px-3 py-1.5 rounded-md bg-slate-100 hover:bg-slate-200 border border-slate-200">Copy</button>
+                                                </div>
+                                                <pre className="p-4 text-xs font-mono whitespace-pre overflow-auto max-h-[38vh]">{optReport.before}</pre>
+                                            </div>
+
+                                            <div className="bg-slate-50 border border-slate-200 rounded-xl overflow-hidden">
+                                                <div className="flex items-center justify-between px-4 py-2 border-b border-slate-200 bg-white">
+                                                    <div className="font-medium text-slate-900 text-sm">After</div>
+                                                    <button onClick={() => copyPlainText(optReport.after)} className="text-xs px-3 py-1.5 rounded-md bg-slate-100 hover:bg-slate-200 border border-slate-200">Copy</button>
+                                                </div>
+                                                <pre className="p-4 text-xs font-mono whitespace-pre overflow-auto max-h-[38vh]">{optReport.after}</pre>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+
+                        {voiceMenu && (
+                            <div className="fixed z-50" style={{ left: voiceMenu.x, top: voiceMenu.y }} onMouseDown={(e) => e.stopPropagation()}>
+                                <div className="bg-white border border-slate-200 rounded-lg shadow-lg overflow-hidden min-w-[160px]">
+                                    <button onClick={() => deleteVoice(voiceMenu.voiceId)} className="w-full px-4 py-2 text-left text-sm hover:bg-slate-50 text-red-600 flex items-center">
+                                        <span className="mr-2">🗑️</span>
+                                        Xóa bè {voiceMenu.voiceId}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+
+                    <div className="flex flex-1 overflow-hidden p-4 gap-4">
+                        <div className="w-5/12 flex flex-col gap-4 min-w-[420px]">
+                            <div className="flex h-2/5 gap-4">
+                                <div className="w-1/2 bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
+                                    <div className="px-4 py-3 border-b border-slate-100 bg-slate-50 flex items-center">
+                                        <Edit3 size={16} className="text-indigo-500 mr-2" />
+                                        <h2 className="font-semibold text-sm">Thông tin & Trường độ</h2>
+                                    </div>
+                                    
+                                    <div className="p-4 space-y-4 overflow-y-auto">
+                                        <div className="space-y-3">
+                                            <input type="text" value={title} placeholder="Tên bài hát..." onChange={e => setTitle(e.target.value)} onBlur={(e) => updateHeaderField('T', e.target.value)} className="w-full text-sm border border-slate-200 p-2 rounded-lg focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 outline-none transition-all" />
+                                            
+                                            <div className="flex space-x-2">
+                                                <input type="text" value={composer} placeholder="Tác giả" onChange={e => setComposer(e.target.value)} onBlur={(e) => updateHeaderField('C', e.target.value)} className="flex-1 text-sm border border-slate-200 p-2 rounded-lg focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 outline-none transition-all" />
+                                                <select value={meter} onChange={e => { setMeter(e.target.value); updateHeaderField('M', e.target.value); }} className="w-20 text-sm border border-slate-200 p-2 rounded-lg outline-none cursor-pointer focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400" title="Nhịp">
+                                                    <option value="4/4">4/4</option>
+                                                    <option value="3/4">3/4</option>
+                                                    <option value="2/4">2/4</option>
+                                                    <option value="6/8">6/8</option>
+                                                </select>
+                                                <input type="number" value={tempo} placeholder="BPM" title="Tempo (BPM)" onChange={e => setTempo(e.target.value)} onBlur={(e) => updateHeaderField('Q', `1/4=${e.target.value}`)} className="w-20 text-sm border border-slate-200 p-2 rounded-lg focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 outline-none transition-all" />
+                                            </div>
+
+                                            {/* Bộ điều khiển Dấu hóa bộ Tự do (Visual Key Signature) */}
+                                            <div className="bg-slate-50 border border-slate-200 rounded-lg p-2">
+                                                <div className="flex justify-between items-center mb-2">
+                                                    <span className="text-xs text-slate-500 font-medium uppercase tracking-wider">Dấu hóa đầu dòng:</span>
+                                                    <div className="flex space-x-1">
+                                                        <button onClick={() => addSig('^')} className="px-2 py-1 bg-white border shadow-sm hover:bg-slate-100 rounded text-xs font-bold transition-colors">+ Thêm ♯</button>
+                                                        <button onClick={() => addSig('_')} className="px-2 py-1 bg-white border shadow-sm hover:bg-slate-100 rounded text-xs font-bold transition-colors">+ Thêm ♭</button>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className="space-y-1 max-h-24 overflow-y-auto">
+                                                    {customSigs.length === 0 && (
+                                                        <div className="text-xs text-slate-400 italic text-center py-1">Chưa có dấu hóa</div>
+                                                    )}
+                                                    {customSigs.map((sig, index) => (
+                                                        <div key={index} className="flex items-center justify-between bg-white p-1.5 border border-slate-100 shadow-sm rounded">
+                                                            <div className="flex items-center space-x-1 w-12">
+                                                                <span className="font-bold text-base text-indigo-700">{sig.type === '^' ? '♯' : '♭'}</span>
+                                                                <span className="text-xs font-bold text-slate-500">{NOTES[sig.noteIndex]}</span>
+                                                            </div>
+                                                            <div className="flex gap-1">
+                                                                <button onClick={() => moveSig(index, 1)} title="Chuyển lên" className="w-7 h-7 flex items-center justify-center bg-slate-50 hover:bg-slate-200 border rounded transition-colors text-xs">▲</button>
+                                                                <button onClick={() => moveSig(index, -1)} title="Chuyển xuống" className="w-7 h-7 flex items-center justify-center bg-slate-50 hover:bg-slate-200 border rounded transition-colors text-xs">▼</button>
+                                                            </div>
+                                                            <button onClick={() => removeSig(index)} title="Xóa" className="text-slate-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded transition-colors"><XIcon size={14}/></button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="pt-2 border-t border-slate-100">
+                                            <label className="block text-xs font-medium text-slate-500 mb-2 uppercase tracking-wider">Chọn trường độ nốt</label>
+                                            <div className="flex bg-slate-100 p-1 rounded-lg">
+                                                {[
+                                                    { val: '1', label: '𝅝', title: 'Tròn' },
+                                                    { val: '2', label: '𝅗𝅥', title: 'Trắng' },
+                                                    { val: '4', label: '𝅘𝅥', title: 'Đen' },
+                                                    { val: '8', label: '𝅘𝅥𝅮', title: 'Đơn' }
+                                                ].map(dur => (
+                                                    <button key={dur.val} onClick={() => setDuration(dur.val)} title={dur.title} className={`flex-1 py-1 text-2xl font-medium rounded-md transition-all flex items-center justify-center ${duration === dur.val ? 'bg-white shadow-sm text-indigo-700' : 'text-slate-600 hover:text-slate-900'}`}>
+                                                        {dur.label}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                            <button onClick={() => setIsDotted(!isDotted)} className={`mt-2 w-full py-2 text-xs font-medium rounded-lg border transition-all ${isDotted ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
+                                                {isDotted ? '✓ Đã bật dấu dôi (.)' : '+ Thêm dấu dôi (.)'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="w-1/2 bg-[#1E1E2E] rounded-xl shadow-sm border border-slate-800 flex flex-col overflow-hidden relative">
+                                    <div className="px-4 py-2 bg-[#181825] flex justify-between items-center border-b border-[#313244]">
+                                        <div className="flex items-center text-[#CDD6F4]">
+                                            <AlignLeft size={14} className="mr-2" />
+                                            <span className="font-mono text-xs font-semibold">Mã nguồn ABC</span>
+                                        </div>
+                                        <div className="bg-[#89B4FA] text-[#1E1E2E] text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                            Đang sửa: V{activeVoice}
+                                        </div>
+                                    </div>
+                                    <textarea ref={textAreaRef} value={abcText} onChange={handleTextAreaChange} onClick={handleTextAreaClickOrKey} onKeyUp={handleTextAreaClickOrKey} className="flex-1 w-full p-3 resize-none outline-none font-mono text-sm bg-transparent text-[#A6ADC8] leading-relaxed" spellCheck="false" />
+                                </div>
+                            </div>
+
+                            <div className="flex-1 bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col overflow-hidden relative">
+                                <div className="flex bg-slate-50 border-b border-slate-200 px-2 pt-2 gap-1">
+                                    {voices.map(v => (
+                                        <button key={v.id} onClick={() => changeVoiceTab(v.id)} onContextMenu={(e) => openVoiceContextMenu(e, v.id)} className={`px-5 py-2 text-sm font-medium rounded-t-lg flex items-center space-x-2 transition-colors ${activeVoice === v.id ? 'bg-white border-t border-l border-r border-slate-200 text-indigo-700 shadow-[0_2px_0_0_white] z-10' : 'bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-700 border-t border-l border-r border-transparent'}`}>
+                                            <span className="text-lg leading-none">{v.clef === 'treble' ? '𝄞' : '𝄢'}</span>
+                                            <span>Bè {v.id}</span>
+                                        </button>
+                                    ))}
+                                    
+                                    {voices.length < 2 && (
+                                        <div className="relative ml-2 flex items-end pb-1">
+                                            <button onClick={() => setShowAddVoice(!showAddVoice)} className="px-3 py-1.5 text-xs text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-md font-medium flex items-center transition-colors">
+                                                <Plus size={14} className="mr-1" /> Thêm Bè
+                                            </button>
+                                            {showAddVoice && (
+                                                <div className="absolute top-full left-0 mt-1 w-40 bg-white border border-slate-200 rounded-lg shadow-xl z-20 py-1 text-sm overflow-hidden">
+                                                    <button onClick={() => addVoice('treble')} className="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center"><span className="text-lg mr-2">𝄞</span> Khóa Sol</button>
+                                                    <button onClick={() => addVoice('bass')} className="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center"><span className="text-lg mr-2">𝄢</span> Khóa Fa</button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="flex-1 p-4 overflow-y-auto select-none bg-white">
+                                    <div className="flex flex-wrap gap-2 mb-6">
+                                        {SYMBOLS.map((sym, idx) => (
+                                            <button key={idx} onDoubleClick={() => insertSmartText(sym.val)} title={sym.title} className="px-4 py-2 bg-slate-50 text-slate-700 border border-slate-200 rounded-lg text-lg hover:bg-slate-100 hover:border-slate-300 transition-all font-mono shadow-sm active:scale-95 flex items-center justify-center min-w-[40px]">
+                                                {sym.label}
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        {OCTAVES.slice().reverse().map(oct => (
+                                            <div key={oct.id} className="flex items-stretch bg-slate-50 rounded-lg border border-slate-100 overflow-hidden">
+                                                <div className="w-20 bg-slate-100 text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center justify-center border-r border-slate-200">
+                                                    {oct.label}
+                                                </div>
+                                                <div className="flex flex-1 p-1 gap-1 bg-white">
+                                                    {NOTES.map(note => (
+                                                        <button key={`${note}-${oct.id}`} onDoubleClick={() => handleNoteDoubleClick(note, oct)} onMouseDown={(e) => handleMouseDown(e, note, oct)} onMouseUp={handleMouseUpOrLeave} onMouseLeave={handleMouseUpOrLeave} className="flex-1 py-3 bg-white border border-slate-200 rounded-md text-center font-mono font-bold text-slate-700 hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-700 active:bg-indigo-100 active:scale-95 transition-all relative group shadow-sm">
+                                                            {oct.lowerCase ? note.toLowerCase() : note}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {longPressTarget && (
+                                    <div className="fixed z-50 bg-slate-800 text-white rounded-lg shadow-2xl flex p-1.5 gap-1 transform -translate-x-1/2" style={{ top: longPressTarget.y, left: longPressTarget.x }}>
+                                        <button onClick={() => selectAccidental('^')} className="px-4 py-1.5 hover:bg-slate-700 rounded-md text-xl font-bold transition-colors">♯</button>
+                                        <div className="w-px bg-slate-600 my-1"></div>
+                                        <button onClick={() => selectAccidental('_')} className="px-4 py-1.5 hover:bg-slate-700 rounded-md text-xl font-bold transition-colors">♭</button>
+                                        <div className="w-px bg-slate-600 my-1"></div>
+                                        <button onClick={() => selectAccidental('=')} className="px-4 py-1.5 hover:bg-slate-700 rounded-md text-xl font-bold transition-colors">♮</button>
+                                        <button onClick={() => setLongPressTarget(null)} className="px-2 py-1.5 hover:bg-red-500 rounded-md ml-1 transition-colors"><XIcon size={16}/></button>
+                                        <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-slate-800"></div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="w-7/12 bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
+                            <div className="bg-slate-50 border-b border-slate-200 px-5 py-3 flex justify-between items-center z-10">
+                                <div className="flex items-center text-slate-700">
+                                    <Layers size={16} className="mr-2 text-indigo-500" />
+                                    <h2 className="font-semibold text-sm">Bản nhạc trực tiếp (Live Preview)</h2>
+                                </div>
+                                {!abcjsLoaded && <span className="text-xs font-medium text-amber-500 animate-pulse">Đang tải ABCJS...</span>}
+                            </div>
+                            
+                            <div className="flex-1 p-8 overflow-auto bg-[#F8FAFC]">
+                                <div ref={renderAreaRef} className="bg-white shadow-md border border-slate-200 rounded-lg min-h-full p-6 transition-all duration-300"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
