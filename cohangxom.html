@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -18,6 +19,22 @@
         /* ABCJS rendering polish */
         .abcjs-wrap svg { width: 100% !important; height: auto !important; display: block; }
         .abcjs-wrap svg * { shape-rendering: geometricPrecision; }
+
+        /* Playback highlight */
+        .abcjs-wrap .note-played path,
+        .abcjs-wrap .note-played text,
+        .abcjs-wrap .note-played {
+            fill: #7c3aed !important;
+            stroke: #7c3aed !important;
+            opacity: 1 !important;
+        }
+        .abcjs-wrap .note-current path,
+        .abcjs-wrap .note-current text,
+        .abcjs-wrap .note-current {
+            fill: #2563eb !important;
+            stroke: #2563eb !important;
+            opacity: 1 !important;
+        }
     </style>
 
 </head>
@@ -339,6 +356,13 @@ Tay trai: La3-trang, 7-trang; La3-trang, 7-trang;`;
             const textAreaRef = useRef(null);
             const renderAreaRef = useRef(null);
             const synthRef = useRef(null);
+
+            // Audio playback controller (for repeat + synced cursor)
+            const synthControlRef = useRef(null);
+            const audioCtxRef = useRef(null);
+            const visualObjRef = useRef(null);
+            const audioPreparedRef = useRef(false);
+            const lastCurrentElsRef = useRef([]);
 
             // --- UNDO/REDO (tối đa 5 bước) ---
             const MAX_HISTORY = 5;
@@ -664,17 +688,100 @@ Tay trai: La3-trang, 7-trang; La3-trang, 7-trang;`;
 
                 return () => {
                     document.body.removeChild(script);
-                    if (synthRef.current) synthRef.current.stop();
+                    try { if (synthControlRef.current) synthControlRef.current.pause(); } catch (e) {}
                 };
             }, []);
 
             // --- HÀM RENDER & AUDIO (LIVE PREVIEW) ---
+            const clearPlaybackHighlights = () => {
+                const root = renderAreaRef.current || document;
+                try {
+                    root.querySelectorAll('.note-played').forEach(el => el.classList.remove('note-played'));
+                    root.querySelectorAll('.note-current').forEach(el => el.classList.remove('note-current'));
+                } catch (e) {}
+                lastCurrentElsRef.current = [];
+            };
+
+            const flatElements = (els) => {
+                const out = [];
+                const add = (x) => {
+                    if (!x) return;
+                    if (Array.isArray(x)) return x.forEach(add);
+                    if (x.classList) out.push(x);
+                };
+                add(els);
+                return out;
+            };
+
+            const ensureSynthController = () => {
+                if (!window.ABCJS || !window.ABCJS.synth || !window.ABCJS.synth.supportsAudio || !window.ABCJS.synth.supportsAudio()) return null;
+                if (synthControlRef.current) return synthControlRef.current;
+
+                // Hidden DOM node for abcjs control (we use our own buttons)
+                const holderId = 'abcjs-audio-hidden';
+                let holder = document.getElementById(holderId);
+                if (!holder) {
+                    holder = document.createElement('div');
+                    holder.id = holderId;
+                    holder.style.display = 'none';
+                    document.body.appendChild(holder);
+                }
+
+                // CursorControl for synced highlighting
+                const cursorControl = {
+                    onStart: () => {
+                        // reset only when starting from beginning
+                    },
+                    onFinished: () => {
+                        // Remove "current" highlight but keep "played"
+                        try {
+                            lastCurrentElsRef.current.forEach(el => el.classList && el.classList.remove('note-current'));
+                        } catch (e) {}
+                        lastCurrentElsRef.current = [];
+                        try { synthControlRef.current && synthControlRef.current.restart(); } catch (e) {}
+                        setIsPlaying(false);
+                    },
+                    onEvent: (ev) => {
+                        // clear previous current
+                        try {
+                            lastCurrentElsRef.current.forEach(el => el.classList && el.classList.remove('note-current'));
+                        } catch (e) {}
+                        lastCurrentElsRef.current = [];
+
+                        if (!ev || !ev.elements) return;
+
+                        const els = flatElements(ev.elements);
+                        lastCurrentElsRef.current = els;
+
+                        // cumulative "played" + current
+                        els.forEach(el => {
+                            try {
+                                el.classList.add('note-played');
+                                el.classList.add('note-current');
+                            } catch (e) {}
+                        });
+                    }
+                };
+
+                const sc = new window.ABCJS.synth.SynthController();
+                sc.load('#' + holderId, cursorControl, {
+                    displayLoop: false,
+                    displayRestart: false,
+                    displayPlay: false,
+                    displayProgress: false,
+                    displayWarp: false,
+                });
+
+                synthControlRef.current = sc;
+                return sc;
+            };
+
             const renderSheetMusic = useCallback((text) => {
                 if (!window.ABCJS || !renderAreaRef.current) return;
                 try {
                     const el = renderAreaRef.current;
                     const w = Math.max(360, Math.floor((el.clientWidth || 740) - 2));
-                    window.ABCJS.renderAbc(el, text, {
+                    const visualObjs = window.ABCJS.renderAbc(el, text, {
                         responsive: 'resize',
                         add_classes: true,
                         staffwidth: w,
@@ -683,6 +790,15 @@ Tay trai: La3-trang, 7-trang; La3-trang, 7-trang;`;
                         paddingleft: 14,
                         paddingright: 14,
                     });
+                    visualObjRef.current = (visualObjs && visualObjs[0]) ? visualObjs[0] : null;
+
+                    // Mark audio as dirty whenever we re-render
+                    audioPreparedRef.current = false;
+
+                    // Prepare internal audio mapping so repeat/char positions are stable
+                    if (visualObjRef.current && typeof visualObjRef.current.setUpAudio === 'function') {
+                        try { visualObjRef.current.setUpAudio(); } catch (e) {}
+                    }
                 } catch (err) {
                     console.warn("Đang chờ người dùng nhập đúng cú pháp...");
                 }
@@ -690,41 +806,70 @@ Tay trai: La3-trang, 7-trang; La3-trang, 7-trang;`;
 
             useEffect(() => {
                 if (abcjsLoaded) {
+                    // Changing the tune while playing -> stop playback & clear highlights
+                    if (isPlaying) {
+                        try { synthControlRef.current && synthControlRef.current.pause(); } catch (e) {}
+                        setIsPlaying(false);
+                    }
+                    clearPlaybackHighlights();
                     renderSheetMusic(abcText);
                 }
             }, [abcText, abcjsLoaded, renderSheetMusic]);
 
             const togglePlay = () => {
                 if (!window.ABCJS) return;
-                
+                const sc = ensureSynthController();
+                if (!sc) return;
+
+                // Pause
                 if (isPlaying) {
-                    if (synthRef.current) synthRef.current.pause();
+                    try { sc.pause(); } catch (e) {}
                     setIsPlaying(false);
                     return;
                 }
 
-                if (!synthRef.current) {
-                    synthRef.current = new window.ABCJS.synth.CreateSynth();
+                // Resume / Play
+                if (audioPreparedRef.current) {
+                    try { sc.play(); } catch (e) {}
+                    setIsPlaying(true);
+                    return;
                 }
 
-                const visualObj = window.ABCJS.renderAbc("*", abcText)[0];
-                
-                synthRef.current.init({
-                    audioContext: new (window.AudioContext || window.webkitAudioContext)(),
-                    visualObj: visualObj,
-                }).then(() => {
-                    synthRef.current.prime().then(() => {
-                        synthRef.current.start();
-                        setIsPlaying(true);
-                    });
+                // First time (or after ABC changed): (re)load tune into synth
+                if (!visualObjRef.current) {
+                    // Ensure at least one render happened
+                    try { renderSheetMusic(abcText); } catch (e) {}
+                }
+                if (!visualObjRef.current) return;
+
+                // Reuse a single AudioContext for iOS stability
+                if (!audioCtxRef.current) {
+                    try { audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { audioCtxRef.current = undefined; }
+                }
+
+                clearPlaybackHighlights();
+                const audioParams = {
+                    audioContext: audioCtxRef.current,
+                    chordsOff: true,
+                };
+
+                sc.setTune(visualObjRef.current, true, audioParams).then(() => {
+                    audioPreparedRef.current = true;
+                    sc.play();
+                    setIsPlaying(true);
+                }).catch((err) => {
+                    console.warn("Audio problem:", err);
                 });
             };
 
             const stopAudio = () => {
-                if (synthRef.current) {
-                    synthRef.current.stop();
-                    setIsPlaying(false);
+                const sc = synthControlRef.current;
+                if (sc) {
+                    try { sc.pause(); } catch (e) {}
+                    try { sc.restart(); } catch (e) {}
                 }
+                clearPlaybackHighlights();
+                setIsPlaying(false);
             };
 
             // --- HOTKEYS ---
