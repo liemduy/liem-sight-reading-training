@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -430,7 +431,8 @@
         <div class="panel-footer">
           <div class="btn-row">
             <button id="btnRender" class="mini"><i class="fa-solid fa-wand-magic-sparkles"></i> Render</button>
-            <button id="btnPreview" class="mini" title="Preview audio"><i class="fa-solid fa-headphones"></i> Preview</button>
+            <button id="btnPrevPlayPause" class="mini" title="Play/Pause preview"><i class="fa-solid fa-play"></i> Play</button>
+            <button id="btnPrevStop" class="mini" title="Stop preview" disabled><i class="fa-solid fa-stop"></i></button>
             <button id="btnReset" class="mini" title="Reset to sample"><i class="fa-solid fa-rotate-left"></i></button>
           </div>
           <div style="display:flex; gap:8px; align-items:center;">
@@ -2127,41 +2129,141 @@ V:LH clef=bass name="LH"
       rhythmRAF = requestAnimationFrame(tick);
     };
 
-    // ---------- Preview playback (simple, no UI controls) ----------
+    // ---------- Preview playback (Play/Pause + Stop) ----------
     let previewSynth = null;
-    let previewPlaying = false;
+    let previewState = 'stopped'; // 'stopped' | 'playing' | 'paused'
+    let previewBoundVisualObj = null;
+    let previewDurationSec = 0;
+    let previewTimer = null;
+    let previewPlayedMs = 0;
+    let previewLastStartMs = 0;
 
-    const previewToggle = async () => {
-      if (!state.currentSong.visualObj) renderAbc();
-      if (!state.currentSong.visualObj) return;
+    const clearPreviewTimer = () => {
+      if (previewTimer) { clearTimeout(previewTimer); previewTimer = null; }
+    };
 
-      try {
-        if (previewPlaying && previewSynth) {
-          previewSynth.stop();
-          previewPlaying = false;
-          showToast('Preview stopped');
-          return;
-        }
+    const updatePreviewUI = () => {
+      const btn = $('btnPrevPlayPause');
+      const stopBtn = $('btnPrevStop');
+      if (!btn || !stopBtn) return;
 
-        previewSynth = new ABCJS.synth.CreateSynth();
-        await previewSynth.init({
-          visualObj: state.currentSong.visualObj,
-          options: {
-            soundFontUrl: "https://paulrosen.github.io/midi-js-soundfonts/FluidR3_GM/",
-            program: 0
-          }
-        });
-        await previewSynth.prime();
-        previewSynth.start();
-        previewPlaying = true;
-        showToast('Preview playing');
-      } catch (e) {
-        console.error(e);
-        showToast('Preview audio not available (browser blocked).');
+      if (previewState === 'playing') {
+        btn.innerHTML = '<i class="fa-solid fa-pause"></i> Pause';
+        btn.title = 'Pause preview';
+        stopBtn.disabled = false;
+      } else if (previewState === 'paused') {
+        btn.innerHTML = '<i class="fa-solid fa-play"></i> Resume';
+        btn.title = 'Resume preview';
+        stopBtn.disabled = false;
+      } else {
+        btn.innerHTML = '<i class="fa-solid fa-play"></i> Play';
+        btn.title = 'Play preview';
+        stopBtn.disabled = true;
       }
     };
 
-    // ---------- Storage (Recent) ----------
+    const schedulePreviewEnd = () => {
+      clearPreviewTimer();
+      if (!previewDurationSec) return;
+      const remainingMs = Math.max(0, previewDurationSec * 1000 - previewPlayedMs);
+      // Add a tiny buffer so we don't flip state too early.
+      previewTimer = setTimeout(() => {
+        previewState = 'stopped';
+        previewPlayedMs = 0;
+        updatePreviewUI();
+      }, remainingMs + 80);
+    };
+
+    const ensurePreviewSynth = async () => {
+      if (!state.currentSong.visualObj) renderAbc();
+      if (!state.currentSong.visualObj) return false;
+      if (!window.ABCJS || !ABCJS.synth || !ABCJS.synth.CreateSynth) {
+        showToast('ABCJS audio not loaded.');
+        return false;
+      }
+
+      // If tune changed while stopped, rebuild synth.
+      if (!previewSynth || previewBoundVisualObj !== state.currentSong.visualObj) {
+        previewSynth = new ABCJS.synth.CreateSynth();
+        previewBoundVisualObj = state.currentSong.visualObj;
+        previewDurationSec = 0;
+        previewPlayedMs = 0;
+        previewState = 'stopped';
+
+        try {
+          await previewSynth.init({
+            visualObj: state.currentSong.visualObj,
+            options: {
+              soundFontUrl: "https://paulrosen.github.io/midi-js-soundfonts/FluidR3_GM/",
+              program: 0
+            }
+          });
+          const resp = await previewSynth.prime();
+          previewDurationSec = (resp && typeof resp.duration === 'number') ? resp.duration : 0;
+        } catch (e) {
+          console.error(e);
+          showToast('Preview audio not available (browser blocked).');
+          previewSynth = null;
+          previewBoundVisualObj = null;
+          return false;
+        }
+      }
+      return true;
+    };
+
+    const previewPlayPause = async () => {
+      const ok = await ensurePreviewSynth();
+      if (!ok || !previewSynth) return;
+
+      try {
+        if (previewState === 'playing') {
+          previewSynth.pause();
+          previewState = 'paused';
+          previewPlayedMs += (performance.now() - previewLastStartMs);
+          clearPreviewTimer();
+          updatePreviewUI();
+          return;
+        }
+
+        if (previewState === 'paused') {
+          previewSynth.resume();
+          previewState = 'playing';
+          previewLastStartMs = performance.now();
+          schedulePreviewEnd();
+          updatePreviewUI();
+          return;
+        }
+
+        // stopped -> start
+        previewSynth.start();
+        previewState = 'playing';
+        previewLastStartMs = performance.now();
+        schedulePreviewEnd();
+        updatePreviewUI();
+      } catch (e) {
+        console.error(e);
+        showToast('Preview audio not available (browser blocked).');
+        previewState = 'stopped';
+        previewPlayedMs = 0;
+        clearPreviewTimer();
+        updatePreviewUI();
+      }
+    };
+
+    const previewStop = () => {
+      if (!previewSynth) return;
+      try {
+        previewSynth.stop(); // resets to beginning
+      } catch (e) {
+        console.error(e);
+      }
+      previewState = 'stopped';
+      previewPlayedMs = 0;
+      clearPreviewTimer();
+      updatePreviewUI();
+    };
+
+// ---------- Storage (Recent) ----------
     const STORAGE_KEY = 'liem_piano_coach_recent_v1';
     const loadRecent = () => {
       try {
@@ -2281,9 +2383,10 @@ V:LH clef=bass name="LH"
 
       $('btnRender').onclick = renderAbc;
       $('btnReset').onclick = () => { $('abcInput').value = DEFAULT_ABC; renderAbc(); };
-      $('btnPreview').onclick = previewToggle;
-
-      $('tab-abc').onclick = () => switchTab('abc');
+      $('btnPrevPlayPause').onclick = previewPlayPause;
+      $('btnPrevStop').onclick = previewStop;
+      updatePreviewUI();
+$('tab-abc').onclick = () => switchTab('abc');
       $('tab-recent').onclick = () => switchTab('recent');
 
       $('btnSave').onclick = () => {
