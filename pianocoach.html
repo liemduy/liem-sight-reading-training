@@ -78,9 +78,76 @@
       50%{ transform: scale(1.7); }
       to{ transform: scale(1); }
     }
-    @media (max-width: 1020px){
-      .metroSelect{ display:none; }
-      .metroLed{ display:none; }
+    
+    /* --- Metronome Popover (compact header) --- */
+    .backdrop{
+      position:fixed; inset:0;
+      background:rgba(0,0,0,0.35);
+      z-index:40;
+    }
+    .metroPopover{
+      position:absolute;
+      top:62px; right:16px;
+      width:340px;
+      background:var(--bg-panel);
+      border:1px solid var(--border);
+      border-radius:16px;
+      box-shadow: var(--shadow);
+      padding:12px;
+      z-index:50;
+      transform: translateY(-6px) scale(0.985);
+      opacity:0;
+      pointer-events:none;
+      transition: opacity 140ms ease, transform 140ms ease;
+    }
+    .metroPopover.open{
+      opacity:1;
+      transform: translateY(0) scale(1);
+      pointer-events:auto;
+    }
+    .metroPopHead{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:10px;
+      margin-bottom:10px;
+    }
+    .metroPopTitle{
+      font-weight:900;
+      display:flex; align-items:center; gap:8px;
+    }
+    .iconBtn{
+      width:34px; height:34px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background:rgba(0,0,0,0.02);
+      cursor:pointer;
+      display:flex; align-items:center; justify-content:center;
+    }
+    .iconBtn:hover{ background:rgba(0,0,0,0.06); }
+
+    .metroPopGrid{ display:flex; flex-direction:column; gap:10px; }
+    .metroPopRow{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+    }
+    .metroPopRow .lbl{ font-weight:900; font-size:12px; opacity:.9; }
+    .rowInline{ display:flex; align-items:center; gap:8px; }
+    .metroPopGrid .hint{
+      font-size:12px; opacity:.85; line-height:1.35;
+      border-top:1px solid var(--border);
+      padding-top:10px; margin-top:2px;
+    }
+
+    @media (max-width: 760px){
+      .metroPopover{
+        position:fixed;
+        left:12px; right:12px;
+        bottom:12px; top:auto;
+        width:auto;
+        border-radius:18px;
+      }
+    }
+
+@media (max-width: 1020px){
+      #metroCluster .metroLed{ display:none; }
     }
 
     .pill{
@@ -356,43 +423,16 @@
         <i class="fa-solid fa-plug"></i><span id="midiText">MIDI Off</span>
       </div>
 
-      <div id="metroCluster" class="metroCluster" title="Metronome (Tick/Flash). Click BPM to start/stop.">
+      <div id="metroCluster" class="metroCluster" title="Metronome. Click BPM to start/stop. Use ⋯ for settings.">
         <button id="btnMetro" class="pill ghost metroBtn" title="Metronome on/off (syncs to song meter & BPM)">
           <i class="fa-solid fa-stopwatch"></i>
           <span style="font-weight:900;">BPM</span>
           <span id="metroBpm" class="bpm" style="font-weight:900;">80</span>
         </button>
-        <select id="metroSubdiv" class="metroSelect compact" title="Subdivision (beat split)">
-          <option value="1" selected>1/4</option>
-          <option value="2">1/8</option>
-          <option value="4">1/16</option>
-        </select>
 
-        <button id="btnMetroTick" class="pill ghost metroMini" title="Tick sound on/off">
-          <i class="fa-solid fa-volume-high"></i>
+        <button id="btnMetroMenu" class="pill ghost metroMini" title="Metronome settings">
+          <i class="fa-solid fa-ellipsis"></i>
         </button>
-        <button id="btnMetroFlash" class="pill ghost metroMini" title="Flash (LED) on/off">
-          <i class="fa-solid fa-bolt"></i>
-        </button>
-        <select id="metroSound" class="metroSelect" title="Tick sound">
-          <option value="click" selected>Click</option>
-          <option value="beep">Beep</option>
-          <option value="wood">Wood</option>
-          <option value="hihat">HiHat</option>
-          <option value="clave">Clave</option>
-          <option value="random">Random</option>
-        </select>
-        <button id="btnMetroAccent" class="pill ghost metroMini" title="Accent beat 1 (different sound)">
-          <i class="fa-solid fa-star"></i>
-        </button>
-        <select id="metroAccentSound" class="metroSelect compact" title="Accent sound (beat 1)">
-          <option value="click">Click</option>
-          <option value="beep">Beep</option>
-          <option value="wood" selected>Wood</option>
-          <option value="hihat">HiHat</option>
-          <option value="clave">Clave</option>
-          <option value="random">Random</option>
-        </select>
 
         <div id="metroLed" class="metroLed" aria-label="Beat indicator"></div>
       </div>
@@ -411,6 +451,72 @@
       <button id="btnPractice" class="pill primary"><i class="fa-solid fa-play"></i> Practice</button>
     </div>
   </header>
+
+  <!-- Metronome Popover (Compact A) -->
+  <div id="metroBackdrop" class="backdrop" style="display:none;"></div>
+  <div id="metroPopover" class="metroPopover" style="display:none;" role="dialog" aria-label="Metronome settings">
+    <div class="metroPopHead">
+      <div class="metroPopTitle"><i class="fa-solid fa-stopwatch"></i> Metronome</div>
+      <button id="btnMetroPopClose" class="iconBtn" title="Close"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <div class="metroPopGrid">
+      <div class="metroPopRow">
+        <div class="lbl">Subdivision</div>
+        <select id="metroSubdiv" class="metroSelect compact" title="Subdivision">
+          <option value="1">1/4</option>
+          <option value="2">1/8</option>
+          <option value="4">1/16</option>
+        </select>
+      </div>
+
+      <div class="metroPopRow">
+        <div class="lbl">Tick</div>
+        <div class="rowInline">
+          <button id="btnMetroTick" class="pill ghost metroMini" title="Tick on/off">
+            <i class="fa-solid fa-volume-high"></i>
+          </button>
+          <select id="metroSound" class="metroSelect" title="Tick sound">
+            <option value="click">Click</option>
+            <option value="beep">Beep</option>
+            <option value="wood">Wood</option>
+            <option value="hihat">HiHat</option>
+            <option value="clave">Clave</option>
+            <option value="random">Random</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="metroPopRow">
+        <div class="lbl">Flash</div>
+        <button id="btnMetroFlash" class="pill ghost metroMini" title="Flash on/off">
+          <i class="fa-solid fa-bolt"></i>
+        </button>
+      </div>
+
+      <div class="metroPopRow">
+        <div class="lbl">Accent</div>
+        <div class="rowInline">
+          <button id="btnMetroAccent" class="pill ghost metroMini" title="Accent on beat 1">
+            <i class="fa-solid fa-star"></i>
+          </button>
+          <select id="metroAccentSound" class="metroSelect" title="Accent sound (beat 1)">
+            <option value="wood">Wood</option>
+            <option value="click">Click</option>
+            <option value="beep">Beep</option>
+            <option value="hihat">HiHat</option>
+            <option value="clave">Clave</option>
+            <option value="random">Random</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="hint">
+        Click <b>BPM</b> on the header to start/stop. Meter &amp; BPM sync to the song. In <b>Rhythm</b> mode, starting practice re-syncs the phase so beat 1 lines up.
+      </div>
+    </div>
+  </div>
+
 
   <div id="app">
     <div id="main">
@@ -1316,11 +1422,20 @@ const extractSteps = () => {
 
     // 1) Parse -> eventsByVoice + voiceOrder
     const { voiceOrder, eventsByVoice } = parseVoiceEvents(abc);
+    // Timing: parser uses "ticks" where 100 ticks = 1 *default note length* (L:), NOT real milliseconds.
+    // Convert ticks -> real milliseconds at the song's base tempo so Rhythm mode can compare against performance.now().
+    const meta = parseMetaFromAbc(abc);
+    const bpmBase = (meta && meta.bpm) ? meta.bpm : (state.currentSong.baseBpm || state.settings.bpm || 80);
+    const q = (meta && meta.qNum && meta.qDen) ? (meta.qNum / meta.qDen) : (1/4);   // tempo unit from Q:
+    const L = (meta && meta.lNum && meta.lDen) ? (meta.lNum / meta.lDen) : (1/8);   // default note length from L:
+    const unitMsBase = (60000 / Math.max(1, bpmBase)) * (L / q); // ms for 1 *L* at base tempo
+    const tickMsBase = unitMsBase / 100; // ms for 1 parser tick
+
 
     // 2) Gộp theo thời điểm
     const stepsByTime = new Map(); // timeMs -> step
     const addEventToStep = (evt) => {
-        const t = Math.round(evt.timeMs);
+        const t = Math.round(evt.timeMs * tickMsBase);
         if (!stepsByTime.has(t)) stepsByTime.set(t, { timeMs: t, pitches: [], elements: [], elementPitches: [] });
         const step = stepsByTime.get(t);
         step.pitches.push(...evt.pitches);
@@ -1363,7 +1478,7 @@ const extractSteps = () => {
         const evt = evts[idx];
         if (!evt) return;
 
-        const t = Math.round(evt.timeMs);
+        const t = Math.round(evt.timeMs * tickMsBase);
         const step = stepsByTime.get(t);
         if (!step) return;
 
@@ -1570,13 +1685,38 @@ V:LH clef=bass name="LH"
       return (m && m[1] ? m[1].trim() : 'Untitled');
     };
     const parseMetaFromAbc = (abc) => {
-      const q = abc.match(/^Q:.*?(\d+)\s*$/m);
-      const bpm = q ? parseInt(q[1],10) : 80;
-      const m = abc.match(/^M:(.*)$/m);
-      const meter = m ? m[1].trim() : '4/4';
-      const k = abc.match(/^K:(.*)$/m);
-      const key = k ? k[1].trim() : 'C';
-      return { bpm, meter, key };
+      // Parse tempo Q: (supports Q:1/4=80, Q:80, Q:=80, and ignores extra text)
+      const qLineMatch = abc.match(/^Q:(.*)$/m);
+      const qLine = qLineMatch ? qLineMatch[1].trim() : '';
+      let bpm = 80;
+      let qNum = 1, qDen = 4; // tempo unit, default 1/4
+      let m = qLine.match(/(\d+)\s*\/\s*(\d+)\s*=\s*(\d+)/);
+      if (m) {
+        qNum = parseInt(m[1], 10) || 1;
+        qDen = parseInt(m[2], 10) || 4;
+        bpm = parseInt(m[3], 10) || 80;
+      } else {
+        // try "=80" or "80"
+        const mEq = qLine.match(/=\s*(\d+)/);
+        const mNum = qLine.match(/(\d+)/);
+        if (mEq) bpm = parseInt(mEq[1], 10) || 80;
+        else if (mNum) bpm = parseInt(mNum[1], 10) || 80;
+      }
+
+      // Parse default note length L: (supports L:1/8). ABC default is often 1/8 for common meters.
+      const lMatch = abc.match(/^L:\s*(\d+)\s*\/\s*(\d+)\s*$/m);
+      let lNum = 1, lDen = 8;
+      if (lMatch) {
+        lNum = parseInt(lMatch[1], 10) || 1;
+        lDen = parseInt(lMatch[2], 10) || 8;
+      }
+
+      const mLine = abc.match(/^M:(.*)$/m);
+      const meter = mLine ? mLine[1].trim() : '4/4';
+      const kLine = abc.match(/^K:(.*)$/m);
+      const key = kLine ? kLine[1].trim() : 'C';
+
+      return { bpm, meter, key, qNum, qDen, lNum, lDen };
     };
 
     const clearAllMarks = () => {
@@ -1820,6 +1960,45 @@ V:LH clef=bass name="LH"
     const openModal = (id) => { $(id).style.display = 'flex'; };
     const closeModal = (id) => { $(id).style.display = 'none'; };
 
+    // --- Metronome Popover wiring (compact header) ---
+    const wireMetroPopover = () => {
+      const btn = $('btnMetroMenu');
+      const pop = $('metroPopover');
+      const backdrop = $('metroBackdrop');
+      const closeBtn = $('btnMetroPopClose');
+      if (!btn || !pop) return;
+
+      const open = () => {
+        pop.style.display = 'block';
+        backdrop && (backdrop.style.display = 'block');
+        requestAnimationFrame(() => pop.classList.add('open'));
+      };
+      const close = () => {
+        pop.classList.remove('open');
+        pop.style.display = 'none';
+        backdrop && (backdrop.style.display = 'none');
+      };
+      const toggle = (e) => {
+        e && e.stopPropagation();
+        const isOpen = pop.style.display === 'block';
+        isOpen ? close() : open();
+      };
+
+      btn.addEventListener('click', toggle);
+      closeBtn && closeBtn.addEventListener('click', close);
+      backdrop && backdrop.addEventListener('click', close);
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') close();
+      });
+
+      document.addEventListener('click', (e) => {
+        if (pop.style.display !== 'block') return;
+        if (pop.contains(e.target) || btn.contains(e.target)) return;
+        close();
+      });
+    };
+
     const finishPractice = () => {
       state.practice.running = false;
       state.practice.status = 'finished';
@@ -2054,6 +2233,46 @@ V:LH clef=bass name="LH"
         }
 
         state.practice.chordPressed.add(pitch);
+
+        // Chords in Flow mode:
+        // - allowArpeggio = ON  => accept arpeggiated chord within chordWindowMs (old behavior)
+        // - allowArpeggio = OFF => require the full chord to be HELD together (overlap) within chordWindowMs
+        if (state.settings.allowArpeggio) {
+          if (!state.practice.chordTimer) {
+            state.practice.chordTimer = setTimeout(() => {
+              const played = new Set(state.practice.chordPressed);
+              state.practice.chordPressed = new Set();
+              state.practice.chordTimer = null;
+
+              const missing = [...req].filter(p => !played.has(p));
+              const extra = [...played].filter(p => !req.has(p));
+              const ok = (missing.length === 0 && extra.length === 0);
+
+              completeStep(ok, missing, extra, null);
+            }, state.settings.chordWindowMs);
+          }
+          updateHint(midiToName(pitch));
+          return;
+        }
+
+        // allowArpeggio OFF: must form a real chord (all required notes held at the same time)
+        const heldNow = state.activeKeys || new Set();
+        const missingNow = [...req].filter(p => !heldNow.has(p));
+
+        // If chord is formed NOW, accept immediately (still check "extra onsets" within this window)
+        if (missingNow.length === 0) {
+          const played = new Set(state.practice.chordPressed);
+          const extra = [...played].filter(p => !req.has(p));
+          const ok = (extra.length === 0);
+
+          if (state.practice.chordTimer) { clearTimeout(state.practice.chordTimer); state.practice.chordTimer = null; }
+          state.practice.chordPressed = new Set();
+
+          completeStep(ok, [], extra, null);
+          return;
+        }
+
+        // Otherwise, give a short window to finish forming the chord (notes must overlap)
         if (!state.practice.chordTimer) {
           state.practice.chordTimer = setTimeout(() => {
             const played = new Set(state.practice.chordPressed);
@@ -2062,11 +2281,13 @@ V:LH clef=bass name="LH"
 
             const missing = [...req].filter(p => !played.has(p));
             const extra = [...played].filter(p => !req.has(p));
-            const ok = (missing.length === 0 && extra.length === 0);
 
-            completeStep(ok, missing, extra, null);
+            // If user pressed all notes but never held them together => still wrong (chord not together)
+            const pressedAll = (missing.length === 0);
+            completeStep(false, pressedAll ? [] : missing, extra, null);
           }, state.settings.chordWindowMs);
         }
+
         updateHint(midiToName(pitch));
         return;
       }
@@ -2427,6 +2648,7 @@ $('tab-abc').onclick = () => switchTab('abc');
 
       $('btnInstructions').onclick = () => openModal('instrModal');
       $('btnInstrClose').onclick = () => closeModal('instrModal');
+      wireMetroPopover();
 
       $('midiBadge').onclick = async () => { openModal('midiModal'); await refreshMidiList(); };
       $('btnRefreshMidi').onclick = refreshMidiList;
