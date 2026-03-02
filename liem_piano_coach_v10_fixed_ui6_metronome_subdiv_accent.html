@@ -1,0 +1,2355 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Liem Piano Coach</title>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/abcjs/6.2.2/abcjs-basic-min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/abcjs/6.2.2/abcjs-audio.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-app: #f3f4f6; --bg-panel: #ffffff; --text: #111827; --text-light:#6b7280;
+      --primary:#2563eb; --accent:#10b981; --danger:#ef4444; --warn:#f59e0b;
+      --border:#e5e7eb; --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+      --radius: 14px;
+    }
+    body.theme-retro { --bg-app:#e8e4d9; --bg-panel:#fdf6e3; --text:#5c4b37; --text-light:#7a6a56; --primary:#b58900; --accent:#cb4b16; --border:#e2d7c4; }
+    body.theme-ocean { --bg-app:#eaf7ff; --bg-panel:#ffffff; --text:#083344; --text-light:#3b6b75; --primary:#0ea5a4; --accent:#22c55e; --danger:#ef4444; --warn:#f59e0b; --border:#d6eef2; }
+    body.theme-coder { --bg-app:#0b1220; --bg-panel:#0f172a; --text:#e5e7eb; --text-light:#94a3b8; --primary:#60a5fa; --accent:#34d399; --danger:#fb7185; --warn:#fbbf24; --border:#243041; }
+
+    * { box-sizing:border-box; }
+    html,body { height:100%; }
+    body {
+      margin:0; font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:var(--bg-app); color:var(--text); overflow:hidden;
+    }
+
+    header {
+      height:58px; display:flex; align-items:center; justify-content:space-between;
+      padding:0 16px; background:var(--bg-panel); border-bottom:1px solid var(--border);
+      box-shadow: var(--shadow); z-index:20; position:relative;
+    }
+    .brand { display:flex; align-items:center; gap:10px; min-width:260px; }
+    .brand i { color:var(--primary); }
+    .brand .title { font-weight:900; letter-spacing:0.2px; }
+    .brand .sub { font-size:12px; opacity:.75; font-weight:700; margin-left:6px; }
+
+    .hdr-right { display:flex; align-items:center; gap:10px; }
+
+    /* --- Metronome (Header) --- */
+    .metroCluster{ display:flex; align-items:center; gap:8px; }
+    .metroBtn{ padding:8px 10px; }
+    .metroBtn.on{ background:rgba(16,185,129,0.12); color:var(--accent); border-color:rgba(16,185,129,0.35); }
+    .metroBtn .bpm{ font-variant-numeric: tabular-nums; }
+    .metroMini{ width:36px; justify-content:center; padding:0; }
+    .metroMini.on{ background:rgba(37,99,235,0.12); color:var(--primary); border-color:rgba(37,99,235,0.35); }
+    .metroMini.off{ opacity:.7; }
+    .metroSelect{
+      height:36px; border-radius:999px; border:1px solid var(--border);
+      background:rgba(0,0,0,0.02); font-weight:900; font-size:12px;
+      padding:0 10px; color:var(--text); outline:none;
+    }
+    .metroSelect.compact{ padding:0 8px; min-width:68px; }
+    .metroSelect:disabled{ opacity:.6; }
+
+    .metroLed{
+      height:36px; padding:0 10px; border-radius:999px; border:1px solid var(--border);
+      background:rgba(0,0,0,0.02);
+      display:flex; align-items:center; gap:6px;
+      min-width:80px;
+    }
+    .metroDot{
+      width:8px; height:8px; border-radius:999px;
+      background:rgba(0,0,0,0.20);
+      transform: translateZ(0);
+    }
+    .metroDot.active{ background:var(--warn); box-shadow: 0 0 0 3px rgba(245,158,11,0.16); }
+    .metroDot.active.accent{ background:var(--danger); box-shadow: 0 0 0 3px rgba(239,68,68,0.16); }
+    .metroDot.pulse{ animation: metroPulse 180ms ease-out; }
+    @keyframes metroPulse{
+      from{ transform: scale(1); }
+      50%{ transform: scale(1.7); }
+      to{ transform: scale(1); }
+    }
+    @media (max-width: 1020px){
+      .metroSelect{ display:none; }
+      .metroLed{ display:none; }
+    }
+
+    .pill{
+      border:1px solid var(--border); background:rgba(0,0,0,0.02); color:var(--text);
+      padding:8px 12px; border-radius:999px; font-weight:800; font-size:13px;
+      display:inline-flex; align-items:center; gap:8px; cursor:pointer;
+      height:36px;
+    }
+    .pill.primary { background:var(--primary); border-color:transparent; color:white; }
+    .pill.danger { background:var(--danger); border-color:transparent; color:white; }
+    .pill.ghost:hover { background:rgba(0,0,0,0.06); }
+
+    .mode-pill{
+      display:inline-flex; border:1px solid var(--border); border-radius:999px; overflow:hidden;
+      background:rgba(0,0,0,0.02);
+    }
+    .mode-pill button{
+      border:0; background:transparent; padding:8px 12px; height:36px;
+      cursor:pointer; font-weight:900; font-size:12px; color:var(--text);
+      display:flex; align-items:center; gap:8px;
+    }
+    .mode-pill button.active{
+      background:var(--bg-panel); box-shadow: inset 0 0 0 1px var(--border);
+      color:var(--primary);
+    }
+    .mode-pill button i { opacity:.85; }
+
+    .midi-badge{
+      height:36px; padding:0 12px; border-radius:999px; border:1px solid var(--border);
+      display:inline-flex; align-items:center; gap:8px; font-weight:900; font-size:12px;
+      cursor:pointer; user-select:none;
+    }
+    .midi-badge.off { background:rgba(239,68,68,0.10); color:var(--danger); border-color:rgba(239,68,68,0.35); }
+    .midi-badge.on { background:rgba(16,185,129,0.12); color:var(--accent); border-color:rgba(16,185,129,0.35); }
+    .midi-badge.warn { background:rgba(245,158,11,0.12); color:var(--warn); border-color:rgba(245,158,11,0.35); }
+
+    #app { height: calc(100% - 58px); display:flex; flex-direction:column; }
+    #main { flex:1; min-height:0; display:flex; }
+
+    #abcPanel{
+      width:420px; max-width:44vw; min-width:320px;
+      background:var(--bg-panel); border-right:1px solid var(--border);
+      display:flex; flex-direction:column; min-height:0;
+      transition: width 220ms ease, min-width 220ms ease, opacity 160ms ease, transform 220ms ease;
+    }
+    body.practice-focus #abcPanel{
+      width:0; min-width:0; border-right:0; opacity:0;
+      transform: translateX(-10px);
+      pointer-events:none;
+    }
+    .tabs{
+      display:flex; gap:8px; padding:12px; border-bottom:1px solid var(--border);
+      align-items:center; justify-content:space-between;
+    }
+    .tab-left { display:flex; gap:8px; }
+    .tab{
+      height:34px; padding:0 10px; border-radius:999px; border:1px solid var(--border);
+      background:rgba(0,0,0,0.02); font-weight:900; font-size:12px; cursor:pointer;
+      display:flex; align-items:center; gap:8px;
+    }
+    .tab.active { background:var(--primary); color:white; border-color:transparent; }
+    .tab i { opacity:.85; }
+
+    #abcContent { flex:1; min-height:0; display:flex; flex-direction:column; }
+    #abcInput{
+      flex:1; min-height:0; width:100%;
+      border:0; outline:none; resize:none; padding:14px 14px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size:13px; line-height:1.35; background:transparent; color:var(--text);
+    }
+    .panel-footer{
+      padding:12px; border-top:1px solid var(--border);
+      display:flex; gap:10px; align-items:center; justify-content:space-between;
+    }
+    .btn-row { display:flex; gap:8px; flex-wrap:wrap; }
+    .mini{
+      height:34px; border-radius:10px; border:1px solid var(--border);
+      background:rgba(0,0,0,0.02); font-weight:900; font-size:12px;
+      padding:0 10px; cursor:pointer; display:inline-flex; align-items:center; gap:8px;
+    }
+    .mini.primary { background:var(--primary); color:white; border-color:transparent; }
+    .mini:hover { background:rgba(0,0,0,0.06); }
+    .mini:disabled { opacity:.45; cursor:not-allowed; }
+
+    #recentList{
+      padding: 10px 12px; overflow:auto; display:none; gap:8px; flex-direction:column; min-height:0;
+    }
+    #recentList .item{
+      border:1px solid var(--border); border-radius:12px; padding:10px 10px; cursor:pointer;
+      background:rgba(0,0,0,0.02);
+      display:flex; justify-content:space-between; gap:10px; align-items:center;
+    }
+    #recentList .item:hover { background:rgba(0,0,0,0.06); }
+    #recentList .t { font-weight:900; font-size:13px; }
+    #recentList .s { font-size:12px; color:var(--text-light); font-weight:700; }
+
+    #sheetPanel{ flex:1; min-width:0; display:flex; flex-direction:column; min-height:0; }
+    #sheetTop{
+      padding:10px 14px;
+      display:flex;
+      align-items:center;
+      gap:14px;
+      flex-wrap:nowrap;
+      min-width:0;
+      /* One-line header: Meta (left) + Coach (middle) + Zoom (right) */
+    }
+    /* Focus mode can keep the same compact header layout */
+    body.practice-focus #sheetTop{
+      align-items:center;
+    }
+    #songMeta{ display:flex; flex-direction:column; gap:2px; min-width:0; flex:1; }
+    #zoomCtrl{ justify-self:end; margin-left:auto; }
+    #coachStrip{ }
+    #songTitle{ font-weight:900; font-size:16px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    #songSub{ color:var(--text-light); font-weight:700; font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    #sheetWrap{
+      flex:1; min-height:0;
+      background:var(--bg-panel);
+      border-top:1px solid var(--border);
+      overflow:auto;
+      position:relative;
+    }
+
+    /* Compact coach strip */
+    .coachStrip{
+      margin-top:0;
+      display:none;
+      gap:6px;
+      flex-direction:column;
+      border:1px solid var(--border);
+      border-radius: 12px;
+      padding:8px 10px;
+      background:rgba(0,0,0,0.03);
+      max-width: 520px;
+      flex:0 0 auto;
+    }
+    body.practice-focus .coachStrip{ display:flex; }
+    body.practice-focus #zoomCtrl{ align-self:center; }
+    .coachRow{ display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap; }
+    .coachInline{ display:flex; gap:8px; align-items:baseline; min-width: 190px; flex:1; }
+    .coachInline .lab{ font-size:11px; font-weight:900; letter-spacing:.08em; color:var(--text-light); }
+    .coachInline .val{ font-size:13px; font-weight:900; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+    /* Header practice controls */
+    .practiceControls{ display:none; align-items:center; gap:10px; }
+    body.practice-focus .practiceControls{ display:flex; }
+    body.practice-focus #btnPractice{ display:none !important; }
+    body.practice-focus #btnFocusBack{ display:inline-flex !important; }
+    .hdrStats{ font-weight:900; font-size:12px; color:var(--text-light); white-space:nowrap; }
+
+    /* Hover tooltip */
+    .noteTooltip{
+      position:absolute;
+      z-index:20;
+      padding:4px 8px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:900;
+      background:rgba(17,24,39,0.92);
+      color:#fff;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.22);
+      pointer-events:none;
+      transform: translate(-50%, -130%);
+      white-space:nowrap;
+    }
+    body.theme-coder .noteTooltip{ background:rgba(255,255,255,0.92); color:#0b1220; }
+
+
+    
+
+    #paper{
+      padding:14px 16px;
+      min-width: 720px;
+      transform-origin: 0 0;
+      transition: transform 200ms ease;
+    }
+
+    /* Ensure SVG notes are hoverable (some ABCJS/CSS setups disable pointer events) */
+    #paper svg g.abcjs-note{ cursor: help; }
+    #paper svg g.abcjs-note, #paper svg g.abcjs-note *{ pointer-events: auto !important; }
+
+    body.practice-focus #paper{ padding:18px 22px; }
+
+    body.theme-coder #sheetWrap { background:#0b1220; }
+    body.theme-coder #paper { background:#ffffff; border-radius:16px; box-shadow: 0 12px 40px rgba(0,0,0,0.35); }
+
+    body.theme-coder #sheetWrap { background:#0b1220; }
+        body.practice-focus
+    .hud{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+    .stat{
+      display:flex; flex-direction:column; gap:2px;
+      padding:6px 10px; border-radius:12px; background:rgba(0,0,0,0.03);
+      border:1px solid rgba(0,0,0,0.03);
+      min-width:120px;
+    }
+    .stat .k{ font-size:11px; font-weight:900; color:var(--text-light); text-transform:uppercase; letter-spacing:.06em; }
+    .stat .v{ font-size:14px; font-weight:900; }
+
+    #bottomBar{
+      height:64px; background:var(--bg-panel); border-top:1px solid var(--border);
+      display:flex; align-items:center; justify-content:space-between;
+      padding:0 14px; gap:10px;
+    }
+    body.practice-focus #bottomBar{ display:none; }
+
+    .ctrl{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .ctrl label{
+      font-size:11px; font-weight:900; color:var(--text-light); text-transform:uppercase; letter-spacing:.06em;
+      margin-right:2px;
+    }
+    input[type="range"]{ width:160px; }
+    select{
+      height:36px; border-radius:12px; border:1px solid var(--border);
+      background:rgba(0,0,0,0.02); padding:0 10px; font-weight:900; color:var(--text);
+    }
+
+    .note-correct path, .note-correct text, g.note-correct { fill: #10b981 !important; stroke: #10b981 !important; opacity: 1 !important; }
+    .note-wrong path, .note-wrong text, g.note-wrong { fill: #ef4444 !important; stroke: #ef4444 !important; opacity: 1 !important; }
+    .note-current path, .note-current text, g.note-current { fill: #3b82f6 !important; stroke: #3b82f6 !important; opacity: 1 !important; }
+    .note-partial path, .note-partial text, g.note-partial { fill: #f59e0b !important; stroke: #f59e0b !important; opacity: 1 !important; }
+    .note-had-error path, .note-had-error text, g.note-had-error { opacity: 1 !important; filter: drop-shadow(0 0 6px rgba(239,68,68,.35)); }
+
+    .modal-backdrop{
+      position:fixed; inset:0; background:rgba(0,0,0,0.45);
+      display:none; align-items:center; justify-content:center; z-index:50;
+    }
+    .modal{
+      width:min(640px, calc(100% - 20px));
+      background:var(--bg-panel); border:1px solid var(--border); border-radius: 18px;
+      box-shadow: 0 25px 70px rgba(0,0,0,0.30);
+      padding:14px 14px;
+    }
+    .modal h2{ margin:0; font-size:18px; font-weight:900; }
+    .modal p{ margin:8px 0 0; color:var(--text-light); font-weight:700; }
+    .modal .row{ margin-top:12px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .modal .row .grow{ flex:1; min-width:220px; }
+    .modal .footer{ margin-top:14px; display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap; }
+
+    #toast-container{ position:fixed; right:16px; bottom:16px; z-index:80; display:flex; flex-direction:column; gap:8px; }
+    .toast{ background:rgba(17,24,39,0.92); color:white; padding:10px 12px; border-radius:12px; font-weight:800; font-size:13px; box-shadow: 0 16px 40px rgba(0,0,0,0.22); }
+
+    @media (max-width: 980px){
+      #abcPanel{ width: 360px; min-width: 280px; }
+      #paper{ min-width: 560px; }
+      .stat{ min-width: 110px; }
+    }
+    @media (max-width: 760px){
+      #abcPanel{ width: 100%; max-width:none; }
+      #main{ flex-direction:column; }
+      body.practice-focus #abcPanel{ display:none; }
+      #paper{ min-width: 520px; }
+      header{ padding:0 10px; }
+      .brand{ min-width: 140px; }
+    }
+  </style>
+</head>
+
+<body class="theme-retro">
+  <header>
+    <div class="brand">
+      <i class="fa-solid fa-music fa-lg"></i>
+      <div class="title">Liem Piano Coach<span class="sub">GitHub Pages</span></div>
+    </div>
+
+    <div class="mode-pill" title="Coach Mode">
+      <button id="mode-beginner" class="active"><i class="fa-solid fa-circle-check"></i> Beginner</button>
+      <button id="mode-flow"><i class="fa-solid fa-forward"></i> Flow</button>
+      <button id="mode-rhythm"><i class="fa-solid fa-stopwatch"></i> Rhythm</button>
+    </div>
+
+    <div class="hdr-right">
+      <div id="midiBadge" class="midi-badge off" title="Click to connect MIDI">
+        <i class="fa-solid fa-plug"></i><span id="midiText">MIDI Off</span>
+      </div>
+
+      <div id="metroCluster" class="metroCluster" title="Metronome (Tick/Flash). Click BPM to start/stop.">
+        <button id="btnMetro" class="pill ghost metroBtn" title="Metronome on/off (syncs to song meter & BPM)">
+          <i class="fa-solid fa-stopwatch"></i>
+          <span style="font-weight:900;">BPM</span>
+          <span id="metroBpm" class="bpm" style="font-weight:900;">80</span>
+        </button>
+        <select id="metroSubdiv" class="metroSelect compact" title="Subdivision (beat split)">
+          <option value="1" selected>1/4</option>
+          <option value="2">1/8</option>
+          <option value="4">1/16</option>
+        </select>
+
+        <button id="btnMetroTick" class="pill ghost metroMini" title="Tick sound on/off">
+          <i class="fa-solid fa-volume-high"></i>
+        </button>
+        <button id="btnMetroFlash" class="pill ghost metroMini" title="Flash (LED) on/off">
+          <i class="fa-solid fa-bolt"></i>
+        </button>
+        <select id="metroSound" class="metroSelect" title="Tick sound">
+          <option value="click" selected>Click</option>
+          <option value="beep">Beep</option>
+          <option value="wood">Wood</option>
+          <option value="hihat">HiHat</option>
+          <option value="clave">Clave</option>
+          <option value="random">Random</option>
+        </select>
+        <button id="btnMetroAccent" class="pill ghost metroMini" title="Accent beat 1 (different sound)">
+          <i class="fa-solid fa-star"></i>
+        </button>
+        <select id="metroAccentSound" class="metroSelect compact" title="Accent sound (beat 1)">
+          <option value="click">Click</option>
+          <option value="beep">Beep</option>
+          <option value="wood" selected>Wood</option>
+          <option value="hihat">HiHat</option>
+          <option value="clave">Clave</option>
+          <option value="random">Random</option>
+        </select>
+
+        <div id="metroLed" class="metroLed" aria-label="Beat indicator"></div>
+      </div>
+
+
+      <button id="btnToggleTheme" class="pill ghost" title="Theme"><i class="fa-solid fa-palette"></i></button>
+      <button id="btnInstructions" class="pill ghost" title="Instructions"><i class="fa-solid fa-circle-info"></i> Instructions</button>
+      <button id="btnFocusBack" class="pill ghost" style="display:none;"><i class="fa-solid fa-arrow-left"></i> Back</button>
+      
+      <div id="practiceControls" class="practiceControls">
+        <span id="hdrStats" class="hdrStats">—</span>
+        <button id="btnRestartBarHdr" class="pill ghost" title="Restart bar"><i class="fa-solid fa-rotate-left"></i> Bar</button>
+        <button id="btnStopHdr" class="pill danger" title="Stop practice"><i class="fa-solid fa-stop"></i> Stop</button>
+      </div>
+
+      <button id="btnPractice" class="pill primary"><i class="fa-solid fa-play"></i> Practice</button>
+    </div>
+  </header>
+
+  <div id="app">
+    <div id="main">
+      <aside id="abcPanel">
+        <div class="tabs">
+          <div class="tab-left">
+            <button id="tab-abc" class="tab active"><i class="fa-solid fa-code"></i> ABC</button>
+            <button id="tab-recent" class="tab"><i class="fa-solid fa-clock-rotate-left"></i> Recent</button>
+          </div>
+          <button id="btnSave" class="mini primary" title="Save locally"><i class="fa-solid fa-bookmark"></i> Save</button>
+        </div>
+
+        <div id="abcContent">
+          <textarea id="abcInput" spellcheck="false"></textarea>
+          <div id="recentList"></div>
+        </div>
+
+        <div class="panel-footer">
+          <div class="btn-row">
+            <button id="btnRender" class="mini"><i class="fa-solid fa-wand-magic-sparkles"></i> Render</button>
+            <button id="btnPreview" class="mini" title="Preview audio"><i class="fa-solid fa-headphones"></i> Preview</button>
+            <button id="btnReset" class="mini" title="Reset to sample"><i class="fa-solid fa-rotate-left"></i></button>
+          </div>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <span style="font-size:12px; font-weight:900; color:var(--text-light);">Local</span>
+            <i class="fa-solid fa-database" style="color:var(--text-light);"></i>
+          </div>
+        </div>
+      </aside>
+
+      <section id="sheetPanel">
+        <div id="sheetTop">
+          <div id="songMeta">
+            <div id="songTitle">—</div>
+            <div id="songSub">Paste ABC → Render → Practice (Beginner mode mặc định)</div>
+          </div>
+
+          <div id="coachStrip" class="coachStrip">
+              <div class="coachRow">
+                <div class="coachInline"><span class="lab">STEP</span><span class="val" id="coachStep">—</span></div>
+                <div class="coachInline"><span class="lab">PLAY</span><span class="val" id="coachPlay">—</span></div>
+              </div>
+              <div class="coachRow">
+                <div class="coachInline"><span class="lab">MISSING</span><span class="val" id="coachMiss">—</span></div>
+                <div class="coachInline"><span class="lab">EXTRA</span><span class="val" id="coachExtra">—</span></div>
+              </div>
+          </div>
+
+          <div id="zoomCtrl" class="ctrl">
+            <label for="zoomRange">Zoom</label>
+            <input id="zoomRange" type="range" min="70" max="140" value="100"/>
+          </div>
+        </div>
+
+        <div id="sheetWrap">
+          <div id="paper"></div>
+          <div id="noteTooltip" class="noteTooltip" style="display:none;"></div>
+        </div>
+
+        <div id="bottomBar">
+          <div class="ctrl">
+            <label>BPM</label>
+            <input id="bpmRange" type="range" min="40" max="160" value="80"/>
+            <span id="bpmVal" style="font-weight:900;">80</span>
+
+            <label style="margin-left:8px;">Count-in</label>
+            <select id="countInSel">
+              <option value="0">0 bar</option>
+              <option value="1">1 bar</option>
+              <option value="2" selected>2 bars</option>
+            </select>
+
+            <label style="margin-left:8px;">Tolerance</label>
+            <select id="tolSel">
+              <option value="240">Loose</option>
+              <option value="160" selected>Normal</option>
+              <option value="90">Tight</option>
+            </select>
+          </div>
+
+          <div class="ctrl">
+            <label>Arpeggio chords</label>
+            <select id="arpSel">
+              <option value="1" selected>On</option>
+              <option value="0">Off</option>
+            </select>
+
+            <label style="margin-left:8px;">Theme</label>
+            <select id="themeSel">
+              <option value="retro" selected>Retro</option>
+              <option value="ocean">Ocean</option>
+              <option value="coder">Coder</option>
+            </select>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+  </div>
+
+  <div id="midiModal" class="modal-backdrop">
+    <div class="modal">
+      <h2>Connect MIDI</h2>
+      <p>Chọn thiết bị MIDI input. (WebMIDI hoạt động tốt trên Chrome/Edge.)</p>
+      <div class="row">
+        <div class="grow">
+          <label style="display:block; font-weight:900; font-size:12px; color:var(--text-light); text-transform:uppercase; letter-spacing:.06em;">MIDI Input</label>
+          <select id="midiSelect" style="width:100%; margin-top:6px;"></select>
+        </div>
+        <button id="btnRefreshMidi" class="mini"><i class="fa-solid fa-rotate"></i> Refresh</button>
+      </div>
+      <div class="footer">
+        <button id="btnMidiClose" class="mini">Close</button>
+        <button id="btnMidiConnect" class="mini primary"><i class="fa-solid fa-plug-circle-check"></i> Connect</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="resultModal" class="modal-backdrop">
+    <div class="modal">
+      <h2>Practice result</h2>
+      <p id="resultSub">—</p>
+      <div class="row" id="resultBody"></div>
+      <div class="footer">
+        <button id="btnResultClose" class="mini">Back to edit</button>
+        <button id="btnResultAgain" class="mini primary"><i class="fa-solid fa-rotate-right"></i> Practice again</button>
+      </div>
+    </div>
+  </div>
+
+
+  <div id="instrModal" class="modal-backdrop">
+    <div class="modal">
+      <h2>Instructions</h2>
+      <p>Dán ABC → Render → (khuyên) Connect MIDI → Practice. Beginner mode phù hợp nhất cho người mới.</p>
+      <div style="margin-top:12px; display:grid; gap:10px;">
+        <div class="stat" style="min-width:unset;">
+          <div class="k">Beginner</div>
+          <div class="v" style="font-size:13px; font-weight:800;">Đúng mới qua bước tiếp theo. Điểm chính là “Đúng ngay lần đầu”.</div>
+        </div>
+        <div class="stat" style="min-width:unset;">
+          <div class="k">Flow</div>
+          <div class="v" style="font-size:13px; font-weight:800;">Chơi liên tục, sai vẫn chạy. Luyện đọc trôi.</div>
+        </div>
+        <div class="stat" style="min-width:unset;">
+          <div class="k">Rhythm</div>
+          <div class="v" style="font-size:13px; font-weight:800;">Chấm theo nhịp: bấm quá sớm/trễ sẽ bị tính sai.</div>
+        </div>
+        <div class="stat" style="min-width:unset;">
+          <div class="k">Phím tắt</div>
+          <div class="v" style="font-size:13px; font-weight:800;"><b>R</b>: restart ô nhịp • <b>Hint</b>: hiện tên nốt trên sheet</div>
+        </div>
+      </div>
+      <div class="footer">
+        <button id="btnInstrClose" class="mini primary">OK</button>
+      </div>
+    </div>
+  </div>
+
+
+  <div id="toast-container"></div>
+
+  <script>
+    // ---------- Utilities ----------
+    const $ = (id) => document.getElementById(id);
+    const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+    const midiToName = (m) => {
+      if (typeof m !== 'number' || !isFinite(m)) return '?';
+      const name = NOTE_NAMES[m % 12];
+      const oct = Math.floor(m/12) - 1;
+      return name + oct;
+    };
+    const uniq = (arr) => Array.from(new Set(arr));
+
+    const showToast = (msg) => {
+      const c = $('toast-container');
+      const t = document.createElement('div');
+      t.className = 'toast';
+      t.textContent = msg;
+      c.appendChild(t);
+      setTimeout(() => t.remove(), 2600);
+    };
+
+    const debounce = (fn, ms=220) => {
+      let t;
+      return (...args) => {
+        clearTimeout(t);
+        t = setTimeout(() => fn(...args), ms);
+      };
+    };
+
+
+    // ---------- Metronome (Audio + Flash) ----------
+    // Design goals:
+    // - Lives on the header (always visible)
+    // - Syncs to song meter + current BPM (especially Rhythm mode)
+    // - Tick (audio) and Flash (visual) can be toggled independently
+    const Metro = (() => {
+      const cfg = {
+        lookaheadMs: 25,
+        scheduleAheadSec: 0.15,
+        startDelaySec: 0.06,
+      };
+
+      let audioCtx = null;
+      let masterGain = null;
+      let noiseBuf = null;
+
+      let timer = null;
+      let running = false;
+
+      let bpm = 80;
+      let beatsPerBar = 4;
+      let subdivision = 1; // 1=quarter, 2=eighth
+      let nextTime = 0;
+      let beatInBar = 1;
+      let barIndex = 1;
+      let subIndex = 0;
+
+      const stateLocal = {
+        enabled: false,
+        tick: true,
+        flash: true,
+        sound: 'click',
+        accentDifferent: true, // beat 1 uses accentSound
+        accentSound: 'wood',
+        volume: 0.75
+      };
+
+      const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+      const ensureAudio = async () => {
+        if (audioCtx) return true;
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if (!Ctx) return false;
+        audioCtx = new Ctx();
+        masterGain = audioCtx.createGain();
+        masterGain.gain.value = stateLocal.volume;
+        masterGain.connect(audioCtx.destination);
+
+        // prebuild 1s noise buffer
+        noiseBuf = audioCtx.createBuffer(1, audioCtx.sampleRate, audioCtx.sampleRate);
+        const d = noiseBuf.getChannelData(0);
+        for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1);
+        return true;
+      };
+
+      const resumeAudio = async () => {
+        const ok = await ensureAudio();
+        if (!ok) return false;
+        if (audioCtx.state === 'suspended') {
+          try { await audioCtx.resume(); } catch(e) {}
+        }
+        return true;
+      };
+
+      const secondsPerSub = () => (60 / Math.max(1, bpm)) / Math.max(1, subdivision);
+
+      const buildLed = () => {
+        const led = $('metroLed');
+        if (!led) return;
+        led.innerHTML = '';
+        const n = clamp(beatsPerBar, 1, 12);
+        for (let i = 1; i <= n; i++) {
+          const dot = document.createElement('div');
+          dot.className = 'metroDot' + (i === 1 ? ' accent' : '');
+          dot.dataset.beat = String(i);
+          led.appendChild(dot);
+        }
+        // initial highlight
+        setActiveBeat(beatInBar, true);
+      };
+
+      const setActiveBeat = (beat, pulse=false) => {
+        const led = $('metroLed');
+        if (!led) return;
+        const dots = Array.from(led.querySelectorAll('.metroDot'));
+        dots.forEach(d => {
+          const b = parseInt(d.dataset.beat, 10);
+          d.classList.toggle('active', b === beat);
+          if (pulse && stateLocal.flash && b === beat) {
+            d.classList.remove('pulse');
+            // force reflow to restart animation
+            void d.offsetWidth;
+            d.classList.add('pulse');
+          } else {
+            d.classList.remove('pulse');
+          }
+        });
+      };
+
+      const playSoundAt = (time, isAccent=false, isSub=false) => {
+        if (!stateLocal.tick) return;
+        if (!audioCtx || !masterGain) return;
+
+        const vol = stateLocal.volume * (isAccent ? 1.15 : 0.9) * (isSub ? 0.55 : 1.0);
+        const outGain = audioCtx.createGain();
+        outGain.gain.setValueAtTime(0.0001, time);
+        outGain.gain.exponentialRampToValueAtTime(Math.max(0.0001, vol), time + 0.004);
+        outGain.gain.exponentialRampToValueAtTime(0.0001, time + (isSub ? 0.035 : 0.06));
+        outGain.connect(masterGain);
+
+        let baseSound = stateLocal.sound;
+        if (isAccent && stateLocal.accentDifferent) baseSound = stateLocal.accentSound || baseSound;
+
+        const snd = baseSound === 'random'
+          ? (['click','beep','wood','hihat','clave'][Math.floor(Math.random()*5)])
+          : baseSound;
+
+        if (snd === 'hihat') {
+          const src = audioCtx.createBufferSource();
+          src.buffer = noiseBuf;
+          const hp = audioCtx.createBiquadFilter();
+          hp.type = 'highpass';
+          hp.frequency.setValueAtTime(7000, time);
+          src.connect(hp);
+          hp.connect(outGain);
+          src.start(time);
+          src.stop(time + 0.05);
+          return;
+        }
+
+        if (snd === 'wood') {
+          // short filtered noise "tap"
+          const src = audioCtx.createBufferSource();
+          src.buffer = noiseBuf;
+          const bp = audioCtx.createBiquadFilter();
+          bp.type = 'bandpass';
+          bp.frequency.setValueAtTime(isAccent ? 1200 : 900, time);
+          bp.Q.setValueAtTime(8, time);
+          src.connect(bp);
+          bp.connect(outGain);
+          src.start(time);
+          src.stop(time + 0.06);
+          return;
+        }
+
+        // oscillator-based
+        const osc = audioCtx.createOscillator();
+        const wave = (snd === 'click') ? 'square' : (snd === 'clave' ? 'triangle' : 'sine');
+        osc.type = wave;
+        const baseF = snd === 'beep' ? 880 : (snd === 'clave' ? 620 : 1100);
+        const f = baseF * (isAccent ? 1.28 : 1.0) * (isSub ? 0.92 : 1.0);
+        osc.frequency.setValueAtTime(f, time);
+        osc.connect(outGain);
+        osc.start(time);
+        osc.stop(time + (snd === 'beep' ? 0.07 : 0.05));
+      };
+
+      const scheduleStep = (time) => {
+        const isBeat = (subIndex === 0);
+        const isAccent = isBeat && (beatInBar === 1);
+
+        playSoundAt(time, isAccent, !isBeat);
+
+        // visual: schedule close to audio time to keep sync
+        const doVisual = () => setActiveBeat(beatInBar, true);
+        if (stateLocal.flash && audioCtx) {
+          const delay = Math.max(0, (time - audioCtx.currentTime) * 1000);
+          setTimeout(doVisual, delay);
+        } else {
+          // no flash => still show current beat (static highlight, no pulse)
+          setActiveBeat(beatInBar, false);
+        }
+
+        // advance counters
+        subIndex += 1;
+        if (subIndex >= subdivision) {
+          subIndex = 0;
+          beatInBar += 1;
+          if (beatInBar > beatsPerBar) {
+            beatInBar = 1;
+            barIndex += 1;
+          }
+        }
+      };
+
+      const scheduler = () => {
+        if (!running || !audioCtx) return;
+        while (nextTime < audioCtx.currentTime + cfg.scheduleAheadSec) {
+          scheduleStep(nextTime);
+          nextTime += secondsPerSub();
+        }
+      };
+
+      const start = async (opts={}) => {
+        bpm = clamp(parseInt(opts.bpm ?? bpm, 10) || bpm, 30, 300);
+        beatsPerBar = clamp(parseInt(opts.beatsPerBar ?? beatsPerBar, 10) || beatsPerBar, 1, 12);
+        subdivision = clamp(parseInt(opts.subdivision ?? subdivision, 10) || subdivision, 1, 4);
+
+        stateLocal.enabled = true;
+        running = true;
+
+        const ok = await resumeAudio();
+        if (!ok) {
+          showToast('No WebAudio (metronome sound disabled).');
+        }
+
+        beatInBar = 1;
+        barIndex = 1;
+        subIndex = 0;
+
+        buildLed();
+
+        if (audioCtx) nextTime = audioCtx.currentTime + cfg.startDelaySec;
+
+        if (timer) clearInterval(timer);
+        timer = setInterval(scheduler, cfg.lookaheadMs);
+
+        renderHeaderState();
+      };
+
+      const stop = () => {
+        stateLocal.enabled = false;
+        running = false;
+        if (timer) { clearInterval(timer); timer = null; }
+        renderHeaderState();
+      };
+
+      const toggle = async () => {
+        if (stateLocal.enabled) stop();
+        else await start({ bpm, beatsPerBar, subdivision });
+      };
+
+      const syncToSong = (meta) => {
+        if (!meta) return;
+        if (meta.meter) {
+          const n = parseInt((String(meta.meter).split('/')[0] || '4'), 10);
+          if (Number.isFinite(n) && n > 0) beatsPerBar = clamp(n, 1, 12);
+        }
+        if (meta.bpm) {
+          const v = parseInt(meta.bpm, 10);
+          if (Number.isFinite(v) && v > 0) bpm = clamp(v, 30, 300);
+        }
+        buildLed();
+        renderHeaderState();
+      };
+
+      const syncToPractice = async ({countInBars=0} = {}) => {
+        // Realign phase so beat 1 starts now (count-in uses the same BPM & meter)
+        if (!stateLocal.enabled) return;
+        await resumeAudio();
+        beatInBar = 1;
+        barIndex = 1;
+        subIndex = 0;
+        if (audioCtx) nextTime = audioCtx.currentTime + cfg.startDelaySec;
+        buildLed();
+        // showToast('Metronome synced');
+      };
+
+      const setBpm = (v) => {
+        const nv = clamp(parseInt(v, 10) || bpm, 30, 300);
+        bpm = nv;
+        renderHeaderState();
+      };
+
+      const setSound = (s) => { stateLocal.sound = s || 'click'; renderHeaderState(); };
+      const setTick = (on) => { stateLocal.tick = !!on; renderHeaderState(); };
+      const setFlash = (on) => { stateLocal.flash = !!on; renderHeaderState(); };
+      const setSubdivision = (n) => { subdivision = clamp(parseInt(n,10)||1,1,4); subIndex = 0; };
+
+      const renderHeaderState = () => {
+        const bpmEl = $('metroBpm'); if (bpmEl) bpmEl.textContent = String(bpm);
+        const btn = $('btnMetro');
+        if (btn) {
+          btn.classList.toggle('on', stateLocal.enabled);
+          btn.classList.toggle('off', !stateLocal.enabled);
+        }
+        const bt = $('btnMetroTick');
+        if (bt) { bt.classList.toggle('on', stateLocal.tick); bt.classList.toggle('off', !stateLocal.tick); }
+        const bf = $('btnMetroFlash');
+        if (bf) { bf.classList.toggle('on', stateLocal.flash); bf.classList.toggle('off', !stateLocal.flash); }
+        const sel = $('metroSound');
+        if (sel && sel.value !== stateLocal.sound) sel.value = stateLocal.sound;
+        const subSel = $('metroSubdiv');
+        if (subSel && subSel.value !== String(subdivision)) subSel.value = String(subdivision);
+
+        const ba = $('btnMetroAccent');
+        if (ba) { ba.classList.toggle('on', stateLocal.accentDifferent); ba.classList.toggle('off', !stateLocal.accentDifferent); }
+
+        const asel = $('metroAccentSound');
+        if (asel) {
+          asel.disabled = !stateLocal.accentDifferent;
+          if (asel.value !== stateLocal.accentSound) asel.value = stateLocal.accentSound;
+        }
+      };
+
+      const wireUI = () => {
+        buildLed();
+        renderHeaderState();
+
+        $('btnMetro')?.addEventListener('click', async () => {
+          // user gesture => ok to resume AudioContext
+          await toggle();
+          if (state.practice.running) await syncToPractice({countInBars: state.settings.countInBars});
+        });
+
+        $('btnMetroTick')?.addEventListener('click', async () => {
+          stateLocal.tick = !stateLocal.tick;
+          if (stateLocal.enabled) await resumeAudio();
+          renderHeaderState();
+        });
+
+        $('btnMetroFlash')?.addEventListener('click', () => {
+          stateLocal.flash = !stateLocal.flash;
+          renderHeaderState();
+        });
+
+        $('metroSound')?.addEventListener('change', (e) => {
+          stateLocal.sound = e.target.value;
+          renderHeaderState();
+        });
+
+        $('metroSubdiv')?.addEventListener('change', (e) => {
+          setSubdivision(e.target.value);
+          renderHeaderState();
+        });
+
+        $('btnMetroAccent')?.addEventListener('click', () => {
+          stateLocal.accentDifferent = !stateLocal.accentDifferent;
+          renderHeaderState();
+        });
+
+        $('metroAccentSound')?.addEventListener('change', (e) => {
+          stateLocal.accentSound = e.target.value;
+          renderHeaderState();
+        });
+      };
+
+      return {
+        wireUI,
+        start,
+        stop,
+        toggle,
+        syncToSong,
+        syncToPractice,
+        setBpm,
+        setSound,
+        setTick,
+        setFlash,
+        setSubdivision,
+        renderHeaderState,
+        get enabled(){ return stateLocal.enabled; }
+      };
+    })();
+
+    // ---------- App State ----------
+    const state = {
+      currentSong: {
+        title: '',
+        originalABC: '',
+        workingABC: '',
+        visualObj: null,
+        baseBpm: 80,
+      },
+      mode: 'beginner', // beginner|flow|rhythm
+      activeKeys: new Set(),
+      midi: {
+        access: null,
+        input: null,
+        connected: false
+      },
+      settings: {
+        bpm: 80,
+        countInBars: 2,
+        toleranceMs: 160,
+        chordWindowMs: 240,
+        allowArpeggio: true,
+                theme: 'retro',
+      },
+      practice: {
+        running: false,
+        status: 'idle', // idle|countin|running|finished
+        startPerf: 0,
+        stepIndex: 0,
+        expectedSteps: [],
+        currentPressed: new Set(),     // beginner
+        chordPressed: new Set(),       // flow chord
+        chordTimer: null,
+        windowPressed: new Set(),      // rhythm
+        windowOnsets: new Map(),       // pitch->timeMs within window
+        stepHadError: false,
+        stepCountedWrong: false,
+        results: [],
+        barFirstIdx: new Map(),
+        loop: null,
+        stats: {
+          total: 0,
+          done: 0,
+          correctSteps: 0,
+          wrongSteps: 0,
+          wrongKeystrokes: 0,
+          perfectSteps: 0,
+        }
+      }
+    };
+
+    // ---------- Parsing + step extraction (ported from your file) ----------
+const getMidiFromText = (noteChar, octStr, accStr, keySig) => {
+            const baseMap = { c: 0, d: 2, e: 4, f: 5, g: 7, a: 9, b: 11 };
+            let pitch = 60 + baseMap[noteChar.toLowerCase()]; 
+            if (noteChar === noteChar.toLowerCase()) pitch += 12; 
+            if (octStr) for (let char of octStr) { if (char === ',') pitch -= 12; if (char === "'") pitch += 12; }
+            let acc = keySig[noteChar.toLowerCase()] || 0; 
+            if (accStr === '^^') acc = 2;
+            else if (accStr === '^') acc = 1;
+            else if (accStr === '__') acc = -2;
+            else if (accStr === '_') acc = -1;
+            else if (accStr === '=') acc = 0;      
+            return pitch + acc;
+        };
+
+        // --- EXTRACT STEPS (VOICE-AWARE, TIME-MERGED) ---
+// Mục tiêu:
+// 1) Parse ABC -> danh sách event theo từng voice (đúng thứ tự xuất hiện).
+// 2) Gộp event theo "thời điểm" (timeMs) để ra steps cho Practice (có thể gồm cả 2 tay).
+// 3) Map DOM SVG note groups -> event của đúng voice dựa trên class abcjs-vN.
+//    Điều này sửa lỗi "Hints lệch khi Both Hands" do trước đó map 1-1 theo index toàn cục.
+
+const parseDuration = (durStr) => {
+    // Hỗ trợ các dạng: "", "2", "/2", "3/2", "2/", "1/4"
+    if (!durStr) return 1;
+    if (durStr.includes('/')) {
+        const [a, b] = durStr.split('/');
+        const num = a === '' ? 1 : parseFloat(a);
+        const den = b === '' ? 2 : parseFloat(b);
+        if (!isFinite(num) || !isFinite(den) || den === 0) return 1;
+        return num / den;
+    }
+    const v = parseFloat(durStr);
+    return isFinite(v) && v > 0 ? v : 1;
+};
+
+const parseVoiceEvents = (abc) => {
+    // Trả về:
+    // { voiceOrder: ['1','2',...], eventsByVoice: { '1':[...], '2':[...]} }
+    const lines = abc.split(/\r?\n/);
+
+    // Key signature map (major/minor). Supports common ABC forms: K:C, K:D, K:Bb, K:F#, K:Am, K:F#m, K:Ebm ...
+const KEY_SIG_NUM = {
+    'C':0,'G':1,'D':2,'A':3,'E':4,'B':5,'F#':6,'C#':7,
+    'F':-1,'Bb':-2,'Eb':-3,'Ab':-4,'Db':-5,'Gb':-6,'Cb':-7,
+    'Am':0,'Em':1,'Bm':2,'F#m':3,'C#m':4,'G#m':5,'D#m':6,'A#m':7,
+    'Dm':-1,'Gm':-2,'Cm':-3,'Fm':-4,'Bbm':-5,'Ebm':-6,'Abm':-7
+};
+const SHARP_ORDER = ['f','c','g','d','a','e','b'];
+const FLAT_ORDER  = ['b','e','a','d','g','c','f'];
+
+const normalizeKeyName = (raw) => {
+    if (!raw) return 'C';
+    let tok = String(raw).trim();
+    tok = tok.replace(/^K:\s*/i, '');
+    tok = tok.split(/\s+/)[0];
+    tok = tok.replace(/(major|maj)$/i, '');
+    tok = tok.replace(/(minor|min)$/i, 'm');
+
+    const m = tok.match(/^([A-Ga-g])([#b]?)(m)?/);
+    if (!m) return 'C';
+    const letter = m[1].toUpperCase();
+    const acc = (m[2] || '');
+    const minor = !!m[3];
+    return letter + acc + (minor ? 'm' : '');
+};
+
+const keySigFromName = (name) => {
+    const keyName = normalizeKeyName(name);
+    const n = (KEY_SIG_NUM[keyName] !== undefined) ? KEY_SIG_NUM[keyName] : 0;
+    const out = { c:0,d:0,e:0,f:0,g:0,a:0,b:0 };
+    if (n > 0) {
+        for (let i=0; i<n; i++) out[SHARP_ORDER[i]] = 1;
+    } else if (n < 0) {
+        for (let i=0; i<Math.abs(n); i++) out[FLAT_ORDER[i]] = -1;
+    }
+    return out;
+};
+
+let currentKey = keySigFromName((abc.match(/^K:.*$/mi) || ['K:C'])[0]);
+
+    const voiceOrder = [];
+    const voiceCursors = {};
+    const eventsByVoice = {};
+
+    const ensureVoice = (v) => {
+        if (!eventsByVoice[v]) eventsByVoice[v] = [];
+        if (voiceCursors[v] === undefined) voiceCursors[v] = 0;
+        if (!voiceOrder.includes(v)) voiceOrder.push(v);
+    };
+
+    // Pre-scan voice ids from headers (V:...) so DOM voice index abcjs-v0 maps correctly.
+    lines.forEach((raw) => {
+        const line = String(raw || '').trim();
+        if (!line) return;
+        if (line.startsWith('V:')) {
+            const m = line.match(/^V:\s*([^\s]+)/);
+            if (m) ensureVoice(m[1]);
+        }
+    });
+
+    let currentVoice = voiceOrder.length ? voiceOrder[0] : '1';
+    ensureVoice(currentVoice);
+
+    // Tokenizer theo dòng (không dùng regex toàn cục kiểu cũ để tránh lệch khi 2 voice xen kẽ/chord)
+    lines.forEach((rawLine) => {
+        let line = rawLine.trim();
+        if (!line) return;
+
+        // Bỏ comment/meta
+        if (line.startsWith('%')) return;
+        // Key changes (K:) can appear mid-tune
+        if (line.match(/^K:/i)) { currentKey = keySigFromName(line); return; }
+        if (line.match(/^[A-Z]:/) && !line.startsWith('V:')) return;
+
+        // Nếu là voice header (V:RH name=..., clef=...), ghi nhận currentVoice rồi bỏ qua phần header
+        if (line.startsWith('V:') && (line.includes('clef=') || line.includes('name='))) {
+            const m = line.match(/^V:\s*([^\s]+)/);
+            if (m) { currentVoice = m[1]; ensureVoice(currentVoice); }
+            return;
+        }
+
+        // Voice tag dạng đầu dòng: V:2 ...
+        if (line.startsWith('V:')) {
+            const m = line.match(/^V:\s*([^\s]+)/);
+            if (m) {
+                currentVoice = m[1];
+                ensureVoice(currentVoice);
+                line = line.replace(/^V:\s*[^\s]+/, '').trim();
+                if (!line) return;
+            }
+        }
+
+        // Voice tag inline: [V:2]
+        // Lưu ý: chord cũng dùng [ ... ] nên phải phân biệt [V:
+        // Chúng ta sẽ xử lý inline trong vòng lặp ký tự ở dưới.
+
+        // Accidentals reset theo barline
+        let barAccidentals = { ...currentKey };
+
+        let i = 0;
+        while (i < line.length) {
+            const ch = line[i];
+
+            // Bỏ whitespace
+            if (ch === ' ' || ch === '\t') { i++; continue; }
+
+            // Barline
+            if (ch === '|') {
+                barAccidentals = { ...currentKey };
+                i++;
+                continue;
+            }
+
+            // Inline voice tag: [V:2]
+            if (ch === '[' && (line.slice(i, i+3) === '[V:' || line.slice(i, i+3) === '[v:')) {
+                const end = line.indexOf(']', i);
+                if (end !== -1) {
+                    const m = line.slice(i, end+1).match(/\[V:\s*([^\]\s]+)\]/i);
+                    if (m) {
+                        currentVoice = m[1];
+                        ensureVoice(currentVoice);
+                    }
+                    i = end + 1;
+                    continue;
+                }
+            }
+
+            // Rest: z...
+            if (ch === 'z' || ch === 'Z') {
+                // read duration
+                let j = i + 1;
+                while (j < line.length && /[0-9\/]/.test(line[j])) j++;
+                const durStr = line.slice(i+1, j);
+                const dur = parseDuration(durStr);
+                ensureVoice(currentVoice);
+                voiceCursors[currentVoice] += dur * 100;
+                i = j;
+                continue;
+            }
+
+            // Chord: [CEG]2, ... (không phải [V:..])
+            if (ch === '[') {
+                const end = line.indexOf(']', i);
+                if (end !== -1) {
+                    const inside = line.slice(i+1, end);
+
+                    // Inline field tags like [V:RH] or [K:C] (NOT chords)
+                    const tag = inside.trim();
+                    const vm = tag.match(/^V:\s*([^\s]+)/);
+                    if (vm) { currentVoice = vm[1]; ensureVoice(currentVoice); i = end + 1; continue; }
+                    if (/^K:/i.test(tag)) { currentKey = keySigFromName(tag); barAccidentals = { ...currentKey }; i = end + 1; continue; }
+
+                    // duration nằm sau ']'
+                    let j = end + 1;
+                    while (j < line.length && /[0-9\/]/.test(line[j])) j++;
+                    const durStr = line.slice(end+1, j);
+                    const dur = parseDuration(durStr);
+
+                    // Parse note tokens trong chord
+                    const pitches = [];
+                    // chord accidentals áp dụng từng nốt trong measure
+                    let k = 0;
+                    while (k < inside.length) {
+                        // skip whitespace
+                        if (inside[k] === ' ' || inside[k] === '\t') { k++; continue; }
+                        let accStr = '';
+                        if (inside[k] === '^' || inside[k] === '_' || inside[k] === '=') {
+                            accStr = inside[k];
+                            // support ^^ and __
+                            if ((accStr === '^' || accStr === '_') && inside[k+1] === accStr) { accStr = accStr + accStr; k += 2; }
+                            else { k++; }
+                        }
+                        const noteChar = inside[k];
+                        if (!noteChar || !/[A-Ga-g]/.test(noteChar)) { k++; continue; }
+                        k++;
+
+                        let octStr = '';
+                        while (k < inside.length && (inside[k] === ',' || inside[k] === "'")) {
+                            octStr += inside[k];
+                            k++;
+                        }
+
+                        // cập nhật accidental theo measure
+                        if (accStr) {
+                    if (accStr === '^^') barAccidentals[noteChar.toLowerCase()] = 2;
+                    else if (accStr === '^') barAccidentals[noteChar.toLowerCase()] = 1;
+                    else if (accStr === '__') barAccidentals[noteChar.toLowerCase()] = -2;
+                    else if (accStr === '_') barAccidentals[noteChar.toLowerCase()] = -1;
+                    else barAccidentals[noteChar.toLowerCase()] = 0;
+                }
+
+                        const midi = getMidiFromText(noteChar, octStr, accStr, barAccidentals);
+                        pitches.push(midi);
+                    }
+
+                    if (pitches.length) {
+                        ensureVoice(currentVoice);
+                        const t = Math.round(voiceCursors[currentVoice]);
+                        eventsByVoice[currentVoice].push({ voice: currentVoice, timeMs: t, pitches });
+                        voiceCursors[currentVoice] += dur * 100;
+                    } else {
+                        // không parse được chord -> bỏ qua, tránh kẹt
+                    }
+
+                    i = j;
+                    continue;
+                }
+            }
+
+            // Single note: [^_=]?[A-Ga-g][,']*(duration)
+            // accidental
+            let accStr = '';
+            let idx = i;
+            if (line[idx] === '^' || line[idx] === '_' || line[idx] === '=') {
+                accStr = line[idx];
+                // support ^^ and __
+                if ((accStr === '^' || accStr === '_') && line[idx+1] === accStr) { accStr = accStr + accStr; idx += 2; }
+                else { idx++; }
+            }
+            const noteChar = line[idx];
+            if (noteChar && /[A-Ga-g]/.test(noteChar)) {
+                idx++;
+                let octStr = '';
+                while (idx < line.length && (line[idx] === ',' || line[idx] === "'")) {
+                    octStr += line[idx];
+                    idx++;
+                }
+                let durStart = idx;
+                while (idx < line.length && /[0-9\/]/.test(line[idx])) idx++;
+                const durStr = line.slice(durStart, idx);
+                const dur = parseDuration(durStr);
+
+                if (accStr) {
+                    if (accStr === '^^') barAccidentals[noteChar.toLowerCase()] = 2;
+                    else if (accStr === '^') barAccidentals[noteChar.toLowerCase()] = 1;
+                    else if (accStr === '__') barAccidentals[noteChar.toLowerCase()] = -2;
+                    else if (accStr === '_') barAccidentals[noteChar.toLowerCase()] = -1;
+                    else barAccidentals[noteChar.toLowerCase()] = 0;
+                }
+
+                const midi = getMidiFromText(noteChar, octStr, accStr, barAccidentals);
+                ensureVoice(currentVoice);
+                const t = Math.round(voiceCursors[currentVoice]);
+                eventsByVoice[currentVoice].push({ voice: currentVoice, timeMs: t, pitches: [midi] });
+                voiceCursors[currentVoice] += dur * 100;
+
+                i = idx;
+                continue;
+            }
+
+            // Ký tự khác: bỏ qua
+            i++;
+        }
+    });
+
+    return { voiceOrder, eventsByVoice };
+
+};
+
+
+const extractSteps = () => {
+    const abc = state.currentSong.workingABC;
+    if (!abc) return [];
+
+    // 1) Parse -> eventsByVoice + voiceOrder
+    const { voiceOrder, eventsByVoice } = parseVoiceEvents(abc);
+
+    // 2) Gộp theo thời điểm
+    const stepsByTime = new Map(); // timeMs -> step
+    const addEventToStep = (evt) => {
+        const t = Math.round(evt.timeMs);
+        if (!stepsByTime.has(t)) stepsByTime.set(t, { timeMs: t, pitches: [], elements: [], elementPitches: [] });
+        const step = stepsByTime.get(t);
+        step.pitches.push(...evt.pitches);
+    };
+
+    Object.keys(eventsByVoice).forEach(v => eventsByVoice[v].forEach(addEventToStep));
+
+    // Dedup pitches per step
+    for (const step of stepsByTime.values()) {
+        step.pitches = Array.from(new Set(step.pitches));
+    }
+
+    // 3) Map DOM SVG note groups -> đúng event theo voice (abcjs-vN)
+    const visualElements = document.querySelectorAll('g.abcjs-note');
+    if (!visualElements || visualElements.length === 0) {
+        console.error("Không tìm thấy class .abcjs-note");
+        // vẫn trả về step logic để debug
+        return Array.from(stepsByTime.values()).sort((a,b)=>a.timeMs-b.timeMs);
+    }
+
+    // Counter theo voiceIndex (abcjs-v0, abcjs-v1,...)
+    const voiceDomCounters = {};
+
+    // Để map DOM voiceIndex -> voiceId trong ABC: dựa vào thứ tự voice xuất hiện trong ABC sau khi apply hand-filter.
+    const voiceIdForIndex = (voiceIdx) => voiceOrder[voiceIdx] || voiceOrder[0] || '1';
+
+    // Map lần lượt: mỗi g.abcjs-note thuộc 1 voiceIndex => lấy event cùng index trong eventsByVoice[voiceId]
+    visualElements.forEach((el) => {
+        let voiceIdx = 0;
+        el.classList.forEach(c => {
+            const m = c.match(/^abcjs-v(\d+)$/);
+            if (m) voiceIdx = parseInt(m[1], 10);
+        });
+
+        const voiceId = voiceIdForIndex(voiceIdx);
+        const idx = voiceDomCounters[voiceIdx] || 0;
+        voiceDomCounters[voiceIdx] = idx + 1;
+
+        const evts = eventsByVoice[voiceId] || [];
+        const evt = evts[idx];
+        if (!evt) return;
+
+        const t = Math.round(evt.timeMs);
+        const step = stepsByTime.get(t);
+        if (!step) return;
+
+        step.elements.push(el);
+        // store pitches directly on the SVG group for hover tooltip fallback
+        try { el.dataset.pitches = (evt.pitches || []).join(','); } catch(e) {}
+        try { el.dataset.noteNames = (evt.pitches || []).filter(Number.isFinite).map(midiToName).join(' '); } catch(e) {}
+        step.elementPitches.push({ el, pitches: evt.pitches });
+    });
+
+    // 4) Sort + filter out steps không có pitch
+    let steps = Array.from(stepsByTime.values()).sort((a, b) => a.timeMs - b.timeMs);
+    steps = steps.filter(s => s.pitches && s.pitches.length > 0);
+    return steps;
+};
+
+
+    
+    // ---- ABC tempo helper (two-way with BPM slider) ----
+    const setAbcTempo = (abc, bpm) => {
+      const line = `Q:1/4=${bpm}`;
+      if (/^Q:/m.test(abc)) return abc.replace(/^Q:.*$/m, line);
+      // insert before K: if exists, else append
+      const lines = abc.split('\n');
+      const kIdx = lines.findIndex(l => /^K:/.test(l.trim()));
+      const insertAt = kIdx >= 0 ? kIdx : lines.length;
+      lines.splice(insertAt, 0, line);
+      return lines.join('\n');
+    };
+
+    // ---- Normalize ABC (helpful for users who type F# / Bb / spaces in chords) ----
+    const normalizeAbc = (abc) => {
+      const lines = abc.split('\n');
+      const out = lines.map((line) => {
+        // keep header lines as-is (X:, T:, M:, L:, Q:, K:, V:, etc)
+        if (/^\s*[A-Za-z]:/.test(line) && !/^\s*\[V:/.test(line)) return line;
+
+        // protect inline field tags like [K:...], [V:...]
+        const placeholders = [];
+        const protectedLine = line.replace(/\[[A-Za-z]:[^\]]+\]/g, (m) => {
+          placeholders.push(m);
+          return `@@TAG${placeholders.length-1}@@`;
+        });
+
+        // remove spaces inside chord brackets ONLY (not field tags)
+        let s = protectedLine.replace(/\[(?![A-Za-z]:)([^\]\n]+)\]/g, (m, inner) => '[' + inner.replace(/\s+/g,'') + ']');
+
+        // convert note# => ^note (e.g., F# -> ^F)
+        s = s.replace(/([A-Ga-g])#/g, '^$1');
+
+        // convert uppercase flats like Bb -> _B (avoid touching lowercase note 'b')
+        s = s.replace(/([A-G])b/g, '_$1');
+
+        // restore inline tags
+        s = s.replace(/@@TAG(\d+)@@/g, (_, i) => placeholders[parseInt(i,10)]);
+        return s;
+      });
+      return out.join('\n');
+    };
+
+
+    // ---- Hover dwell tooltip on notes (replaces Hints) ----
+    const elementPitchMap = new Map(); // element -> Set(pitches)
+    const buildElementPitchMap = (steps) => {
+      elementPitchMap.clear();
+      (steps || []).forEach(step => {
+        if (!step || !step.elements || !step.pitches) return;
+        const els = step.elements;
+        const ps = step.pitches;
+        if (!els.length || !ps.length) return;
+
+        if (els.length === ps.length) {
+          for (let i=0;i<els.length;i++){
+            const el = els[i], p = ps[i];
+            if (!el) continue;
+            const set = elementPitchMap.get(el) || new Set();
+            set.add(p);
+            elementPitchMap.set(el, set);
+          }
+        } else {
+          els.forEach(el => {
+            if (!el) return;
+            const set = elementPitchMap.get(el) || new Set();
+            ps.forEach(p => set.add(p));
+            elementPitchMap.set(el, set);
+          });
+        }
+      });
+    };
+
+    let hoverTimer = null;
+    let lastHoverEl = null;
+
+    const hideNoteTooltip = () => {
+      const tip = $('noteTooltip');
+      if (!tip) return;
+      tip.style.display = 'none';
+      tip.textContent = '';
+    };
+
+    const showNoteTooltip = (el) => {
+      const tip = $('noteTooltip');
+      if (!tip || !el) return;
+
+      const wrapRect = $('sheetWrap').getBoundingClientRect();
+      const r = el.getBoundingClientRect();
+      const x = (r.left - wrapRect.left) + (r.width / 2);
+      const y = (r.top - wrapRect.top);
+
+      let mids = null;
+      const set = elementPitchMap.get(el);
+      if (set && set.size) {
+        mids = Array.from(set);
+      } else if (el.dataset && el.dataset.pitches) {
+        mids = el.dataset.pitches.split(',').map(x => parseInt(x, 10)).filter(Number.isFinite);
+      }
+      if (!mids || mids.length === 0) return;
+
+      // dedup + sort
+      mids = Array.from(new Set(mids)).sort((a,b)=>a-b);
+      let names = (el.dataset && el.dataset.noteNames) ? el.dataset.noteNames : mids.map(midiToName).join(' ');
+      // Fallback: if mapping fails, show raw midi numbers
+      if (!names || names.trim() === '' || names.trim() === '?') {
+        const raw = mids.map(x => String(x)).join(' ');
+        if (raw) names = raw;
+      }
+      tip.textContent = names;
+      tip.style.left = x + 'px';
+      tip.style.top = y + 'px';
+      tip.style.display = 'block';
+    };
+
+    const bindNoteHoverTooltips = () => {
+      hideNoteTooltip();
+      const notes = document.querySelectorAll('g.abcjs-note');
+      notes.forEach(el => {
+        el.addEventListener('mouseenter', () => {
+          lastHoverEl = el;
+          if (hoverTimer) clearTimeout(hoverTimer);
+          hoverTimer = setTimeout(() => {
+            if (lastHoverEl === el) showNoteTooltip(el);
+          }, 450);
+        });
+        el.addEventListener('mouseleave', () => {
+          lastHoverEl = null;
+          if (hoverTimer) clearTimeout(hoverTimer);
+          hideNoteTooltip();
+        });
+      });
+
+      $('sheetWrap').addEventListener('scroll', hideNoteTooltip, { passive: true });
+    };
+
+
+    // ---- Click note on sheet -> select corresponding ABC in textarea ----
+    const selectAbcRange = (start, end) => {
+      const ta = $('abcInput');
+      if (!ta) return;
+      if (typeof start !== 'number' || typeof end !== 'number' || start < 0 || end <= start) return;
+      ta.focus();
+      ta.setSelectionRange(start, end);
+
+      // scroll roughly to line
+      const before = ta.value.slice(0, start);
+      const line = before.split('\n').length;
+      ta.scrollTop = Math.max(0, (line - 3) * 18);
+    };
+
+    const getClickCharRange = (abcelem, analysis) => {
+      const candidates = [
+        abcelem,
+        abcelem && abcelem.abcelem,
+        analysis,
+        analysis && analysis.abcelem,
+        analysis && analysis.elem,
+      ];
+      for (const o of candidates) {
+        if (!o) continue;
+        const s = o.startChar ?? o.start;
+        const e = o.endChar ?? o.end;
+        if (typeof s === 'number' && typeof e === 'number' && e > s) return {start:s, end:e};
+      }
+      return null;
+    };
+
+
+    // ---------- Rendering ----------
+    const DEFAULT_ABC = `X:1
+T:Piano Coach Test (2 Voices)
+C:Demo
+M:4/4
+L:1/8
+Q:1/4=80
+K:C
+V:RH clef=treble name="RH"
+V:LH clef=bass name="LH"
+[V:RH] C2 D2 | E2 F2 | [CEG]2 z2 | G4 |
+[V:RH] A2 G2 | F2 E2 | [DFA]2 z2 | C4 ||
+[V:LH] C,4 | G,,4 | C,2 G,,2 | C,4 |
+[V:LH] F,,4 | G,,4 | C,2 G,,2 | C,4 ||`;
+
+    const parseTitleFromAbc = (abc) => {
+      const m = abc.match(/^T:(.*)$/m);
+      return (m && m[1] ? m[1].trim() : 'Untitled');
+    };
+    const parseMetaFromAbc = (abc) => {
+      const q = abc.match(/^Q:.*?(\d+)\s*$/m);
+      const bpm = q ? parseInt(q[1],10) : 80;
+      const m = abc.match(/^M:(.*)$/m);
+      const meter = m ? m[1].trim() : '4/4';
+      const k = abc.match(/^K:(.*)$/m);
+      const key = k ? k[1].trim() : 'C';
+      return { bpm, meter, key };
+    };
+
+    const clearAllMarks = () => {
+      document.querySelectorAll('g.abcjs-note').forEach(el => {
+        el.classList.remove('note-current','note-correct','note-wrong','note-partial','note-had-error');
+      });
+    };
+    const clearCurrentMark = () => {
+      document.querySelectorAll('g.abcjs-note.note-current, g.abcjs-note.note-partial').forEach(el => {
+        el.classList.remove('note-current','note-partial');
+      });
+    };
+    const markStep = (step, cls) => {
+      if (!step || !step.elements) return;
+      step.elements.forEach(el => el.classList.add(cls));
+    };
+    const unmarkStep = (step, cls) => {
+      if (!step || !step.elements) return;
+      step.elements.forEach(el => el.classList.remove(cls));
+    };
+
+    const renderAbc = () => {
+      let abc = $('abcInput').value.trim();
+      if (!abc) return;
+      const normalized = normalizeAbc(abc);
+      if (normalized !== abc) {
+        $('abcInput').value = normalized;
+        abc = normalized;
+        showToast('Normalized ABC (#→^, chord spaces removed)');
+      }
+      state.currentSong.originalABC = abc;
+      state.currentSong.workingABC = abc;
+
+      const meta = parseMetaFromAbc(abc);
+      state.currentSong.baseBpm = meta.bpm || state.settings.bpm;
+      // sync BPM UI from ABC
+      state.settings.bpm = state.currentSong.baseBpm;
+      $('bpmRange').value = String(state.settings.bpm);
+      $('bpmVal').textContent = String(state.settings.bpm);
+      if (!Number.isFinite(state.settings.bpm) || state.settings.bpm <= 0) state.settings.bpm = state.currentSong.baseBpm;
+
+      const title = parseTitleFromAbc(abc);
+      state.currentSong.title = title;
+      $('songTitle').textContent = title;
+      $('songSub').textContent = `Key: ${meta.key} • Meter: ${meta.meter} • Base tempo: ${state.currentSong.baseBpm} BPM`;
+      // keep metronome in sync with the song
+      Metro.syncToSong({ meter: meta.meter, bpm: state.settings.bpm });
+
+      $('paper').innerHTML = '';
+      if (!window.ABCJS || !ABCJS.renderAbc) {
+        showToast('ABCJS not loaded. Please use internet or GitHub Pages (https).');
+        $('paper').innerHTML = '<div style="padding:14px;border:1px solid rgba(245,158,11,0.35);background:rgba(245,158,11,0.08);border-radius:14px;font-weight:900;">Library ABCJS chưa tải được. Hãy bật internet và reload trang.</div>';
+        return;
+      }
+      try {
+        const visualObjs = ABCJS.renderAbc('paper', abc, {
+          add_classes: true,
+          clickListener: (abcelem, tuneNumber, classes, analysis, drag, mouseEvent) => {
+            const r = getClickCharRange(abcelem, analysis);
+            if (r) {
+              selectAbcRange(r.start, r.end);
+              // mark selection on sheet too
+              if (mouseEvent && mouseEvent.target) {
+                // no-op
+              }
+              if (document.body.classList.contains('practice-focus')) {
+                showToast('ABC selected (Back to edit to see highlight)');
+              }
+            }
+          },
+          responsive: 'resize',
+          paddingtop: 10,
+          paddingleft: 10,
+          paddingright: 10,
+          paddingbottom: 10,
+          staffwidth: 860
+        });
+        state.currentSong.visualObj = visualObjs && visualObjs[0] ? visualObjs[0] : null;
+      } catch (e) {
+        console.error(e);
+        showToast('ABC render failed. Check ABC syntax (K changes should be [K:G], chords like [CEG]).');
+        return;
+      }
+
+      const steps = extractSteps();
+      state.practice.expectedSteps = steps;
+      buildElementPitchMap(steps);
+      bindNoteHoverTooltips();
+
+      state.practice.barFirstIdx = new Map();
+      steps.forEach((s, idx) => {
+        const b = (s.barIndex ?? s.bar ?? 0);
+        if (!state.practice.barFirstIdx.has(b)) state.practice.barFirstIdx.set(b, idx);
+      });
+
+      clearAllMarks();
+      showToast(`Rendered: ${steps.length} steps`);
+    };
+
+    const applyZoom = () => {
+      const z = parseInt($('zoomRange').value, 10) / 100;
+      $('paper').style.transform = `scale(${z})`;
+    };
+
+    // ---------- MIDI ----------
+    const setMidiBadge = (status, text) => {
+      const b = $('midiBadge');
+      b.classList.remove('off','on','warn');
+      b.classList.add(status);
+      $('midiText').textContent = text;
+    };
+
+    const refreshMidiList = async () => {
+      $('midiSelect').innerHTML = '';
+      if (!navigator.requestMIDIAccess) {
+        setMidiBadge('warn', 'No WebMIDI');
+        showToast('Trình duyệt không hỗ trợ WebMIDI.');
+        return;
+      }
+      try {
+        state.midi.access = state.midi.access || await navigator.requestMIDIAccess();
+      } catch(e) {
+        console.error(e);
+        setMidiBadge('warn', 'MIDI blocked');
+        showToast('MIDI permission blocked.');
+        return;
+      }
+      const inputs = Array.from(state.midi.access.inputs.values());
+      if (inputs.length === 0) {
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = 'No MIDI input found';
+        $('midiSelect').appendChild(opt);
+        setMidiBadge('off', 'MIDI Off');
+        return;
+      }
+      inputs.forEach((inp) => {
+        const opt = document.createElement('option');
+        opt.value = inp.id;
+        opt.textContent = inp.name || inp.manufacturer || inp.id;
+        $('midiSelect').appendChild(opt);
+      });
+      setMidiBadge(state.midi.connected ? 'on' : 'warn', state.midi.connected ? 'MIDI On' : 'Select MIDI');
+    };
+
+    const connectSelectedMidi = async () => {
+      await refreshMidiList();
+      const id = $('midiSelect').value;
+      if (!id) { showToast('Không có MIDI input.'); return; }
+      const inputs = Array.from(state.midi.access.inputs.values());
+      const chosen = inputs.find(i => i.id === id) || inputs[0];
+      if (!chosen) { showToast('MIDI input not found.'); return; }
+
+      if (state.midi.input) state.midi.input.onmidimessage = null;
+      state.midi.input = chosen;
+      state.midi.input.onmidimessage = onMidiMessage;
+      state.midi.connected = true;
+
+      setMidiBadge('on', 'MIDI On');
+      showToast('MIDI connected.');
+      closeModal('midiModal');
+    };
+
+    const onMidiMessage = (msg) => {
+      const [st, d1, d2] = msg.data;
+      const cmd = st & 0xF0;
+      if (cmd === 0x90 && d2 > 0) {
+        state.activeKeys.add(d1);
+        handleNoteOn(d1, d2);
+      } else if (cmd === 0x80 || (cmd === 0x90 && d2 === 0)) {
+        state.activeKeys.delete(d1);
+      }
+    };
+
+    // ---------- Practice logic ----------
+    const getScaledTimeMs = (rawMs) => {
+      const base = state.currentSong.baseBpm || state.settings.bpm || 80;
+      const target = state.settings.bpm || base;
+      if (!base || !target) return rawMs;
+      return rawMs * (base / target);
+    };
+
+    const buildHud = () => {
+      const m = state.mode;
+      const s = state.practice.stats;
+
+      let text = '';
+      if (m === 'beginner') {
+        const firstTry = Math.round((s.perfectSteps / Math.max(1, s.total)) * 100);
+        text = `First-try ${firstTry}% • Done ${s.done}/${s.total} • Errors ${s.wrongSteps}`;
+      } else if (m === 'flow') {
+        const acc = Math.round((s.correctSteps / Math.max(1, s.done)) * 100);
+        text = `Acc ${acc}% • Done ${s.done}/${s.total} • Wrong ${s.wrongSteps}`;
+      } else {
+        const ok = Math.round((s.correctSteps / Math.max(1, s.done)) * 100);
+        text = `OK ${ok}% • Done ${s.done}/${s.total} • Miss ${s.wrongSteps}`;
+      }
+
+      const hdr = $('hdrStats');
+      if (hdr) hdr.textContent = text || '—';
+    };
+
+    const updateHint = (extraText='—') => {
+      const i = state.practice.stepIndex;
+      const steps = state.practice.expectedSteps;
+      const step = steps[i];
+      const total = steps.length;
+      $('coachStep').textContent = `${Math.min(i+1,total)}/${total}`;
+      if (!step) {
+        $('coachPlay').textContent = '—';
+        $('coachMiss').textContent = '—';
+        $('coachExtra').textContent = '—';
+        return;
+      }
+      const req = uniq(step.pitches || []).sort((a,b)=>a-b);
+      const reqNames = req.map(midiToName).join(' ');
+      $('coachPlay').textContent = `${reqNames || '—'}`;
+
+      const pressed = new Set([...state.practice.currentPressed, ...state.activeKeys]);
+      const miss = req.filter(p => !pressed.has(p));
+      $('coachMiss').textContent = `${miss.length ? miss.map(midiToName).join(' ') : '—'}`;
+      $('coachExtra').textContent = `${extraText || '—'}`;
+    };
+
+    const highlightStep = () => {
+      clearCurrentMark();
+      const step = state.practice.expectedSteps[state.practice.stepIndex];
+      if (!step) return;
+      markStep(step, 'note-current');
+
+
+      if (state.mode === 'beginner' && step.pitches && step.pitches.length > 1) {
+        const pressed = new Set([...state.practice.currentPressed, ...state.activeKeys]);
+        const miss = step.pitches.filter(p => !pressed.has(p));
+        if (miss.length > 0 && miss.length < step.pitches.length) {
+          markStep(step, 'note-partial');
+        }
+      }
+    };
+
+    const openModal = (id) => { $(id).style.display = 'flex'; };
+    const closeModal = (id) => { $(id).style.display = 'none'; };
+
+    const finishPractice = () => {
+      state.practice.running = false;
+      state.practice.status = 'finished';
+      document.body.classList.remove('practice-focus');
+      $('btnPractice').style.display = '';
+      $('btnFocusBack').style.display = 'none';
+
+      const m = state.mode;
+      const s = state.practice.stats;
+      let sub = '';
+      let statsHtml = '';
+
+      if (m === 'beginner') {
+        const firstTry = Math.round((s.perfectSteps / Math.max(1, s.total)) * 100);
+        sub = `Beginner mode: First-try ${firstTry}% • Steps with errors ${s.wrongSteps} • Wrong keys ${s.wrongKeystrokes}`;
+        statsHtml = `
+          <div class="stat"><div class="k">First-try</div><div class="v">${firstTry}%</div></div>
+          <div class="stat"><div class="k">Perfect steps</div><div class="v">${s.perfectSteps}/${s.total}</div></div>
+          <div class="stat"><div class="k">Steps w/ errors</div><div class="v">${s.wrongSteps}</div></div>
+          <div class="stat"><div class="k">Wrong keystrokes</div><div class="v">${s.wrongKeystrokes}</div></div>
+        `;
+      } else {
+        const acc = Math.round((s.correctSteps / Math.max(1, s.done)) * 100);
+        sub = `${m.toUpperCase()} mode: Accuracy ${acc}% • Wrong steps ${s.wrongSteps}`;
+        statsHtml = `
+          <div class="stat"><div class="k">Accuracy</div><div class="v">${acc}%</div></div>
+          <div class="stat"><div class="k">Done</div><div class="v">${s.done}/${s.total}</div></div>
+          <div class="stat"><div class="k">Correct steps</div><div class="v">${s.correctSteps}</div></div>
+          <div class="stat"><div class="k">Wrong steps</div><div class="v">${s.wrongSteps}</div></div>
+        `;
+      }
+
+      $('resultSub').textContent = sub;
+      $('resultBody').innerHTML = statsHtml;
+      openModal('resultModal');
+    };
+
+    const stopPractice = () => {
+      if (!state.practice.running) return;
+      state.practice.running = false;
+      state.practice.status = 'finished';
+      finishPractice();
+    };
+
+    const restartCurrentBar = () => {
+      if (!state.practice.running) return;
+      const steps = state.practice.expectedSteps;
+      const i = state.practice.stepIndex;
+      const cur = steps[i];
+      if (!cur) return;
+      const bar = cur.barIndex ?? cur.bar ?? 0;
+      const idx = state.practice.barFirstIdx.get(bar) ?? 0;
+      for (let j = idx; j < steps.length; j++) {
+        unmarkStep(steps[j], 'note-correct');
+        unmarkStep(steps[j], 'note-wrong');
+        unmarkStep(steps[j], 'note-had-error');
+      }
+      state.practice.stepIndex = idx;
+      state.practice.currentPressed = new Set();
+      state.practice.stepHadError = false;
+      state.practice.stepCountedWrong = false;
+      highlightStep();
+      updateHint('—');
+      showToast('Restart bar');
+    };
+
+    const startPractice = async () => {
+      if (!state.currentSong.visualObj) renderAbc();
+      if (!state.currentSong.visualObj) { showToast('Render ABC trước đã.'); return; }
+      if (!state.practice.expectedSteps || state.practice.expectedSteps.length === 0) {
+        showToast('Không tạo được steps. Kiểm tra ABC.');
+        return;
+      }
+      if (!state.midi.connected) showToast('Tip: Connect MIDI để chấm đúng hơn.');
+
+      clearAllMarks();
+      state.practice.running = true;
+      state.practice.status = 'countin';
+      state.practice.stepIndex = 0;
+      state.practice.currentPressed = new Set();
+      state.practice.chordPressed = new Set();
+      state.practice.windowPressed = new Set();
+      state.practice.windowOnsets = new Map();
+      state.practice.stepHadError = false;
+      state.practice.stepCountedWrong = false;
+      state.practice.results = [];
+      state.practice.loop = null;
+
+      const s = state.practice.stats;
+      s.total = state.practice.expectedSteps.length;
+      s.done = 0; s.correctSteps = 0; s.wrongSteps = 0; s.wrongKeystrokes = 0; s.perfectSteps = 0;
+
+      document.body.classList.add('practice-focus');
+      $('btnPractice').style.display = 'none';
+      $('btnFocusBack').style.display = 'inline-flex';
+
+      buildHud();
+      highlightStep();
+      updateHint('—');
+
+      const bars = parseInt($('countInSel').value, 10) || 0;
+      state.settings.countInBars = bars;
+
+      // If metronome is running, re-sync it to the practice start (count-in uses the same grid)
+      if (Metro.enabled) { Metro.syncToPractice({ countInBars: bars }); }
+
+      state.practice.startPerf = performance.now();
+      if (state.mode === 'rhythm' && bars > 0) {
+        showToast(`Count-in: ${bars} bar(s)`);
+        const msPerBeat = 60000 / state.settings.bpm;
+        const meter = parseMetaFromAbc(state.currentSong.workingABC).meter || '4/4';
+        const beats = parseInt((meter.split('/')[0]||'4'),10);
+        const countMs = bars * beats * msPerBeat;
+        setTimeout(() => {
+          if (!state.practice.running) return;
+          state.practice.status = 'running';
+          state.practice.startPerf = performance.now();
+          showToast('Go!');
+          startRhythmLoop();
+        }, Math.max(200, countMs));
+      } else {
+        state.practice.status = 'running';
+        if (state.mode === 'rhythm') startRhythmLoop();
+      }
+    };
+
+    const completeStep = (ok, missing=[], extra=[], deltaMs=null) => {
+      const steps = state.practice.expectedSteps;
+      const step = steps[state.practice.stepIndex];
+      if (!step) return;
+
+      unmarkStep(step, 'note-current');
+      unmarkStep(step, 'note-partial');
+      if (ok) {
+        unmarkStep(step, 'note-wrong');
+        markStep(step, 'note-correct');
+        if (state.practice.stepHadError) markStep(step, 'note-had-error');
+      } else {
+        unmarkStep(step, 'note-correct');
+        markStep(step, 'note-wrong');
+        markStep(step, 'note-had-error');
+      }
+
+      const s = state.practice.stats;
+      s.done += 1;
+      if (ok) s.correctSteps += 1;
+      else s.wrongSteps += 1;
+
+      state.practice.results.push({
+        ok, missing, extra, deltaMs,
+        bar: step.barIndex ?? step.bar ?? 0
+      });
+
+      state.practice.stepIndex += 1;
+
+      state.practice.currentPressed = new Set();
+      state.practice.stepHadError = false;
+      state.practice.stepCountedWrong = false;
+
+      if (state.practice.stepIndex >= steps.length) { stopPractice(); return; }
+
+      highlightStep();
+      updateHint('—');
+      buildHud();
+    };
+
+    const handleNoteOn = (pitch, vel=100) => {
+      if (!state.practice.running || state.practice.status !== 'running') return;
+      const steps = state.practice.expectedSteps;
+      const idx = state.practice.stepIndex;
+      const step = steps[idx];
+      if (!step) return;
+
+      let extraText = '—';
+
+      if (state.mode === 'beginner') {
+        const req = new Set(step.pitches || []);
+        if (req.has(pitch)) {
+          state.practice.currentPressed.add(pitch);
+        } else {
+          state.practice.stats.wrongKeystrokes += 1;
+          extraText = midiToName(pitch);
+          if (!state.practice.stepCountedWrong) {
+            state.practice.stats.wrongSteps += 1;
+            state.practice.stepCountedWrong = true;
+          }
+          state.practice.stepHadError = true;
+          markStep(step, 'note-wrong');
+          setTimeout(() => unmarkStep(step,'note-wrong'), 120);
+        }
+
+        const pressed = new Set([...state.practice.currentPressed, ...state.activeKeys]);
+        const missing = (step.pitches || []).filter(p => !pressed.has(p));
+        if (missing.length === 0) {
+          if (!state.practice.stepHadError) state.practice.stats.perfectSteps += 1;
+
+          state.practice.stats.done += 1;
+          state.practice.stats.correctSteps += 1;
+
+          unmarkStep(step,'note-current'); unmarkStep(step,'note-partial'); unmarkStep(step,'note-wrong');
+          markStep(step,'note-correct');
+          if (state.practice.stepHadError) markStep(step,'note-had-error');
+
+          state.practice.stepIndex += 1;
+          state.practice.currentPressed = new Set();
+          state.practice.stepHadError = false;
+          state.practice.stepCountedWrong = false;
+
+          if (state.practice.stepIndex >= steps.length) { stopPractice(); return; }
+          highlightStep();
+        } else {
+          if ((step.pitches||[]).length > 1) {
+            const missCount = missing.length;
+            if (missCount > 0 && missCount < (step.pitches||[]).length) {
+              markStep(step,'note-partial');
+            }
+          }
+        }
+        buildHud();
+        updateHint(extraText);
+        return;
+      }
+
+      if (state.mode === 'flow') {
+        const req = new Set(step.pitches || []);
+        const isChord = req.size > 1;
+
+        if (!isChord) {
+          const ok = req.has(pitch);
+          completeStep(ok, ok?[]:[...req], ok?[]:[pitch], null);
+          return;
+        }
+
+        state.practice.chordPressed.add(pitch);
+        if (!state.practice.chordTimer) {
+          state.practice.chordTimer = setTimeout(() => {
+            const played = new Set(state.practice.chordPressed);
+            state.practice.chordPressed = new Set();
+            state.practice.chordTimer = null;
+
+            const missing = [...req].filter(p => !played.has(p));
+            const extra = [...played].filter(p => !req.has(p));
+            const ok = (missing.length === 0 && extra.length === 0);
+
+            completeStep(ok, missing, extra, null);
+          }, state.settings.chordWindowMs);
+        }
+        updateHint(midiToName(pitch));
+        return;
+      }
+
+      if (state.mode === 'rhythm') {
+        const now = performance.now();
+        const t = now - state.practice.startPerf;
+        const expected = getScaledTimeMs(step.timeMs || 0);
+        const tol = state.settings.toleranceMs;
+
+        if (t >= expected - tol && t <= expected + tol) {
+          state.practice.windowPressed.add(pitch);
+          if (!state.practice.windowOnsets.has(pitch)) state.practice.windowOnsets.set(pitch, t);
+          updateHint(midiToName(pitch));
+        } else {
+          state.practice.stats.wrongKeystrokes += 1;
+          updateHint(midiToName(pitch) + ' (off)');
+          buildHud();
+        }
+      }
+    };
+
+    let rhythmRAF = null;
+    const startRhythmLoop = () => {
+      if (rhythmRAF) cancelAnimationFrame(rhythmRAF);
+      const tick = () => {
+        if (!state.practice.running || state.practice.status !== 'running' || state.mode !== 'rhythm') return;
+
+        const steps = state.practice.expectedSteps;
+        const idx = state.practice.stepIndex;
+        const step = steps[idx];
+        if (!step) return;
+
+        const now = performance.now();
+        const t = now - state.practice.startPerf;
+        const expected = getScaledTimeMs(step.timeMs || 0);
+        const tol = state.settings.toleranceMs;
+
+        highlightStep();
+
+        if (t > expected + tol) {
+          const req = new Set(step.pitches || []);
+          const played = new Set(state.practice.windowPressed);
+          const missing = [...req].filter(p => !played.has(p));
+          const extra = [...played].filter(p => !req.has(p));
+          const ok = (missing.length === 0);
+
+          let delta = null;
+          const onsets = [...req].map(p => state.practice.windowOnsets.get(p)).filter(x => typeof x === 'number');
+          if (onsets.length) delta = Math.round(Math.min(...onsets) - expected);
+
+          completeStep(ok, missing, extra, delta);
+
+          state.practice.windowPressed = new Set();
+          state.practice.windowOnsets = new Map();
+        }
+
+        rhythmRAF = requestAnimationFrame(tick);
+      };
+      rhythmRAF = requestAnimationFrame(tick);
+    };
+
+    // ---------- Preview playback (simple, no UI controls) ----------
+    let previewSynth = null;
+    let previewPlaying = false;
+
+    const previewToggle = async () => {
+      if (!state.currentSong.visualObj) renderAbc();
+      if (!state.currentSong.visualObj) return;
+
+      try {
+        if (previewPlaying && previewSynth) {
+          previewSynth.stop();
+          previewPlaying = false;
+          showToast('Preview stopped');
+          return;
+        }
+
+        previewSynth = new ABCJS.synth.CreateSynth();
+        await previewSynth.init({
+          visualObj: state.currentSong.visualObj,
+          options: {
+            soundFontUrl: "https://paulrosen.github.io/midi-js-soundfonts/FluidR3_GM/",
+            program: 0
+          }
+        });
+        await previewSynth.prime();
+        previewSynth.start();
+        previewPlaying = true;
+        showToast('Preview playing');
+      } catch (e) {
+        console.error(e);
+        showToast('Preview audio not available (browser blocked).');
+      }
+    };
+
+    // ---------- Storage (Recent) ----------
+    const STORAGE_KEY = 'liem_piano_coach_recent_v1';
+    const loadRecent = () => {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        const list = raw ? JSON.parse(raw) : [];
+        return Array.isArray(list) ? list : [];
+      } catch(e) {
+        return [];
+      }
+    };
+    const saveRecent = (abc) => {
+      const title = parseTitleFromAbc(abc);
+      const now = Date.now();
+      const item = { title, abc, ts: now };
+      const list = loadRecent()
+        .filter(x => x && x.abc && x.abc.trim() !== abc.trim())
+        .slice(0, 9);
+      list.unshift(item);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+      renderRecentList();
+      showToast('Saved locally');
+    };
+    const renderRecentList = () => {
+      const list = loadRecent();
+      const wrap = $('recentList');
+      wrap.innerHTML = '';
+      if (!list.length) {
+        const empty = document.createElement('div');
+        empty.style.padding = '12px';
+        empty.style.color = 'var(--text-light)';
+        empty.style.fontWeight = '800';
+        empty.textContent = 'No recent songs yet.';
+        wrap.appendChild(empty);
+        return;
+      }
+      list.forEach((it) => {
+        const div = document.createElement('div');
+        div.className = 'item';
+        const d = new Date(it.ts);
+        div.innerHTML = `
+          <div style="min-width:0">
+            <div class="t">${it.title || 'Untitled'}</div>
+            <div class="s">${d.toLocaleString()}</div>
+          </div>
+          <i class="fa-solid fa-chevron-right" style="opacity:.6"></i>
+        `;
+        div.onclick = () => {
+          $('abcInput').value = it.abc;
+          switchTab('abc');
+          renderAbc();
+          showToast('Loaded');
+        };
+        wrap.appendChild(div);
+      });
+    };
+
+    // ---------- Tabs ----------
+    const switchTab = (name) => {
+      const isRecent = (name === 'recent');
+      $('tab-abc').classList.toggle('active', !isRecent);
+      $('tab-recent').classList.toggle('active', isRecent);
+
+      $('abcInput').style.display = isRecent ? 'none' : 'block';
+      $('recentList').style.display = isRecent ? 'flex' : 'none';
+      if (isRecent) renderRecentList();
+    };
+
+    // ---------- Mode selection ----------
+    const setMode = (mode) => {
+      state.mode = mode;
+      $('mode-beginner').classList.toggle('active', mode === 'beginner');
+      $('mode-flow').classList.toggle('active', mode === 'flow');
+      $('mode-rhythm').classList.toggle('active', mode === 'rhythm');
+
+      if (mode === 'beginner') showToast('Beginner: đúng mới qua');
+      if (mode === 'flow') showToast('Flow: chơi liên tục');
+      if (mode === 'rhythm') showToast('Rhythm: chấm sớm/trễ');
+
+      if (state.practice.running) {
+        showToast('Mode changed → stop practice');
+        stopPractice();
+      }
+    };
+
+    const setTheme = (t) => {
+      document.body.classList.remove('theme-retro','theme-ocean','theme-coder');
+      document.body.classList.add('theme-' + t);
+      state.settings.theme = t;
+    };
+
+    const exitFocus = () => {
+      if (state.practice.running) { stopPractice(); return; }
+      document.body.classList.remove('practice-focus');
+      $('btnPractice').style.display = '';
+      $('btnFocusBack').style.display = 'none';
+    };
+
+    // ---------- Keyboard shortcuts ----------
+    window.addEventListener('keydown', (e) => {
+      if (!state.practice.running) return;
+      
+      if (e.key.toLowerCase() === 'r') {
+        e.preventDefault();
+        restartCurrentBar();
+      }
+    });
+
+    // ---------- Init ----------
+    const renderAbcDebounced = debounce(renderAbc, 220);
+
+    const init = async () => {
+      $('abcInput').value = DEFAULT_ABC;
+      renderAbc();
+      applyZoom();
+
+      $('zoomRange').addEventListener('input', applyZoom);
+
+      $('btnRender').onclick = renderAbc;
+      $('btnReset').onclick = () => { $('abcInput').value = DEFAULT_ABC; renderAbc(); };
+      $('btnPreview').onclick = previewToggle;
+
+      $('tab-abc').onclick = () => switchTab('abc');
+      $('tab-recent').onclick = () => switchTab('recent');
+
+      $('btnSave').onclick = () => {
+        const abc = $('abcInput').value.trim();
+        if (!abc) return;
+        saveRecent(abc);
+      };
+
+      $('btnPractice').onclick = startPractice;
+      $('btnStopHdr').onclick = stopPractice;
+      $('btnRestartBarHdr').onclick = restartCurrentBar;      
+
+      $('btnFocusBack').onclick = exitFocus;
+
+      $('mode-beginner').onclick = () => setMode('beginner');
+      $('mode-flow').onclick = () => setMode('flow');
+      $('mode-rhythm').onclick = () => setMode('rhythm');
+
+      $('bpmRange').addEventListener('input', () => {
+        const v = parseInt($('bpmRange').value, 10);
+        state.settings.bpm = v;
+        $('bpmVal').textContent = String(v);
+        Metro.setBpm(v);
+        // update ABC text tempo line so sheet/meta stay in sync
+        const abc = $('abcInput').value;
+        $('abcInput').value = setAbcTempo(abc, v);
+        renderAbcDebounced();
+      });
+      $('tolSel').addEventListener('change', () => { state.settings.toleranceMs = parseInt($('tolSel').value, 10); });
+      $('countInSel').addEventListener('change', () => { state.settings.countInBars = parseInt($('countInSel').value, 10); });
+      $('arpSel').addEventListener('change', () => { state.settings.allowArpeggio = $('arpSel').value === '1'; });
+      $('themeSel').addEventListener('change', () => { setTheme($('themeSel').value); });
+      $('btnToggleTheme').onclick = () => {
+        const next = state.settings.theme === 'retro' ? 'ocean' : (state.settings.theme === 'ocean' ? 'coder' : 'retro');
+        $('themeSel').value = next;
+        setTheme(next);
+      };
+
+      $('btnInstructions').onclick = () => openModal('instrModal');
+      $('btnInstrClose').onclick = () => closeModal('instrModal');
+
+      $('midiBadge').onclick = async () => { openModal('midiModal'); await refreshMidiList(); };
+      $('btnRefreshMidi').onclick = refreshMidiList;
+      $('btnMidiClose').onclick = () => closeModal('midiModal');
+      $('btnMidiConnect').onclick = connectSelectedMidi;
+
+      $('btnResultClose').onclick = () => closeModal('resultModal');
+      $('btnResultAgain').onclick = () => { closeModal('resultModal'); startPractice(); };
+
+      $('abcInput').addEventListener('input', debounce(() => { if (!state.practice.running) renderAbc(); }, 650));
+
+      Metro.wireUI();
+      Metro.setBpm(state.settings.bpm);
+      setTheme(state.settings.theme);
+
+      if (!navigator.requestMIDIAccess) setMidiBadge('warn', 'No WebMIDI');
+      else setMidiBadge('off', 'MIDI Off');
+
+      buildHud();
+    };
+
+    $('midiModal').addEventListener('click', (e) => { if (e.target === $('midiModal')) closeModal('midiModal'); });
+    $('resultModal').addEventListener('click', (e) => { if (e.target === $('resultModal')) closeModal('resultModal'); });
+    $('instrModal').addEventListener('click', (e) => { if (e.target === $('instrModal')) closeModal('instrModal'); });
+
+    init();
+  </script>
+</body>
+</html>
