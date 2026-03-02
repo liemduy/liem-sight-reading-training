@@ -368,6 +368,14 @@
     .note-wrong path, .note-wrong text, g.note-wrong { fill: #ef4444 !important; stroke: #ef4444 !important; opacity: 1 !important; }
     .note-current path, .note-current text, g.note-current { fill: #3b82f6 !important; stroke: #3b82f6 !important; opacity: 1 !important; }
     .note-partial path, .note-partial text, g.note-partial { fill: #f59e0b !important; stroke: #f59e0b !important; opacity: 1 !important; }
+
+    /* Preview playback highlight (listening mode) */
+    .note-playback path, .note-playback text, g.note-playback {
+      fill: #a855f7 !important;
+      stroke: #a855f7 !important;
+      opacity: 1 !important;
+      filter: drop-shadow(0 0 6px rgba(168,85,247,0.35));
+    }
     .note-had-error path, .note-had-error text, g.note-had-error { opacity: 1 !important; filter: drop-shadow(0 0 6px rgba(239,68,68,.35)); }
 
     .modal-backdrop{
@@ -409,7 +417,7 @@
   <header>
     <div class="brand">
       <i class="fa-solid fa-music fa-lg"></i>
-      <div class="title">Liem Piano Coach<span class="sub">GitHub Pages</span></div>
+      <div class="title">Liem Piano Coach</div>
     </div>
 
     <div class="mode-pill" title="Coach Mode">
@@ -1086,6 +1094,7 @@
         toleranceMs: 160,
         chordWindowMs: 240,
         allowArpeggio: true,
+        chordTogetherMs: 120,
                 theme: 'retro',
       },
       practice: {
@@ -1766,6 +1775,8 @@ V:LH clef=bass name="LH"
       Metro.syncToSong({ meter: meta.meter, bpm: state.settings.bpm });
 
       $('paper').innerHTML = '';
+      // clear any preview playback highlight from previous render
+      try { document.querySelectorAll('g.abcjs-note.note-playback').forEach(el => el.classList.remove('note-playback')); } catch(e) {}
       if (!window.ABCJS || !ABCJS.renderAbc) {
         showToast('ABCJS not loaded. Please use internet or GitHub Pages (https).');
         $('paper').innerHTML = '<div style="padding:14px;border:1px solid rgba(245,158,11,0.35);background:rgba(245,158,11,0.08);border-radius:14px;font-weight:900;">Library ABCJS chưa tải được. Hãy bật internet và reload trang.</div>';
@@ -1949,9 +1960,9 @@ V:LH clef=bass name="LH"
 
 
       if (state.mode === 'beginner' && step.pitches && step.pitches.length > 1) {
-        const pressed = new Set([...state.practice.currentPressed, ...state.activeKeys]);
+        const pressed = new Set([...state.activeKeys]);
         const miss = step.pitches.filter(p => !pressed.has(p));
-        if (miss.length > 0 && miss.length < step.pitches.length) {
+if (miss.length > 0 && miss.length < step.pitches.length) {
           markStep(step, 'note-partial');
         }
       }
@@ -2058,7 +2069,8 @@ V:LH clef=bass name="LH"
       }
       state.practice.stepIndex = idx;
       state.practice.currentPressed = new Set();
-      state.practice.stepHadError = false;
+      
+      state.practice.chordOnsets = new Map();state.practice.stepHadError = false;
       state.practice.stepCountedWrong = false;
       highlightStep();
       updateHint('—');
@@ -2080,7 +2092,8 @@ V:LH clef=bass name="LH"
       state.practice.stepIndex = 0;
       state.practice.currentPressed = new Set();
       state.practice.chordPressed = new Set();
-      state.practice.windowPressed = new Set();
+      
+      state.practice.chordOnsets = new Map();state.practice.windowPressed = new Set();
       state.practice.windowOnsets = new Map();
       state.practice.stepHadError = false;
       state.practice.stepCountedWrong = false;
@@ -2155,6 +2168,8 @@ V:LH clef=bass name="LH"
       state.practice.stepIndex += 1;
 
       state.practice.currentPressed = new Set();
+      state.practice.chordOnsets = new Map();
+
       state.practice.stepHadError = false;
       state.practice.stepCountedWrong = false;
 
@@ -2175,9 +2190,17 @@ V:LH clef=bass name="LH"
       let extraText = '—';
 
       if (state.mode === 'beginner') {
-        const req = new Set(step.pitches || []);
+        const reqArr = (step.pitches || []);
+        const req = new Set(reqArr);
+        const isChord = req.size > 1;
+
         if (req.has(pitch)) {
-          state.practice.currentPressed.add(pitch);
+          // For single notes we keep the old "progress memory".
+          // For chords we REQUIRE notes to be held together, so we track onsets separately.
+          if (!isChord) state.practice.currentPressed.add(pitch);
+          if (isChord && !state.practice.chordOnsets.has(pitch)) {
+            state.practice.chordOnsets.set(pitch, performance.now());
+          }
         } else {
           state.practice.stats.wrongKeystrokes += 1;
           extraText = midiToName(pitch);
@@ -2188,10 +2211,72 @@ V:LH clef=bass name="LH"
           state.practice.stepHadError = true;
           markStep(step, 'note-wrong');
           setTimeout(() => unmarkStep(step,'note-wrong'), 120);
+          buildHud();
+          updateHint(extraText);
+          return;
         }
 
+        // ---- Chord in Beginner: must be HELD together + pressed "together enough" ----
+        if (isChord) {
+          const held = new Set(state.activeKeys);
+          const missingHeld = reqArr.filter(p => !held.has(p));
+
+          if (missingHeld.length === 0) {
+            // Check onset spread to avoid "hold one note, press the other much later"
+            const times = reqArr.map(p => state.practice.chordOnsets.get(p)).filter(t => typeof t === 'number');
+            const spread = (times.length === reqArr.length) ? (Math.max(...times) - Math.min(...times)) : Infinity;
+
+            if (spread <= (state.settings.chordTogetherMs || 120)) {
+              // Success
+              if (!state.practice.stepHadError) state.practice.stats.perfectSteps += 1;
+
+              state.practice.stats.done += 1;
+              state.practice.stats.correctSteps += 1;
+
+              unmarkStep(step,'note-current'); unmarkStep(step,'note-partial'); unmarkStep(step,'note-wrong');
+              markStep(step,'note-correct');
+              if (state.practice.stepHadError) markStep(step,'note-had-error');
+
+              state.practice.stepIndex += 1;
+              state.practice.currentPressed = new Set();
+              state.practice.chordOnsets = new Map();
+              state.practice.stepHadError = false;
+              state.practice.stepCountedWrong = false;
+
+              if (state.practice.stepIndex >= steps.length) { stopPractice(); return; }
+              highlightStep();
+              buildHud();
+              updateHint('—');
+              return;
+            }
+
+            // Too wide => count as wrong step once and force retry
+            if (!state.practice.stepCountedWrong) {
+              state.practice.stats.wrongSteps += 1;
+              state.practice.stepCountedWrong = true;
+            }
+            state.practice.stepHadError = true;
+            markStep(step, 'note-wrong');
+            setTimeout(() => unmarkStep(step,'note-wrong'), 160);
+            state.practice.chordOnsets = new Map();
+            updateHint('Chord not together');
+            buildHud();
+            return;
+          } else {
+            // Partial (some held)
+            const heldCount = reqArr.filter(p => held.has(p)).length;
+            if (heldCount > 0 && heldCount < reqArr.length) {
+              markStep(step,'note-partial');
+            }
+            buildHud();
+            updateHint('—');
+            return;
+          }
+        }
+
+        // ---- Single note (old behavior) ----
         const pressed = new Set([...state.practice.currentPressed, ...state.activeKeys]);
-        const missing = (step.pitches || []).filter(p => !pressed.has(p));
+        const missing = reqArr.filter(p => !pressed.has(p));
         if (missing.length === 0) {
           if (!state.practice.stepHadError) state.practice.stats.perfectSteps += 1;
 
@@ -2204,19 +2289,21 @@ V:LH clef=bass name="LH"
 
           state.practice.stepIndex += 1;
           state.practice.currentPressed = new Set();
+          state.practice.chordOnsets = new Map();
           state.practice.stepHadError = false;
           state.practice.stepCountedWrong = false;
 
           if (state.practice.stepIndex >= steps.length) { stopPractice(); return; }
           highlightStep();
         } else {
-          if ((step.pitches||[]).length > 1) {
+          if (reqArr.length > 1) {
             const missCount = missing.length;
-            if (missCount > 0 && missCount < (step.pitches||[]).length) {
+            if (missCount > 0 && missCount < reqArr.length) {
               markStep(step,'note-partial');
             }
           }
         }
+
         buildHud();
         updateHint(extraText);
         return;
@@ -2333,7 +2420,8 @@ V:LH clef=bass name="LH"
           const played = new Set(state.practice.windowPressed);
           const missing = [...req].filter(p => !played.has(p));
           const extra = [...played].filter(p => !req.has(p));
-          const ok = (missing.length === 0);
+          const ok = (missing.length === 0 && extra.length === 0);
+          if (extra.length) state.practice.stats.wrongKeystrokes += extra.length;
 
           let delta = null;
           const onsets = [...req].map(p => state.practice.windowOnsets.get(p)).filter(x => typeof x === 'number');
@@ -2358,6 +2446,97 @@ V:LH clef=bass name="LH"
     let previewTimer = null;
     let previewPlayedMs = 0;
     let previewLastStartMs = 0;
+
+    // --- Preview -> highlight notes on the sheet as the audio plays ---
+    let previewVizTimer = null;
+    let previewVizLastIdx = -1;
+
+    const clearPreviewVizTimer = () => {
+      if (previewVizTimer) { clearTimeout(previewVizTimer); previewVizTimer = null; }
+    };
+
+    const clearPreviewVizHighlight = () => {
+      try {
+        document.querySelectorAll('g.abcjs-note.note-playback').forEach(el => el.classList.remove('note-playback'));
+      } catch(e) {}
+    };
+
+    const getPreviewElapsedMs = () => {
+      if (previewState === 'playing') return previewPlayedMs + (performance.now() - previewLastStartMs);
+      return previewPlayedMs;
+    };
+
+    const findLastStepAtOrBefore = (steps, tMs) => {
+      // binary search
+      let lo = 0, hi = steps.length - 1, ans = -1;
+      while (lo <= hi) {
+        const mid = (lo + hi) >> 1;
+        const tm = steps[mid] && typeof steps[mid].timeMs === 'number' ? steps[mid].timeMs : 0;
+        if (tm <= tMs) { ans = mid; lo = mid + 1; } else { hi = mid - 1; }
+      }
+      return ans;
+    };
+
+    const setPreviewVizIdx = (steps, idx) => {
+      if (idx === previewVizLastIdx) return;
+      previewVizLastIdx = idx;
+
+      clearPreviewVizHighlight();
+      const step = steps[idx];
+      if (!step || !step.elements) return;
+      step.elements.forEach(el => {
+        if (!el) return;
+        el.classList.add('note-playback');
+      });
+    };
+
+    const previewVizTick = () => {
+      clearPreviewVizTimer();
+      if (previewState !== 'playing') return;
+      if (state.practice && state.practice.running) return; // avoid fighting with practice highlighting
+
+      const steps = (state.practice && state.practice.expectedSteps) ? state.practice.expectedSteps : [];
+      if (!steps || steps.length === 0) return;
+
+      const t = getPreviewElapsedMs();
+      const idx = findLastStepAtOrBefore(steps, t);
+
+      if (idx >= 0) setPreviewVizIdx(steps, idx);
+      else {
+        // before first note: clear highlight
+        previewVizLastIdx = -1;
+        clearPreviewVizHighlight();
+      }
+
+      const nextIdx = idx + 1;
+      if (nextIdx >= steps.length) return;
+
+      const nextT = steps[nextIdx].timeMs || 0;
+      const delay = Math.max(0, nextT - t);
+      // schedule close to the next note; cap to keep UI responsive
+      previewVizTimer = setTimeout(previewVizTick, Math.min(250, delay + 5));
+    };
+
+    const startPreviewViz = (reset=false) => {
+      if (state.practice && state.practice.running) return;
+      clearPreviewVizTimer();
+      if (reset) {
+        previewVizLastIdx = -1;
+        clearPreviewVizHighlight();
+      }
+      previewVizTick();
+    };
+
+    const pausePreviewViz = () => {
+      clearPreviewVizTimer();
+      // keep the current highlight frozen
+    };
+
+    const stopPreviewViz = () => {
+      clearPreviewVizTimer();
+      previewVizLastIdx = -1;
+      clearPreviewVizHighlight();
+    };
 
     const clearPreviewTimer = () => {
       if (previewTimer) { clearTimeout(previewTimer); previewTimer = null; }
@@ -2391,6 +2570,7 @@ V:LH clef=bass name="LH"
       previewTimer = setTimeout(() => {
         previewState = 'stopped';
         previewPlayedMs = 0;
+        stopPreviewViz();
         updatePreviewUI();
       }, remainingMs + 80);
     };
@@ -2442,6 +2622,7 @@ V:LH clef=bass name="LH"
           previewState = 'paused';
           previewPlayedMs += (performance.now() - previewLastStartMs);
           clearPreviewTimer();
+          pausePreviewViz();
           updatePreviewUI();
           return;
         }
@@ -2451,6 +2632,7 @@ V:LH clef=bass name="LH"
           previewState = 'playing';
           previewLastStartMs = performance.now();
           schedulePreviewEnd();
+          startPreviewViz(false);
           updatePreviewUI();
           return;
         }
@@ -2460,6 +2642,7 @@ V:LH clef=bass name="LH"
         previewState = 'playing';
         previewLastStartMs = performance.now();
         schedulePreviewEnd();
+        startPreviewViz(true);
         updatePreviewUI();
       } catch (e) {
         console.error(e);
@@ -2467,7 +2650,8 @@ V:LH clef=bass name="LH"
         previewState = 'stopped';
         previewPlayedMs = 0;
         clearPreviewTimer();
-        updatePreviewUI();
+        stopPreviewViz();
+          updatePreviewUI();
       }
     };
 
@@ -2481,6 +2665,7 @@ V:LH clef=bass name="LH"
       previewState = 'stopped';
       previewPlayedMs = 0;
       clearPreviewTimer();
+      stopPreviewViz();
       updatePreviewUI();
     };
 
