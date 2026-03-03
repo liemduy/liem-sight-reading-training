@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -1209,9 +1210,38 @@ let currentKey = keySigFromName((abc.match(/^K:.*$/mi) || ['K:C'])[0]);
     const voiceCursors = {};
     const eventsByVoice = {};
 
+    // Per-voice tie carry and tuplet state (minimal ABC support for rhythm accuracy)
+    const tieCarryByVoice = {}; // voice -> Set(midi)
+    const tupletByVoice = {};   // voice -> { mult:number, remaining:number } | null
+
+    const defaultTupletQ = (p) => {
+        if (p === 2) return 3;
+        if (p === 3) return 2;
+        if (p === 4) return 3;
+        return 2; // 5-7 => 2 (common default)
+    };
+
+    const setTuplet = (v, p, q=null, r=null) => {
+        const P = Math.max(1, parseInt(p,10) || 1);
+        const Q = (q === null || q === undefined) ? defaultTupletQ(P) : Math.max(1, parseInt(q,10) || 1);
+        const R = (r === null || r === undefined) ? P : Math.max(1, parseInt(r,10) || 1);
+        tupletByVoice[v] = { mult: (Q / P), remaining: R };
+    };
+
+    const applyTuplet = (v, dur) => {
+        const st = tupletByVoice[v];
+        if (!st || !isFinite(dur)) return dur;
+        const out = dur * (st.mult || 1);
+        st.remaining = (st.remaining || 0) - 1;
+        if (st.remaining <= 0) tupletByVoice[v] = null;
+        return out;
+    };
+
     const ensureVoice = (v) => {
         if (!eventsByVoice[v]) eventsByVoice[v] = [];
         if (voiceCursors[v] === undefined) voiceCursors[v] = 0;
+        if (!tieCarryByVoice[v]) tieCarryByVoice[v] = new Set();
+        if (tupletByVoice[v] === undefined) tupletByVoice[v] = null;
         if (!voiceOrder.includes(v)) voiceOrder.push(v);
     };
 
@@ -1271,6 +1301,20 @@ let currentKey = keySigFromName((abc.match(/^K:.*$/mi) || ['K:C'])[0]);
             // Bỏ whitespace
             if (ch === ' ' || ch === '\t') { i++; continue; }
 
+            // Tuplet marker: (3, (3:2:3, ... (minimal support)
+            if (ch === '(') {
+                const m = line.slice(i).match(/^\((\d+)(?::(\d+)(?::(\d+))?)?/);
+                if (m) {
+                    const p = parseInt(m[1], 10);
+                    const q = (m[2] !== undefined) ? parseInt(m[2], 10) : null;
+                    const r = (m[3] !== undefined) ? parseInt(m[3], 10) : null;
+                    ensureVoice(currentVoice);
+                    setTuplet(currentVoice, p, q, r);
+                    i += m[0].length;
+                    continue;
+                }
+            }
+
             // Barline
             if (ch === '|') {
                 barAccidentals = { ...currentKey };
@@ -1298,8 +1342,9 @@ let currentKey = keySigFromName((abc.match(/^K:.*$/mi) || ['K:C'])[0]);
                 let j = i + 1;
                 while (j < line.length && /[0-9\/]/.test(line[j])) j++;
                 const durStr = line.slice(i+1, j);
-                const dur = parseDuration(durStr);
+                let dur = parseDuration(durStr);
                 ensureVoice(currentVoice);
+                dur = applyTuplet(currentVoice, dur);
                 voiceCursors[currentVoice] += dur * 100;
                 i = j;
                 continue;
@@ -1321,7 +1366,17 @@ let currentKey = keySigFromName((abc.match(/^K:.*$/mi) || ['K:C'])[0]);
                     let j = end + 1;
                     while (j < line.length && /[0-9\/]/.test(line[j])) j++;
                     const durStr = line.slice(end+1, j);
-                    const dur = parseDuration(durStr);
+                    let dur = parseDuration(durStr);
+
+                    // Tie marker after the chord (e.g. [CEG]-)
+                    let tieOut = false;
+                    if (line[j] === '-') {
+                        tieOut = true;
+                        while (j < line.length && line[j] === '-') j++;
+                    }
+
+                    ensureVoice(currentVoice);
+                    dur = applyTuplet(currentVoice, dur);
 
                     // Parse note tokens trong chord
                     const pitches = [];
@@ -1363,8 +1418,16 @@ let currentKey = keySigFromName((abc.match(/^K:.*$/mi) || ['K:C'])[0]);
                     if (pitches.length) {
                         ensureVoice(currentVoice);
                         const t = Math.round(voiceCursors[currentVoice]);
-                        eventsByVoice[currentVoice].push({ voice: currentVoice, timeMs: t, pitches });
+                        const tieCarry = tieCarryByVoice[currentVoice] || new Set();
+                        const onsetPitches = pitches.filter(p => !tieCarry.has(p));
+
+                        // Keep an event even if onsetPitches is empty (tie continuation) so DOM mapping indices stay aligned
+                        eventsByVoice[currentVoice].push({ voice: currentVoice, timeMs: t, pitches: onsetPitches });
                         voiceCursors[currentVoice] += dur * 100;
+
+                        // Consume tie-in then set tie-out
+                        pitches.forEach(p => { if (tieCarry.has(p)) tieCarry.delete(p); });
+                        if (tieOut) pitches.forEach(p => tieCarry.add(p));
                     } else {
                         // không parse được chord -> bỏ qua, tránh kẹt
                     }
@@ -1395,7 +1458,14 @@ let currentKey = keySigFromName((abc.match(/^K:.*$/mi) || ['K:C'])[0]);
                 let durStart = idx;
                 while (idx < line.length && /[0-9\/]/.test(line[idx])) idx++;
                 const durStr = line.slice(durStart, idx);
-                const dur = parseDuration(durStr);
+                let dur = parseDuration(durStr);
+
+                // Tie marker after the note (e.g. A-)
+                let tieOut = false;
+                if (line[idx] === '-') { tieOut = true; idx++; }
+
+                ensureVoice(currentVoice);
+                dur = applyTuplet(currentVoice, dur);
 
                 if (accStr) {
                     if (accStr === '^^') barAccidentals[noteChar.toLowerCase()] = 2;
@@ -1406,10 +1476,18 @@ let currentKey = keySigFromName((abc.match(/^K:.*$/mi) || ['K:C'])[0]);
                 }
 
                 const midi = getMidiFromText(noteChar, octStr, accStr, barAccidentals);
-                ensureVoice(currentVoice);
+
                 const t = Math.round(voiceCursors[currentVoice]);
-                eventsByVoice[currentVoice].push({ voice: currentVoice, timeMs: t, pitches: [midi] });
+                const tieCarry = tieCarryByVoice[currentVoice] || new Set();
+                const onsetPitches = tieCarry.has(midi) ? [] : [midi];
+
+                // Keep an event even if onsetPitches is empty (tie continuation) so DOM mapping indices stay aligned
+                eventsByVoice[currentVoice].push({ voice: currentVoice, timeMs: t, pitches: onsetPitches });
                 voiceCursors[currentVoice] += dur * 100;
+
+                // Consume tie-in then set tie-out
+                if (tieCarry.has(midi)) tieCarry.delete(midi);
+                if (tieOut) tieCarry.add(midi);
 
                 i = idx;
                 continue;
@@ -2170,6 +2248,12 @@ if (miss.length > 0 && miss.length < step.pitches.length) {
       state.practice.currentPressed = new Set();
       state.practice.chordOnsets = new Map();
 
+      // reset flow/rhythm transient windows safely
+      if (state.practice.chordTimer) { try { clearTimeout(state.practice.chordTimer); } catch(e) {} state.practice.chordTimer = null; }
+      state.practice.chordPressed = new Set();
+      state.practice.windowPressed = new Set();
+      state.practice.windowOnsets = new Map();
+
       state.practice.stepHadError = false;
       state.practice.stepCountedWrong = false;
 
@@ -2178,6 +2262,24 @@ if (miss.length > 0 && miss.length < step.pitches.length) {
       highlightStep();
       updateHint('—');
       buildHud();
+    };
+
+    const getRhythmTol = (idx) => {
+      // Dynamic tolerance to avoid overlapping timing windows on fast passages.
+      // Cap tolerance to ~45% of the gap to the next step (scaled by current BPM).
+      const steps = state.practice.expectedSteps || [];
+      const baseTol = Math.max(20, Number(state.settings.toleranceMs || 160));
+      const step = steps[idx];
+      if (!step) return baseTol;
+      const next = steps[idx + 1];
+      if (!next) return baseTol;
+
+      const t0 = getScaledTimeMs(step.timeMs || 0);
+      const t1 = getScaledTimeMs(next.timeMs || 0);
+      const gap = Math.max(0, t1 - t0);
+
+      const cap = Math.max(25, Math.floor(gap * 0.45));
+      return Math.min(baseTol, cap);
     };
 
     const handleNoteOn = (pitch, vel=100) => {
@@ -2383,58 +2485,120 @@ if (miss.length > 0 && miss.length < step.pitches.length) {
         const now = performance.now();
         const t = now - state.practice.startPerf;
         const expected = getScaledTimeMs(step.timeMs || 0);
-        const tol = state.settings.toleranceMs;
+        const tol = getRhythmTol(idx);
 
-        if (t >= expected - tol && t <= expected + tol) {
-          state.practice.windowPressed.add(pitch);
-          if (!state.practice.windowOnsets.has(pitch)) state.practice.windowOnsets.set(pitch, t);
-          updateHint(midiToName(pitch));
-        } else {
+        const reqArr = (step.pitches || []);
+        const req = new Set(reqArr);
+
+        const inWindow = (t >= expected - tol && t <= expected + tol);
+
+        if (!inWindow) {
+          // Off-time keystroke
           state.practice.stats.wrongKeystrokes += 1;
+          state.practice.stepHadError = true;
+          markStep(step, 'note-wrong');
+          setTimeout(() => unmarkStep(step,'note-wrong'), 120);
           updateHint(midiToName(pitch) + ' (off)');
           buildHud();
+          return;
         }
+
+        // Record what was played inside the timing window
+        state.practice.windowPressed.add(pitch);
+        if (!state.practice.windowOnsets.has(pitch)) state.practice.windowOnsets.set(pitch, t);
+
+        // If it's not a required pitch, remember as error (but we still wait until the window ends or the chord is complete)
+        if (!req.has(pitch)) {
+          state.practice.stepHadError = true;
+          markStep(step, 'note-wrong');
+          setTimeout(() => unmarkStep(step,'note-wrong'), 120);
+        }
+
+        updateHint(midiToName(pitch));
+        buildHud();
+
+        // Early-complete as soon as ALL required pitches have been played within the window.
+        // This prevents fast passages from getting mis-attributed to the previous step.
+        const played = new Set(state.practice.windowPressed);
+        const missing = reqArr.filter(p => !played.has(p));
+        if (missing.length === 0 && reqArr.length > 0) {
+          const extra = [...played].filter(p => !req.has(p));
+          const ok = (extra.length === 0);
+
+          if (extra.length) state.practice.stats.wrongKeystrokes += extra.length;
+
+          let delta = null;
+          const onsets = reqArr.map(p => state.practice.windowOnsets.get(p)).filter(x => typeof x === 'number');
+          if (onsets.length) delta = Math.round(Math.min(...onsets) - expected);
+
+          completeStep(ok, [], extra, delta);
+        }
+
+        return;
       }
     };
 
     let rhythmRAF = null;
     const startRhythmLoop = () => {
       if (rhythmRAF) cancelAnimationFrame(rhythmRAF);
+      state.practice._lastRhythmHiIdx = -1;
       const tick = () => {
         if (!state.practice.running || state.practice.status !== 'running' || state.mode !== 'rhythm') return;
 
-        const steps = state.practice.expectedSteps;
-        const idx = state.practice.stepIndex;
-        const step = steps[idx];
-        if (!step) return;
+        const steps = state.practice.expectedSteps || [];
+        if (!steps.length) { stopPractice(); return; }
 
         const now = performance.now();
         const t = now - state.practice.startPerf;
-        const expected = getScaledTimeMs(step.timeMs || 0);
-        const tol = state.settings.toleranceMs;
 
-        highlightStep();
+        // Only re-highlight when the step index changes (avoid heavy DOM work every frame)
+        const curIdx = state.practice.stepIndex;
+        if (state.practice._lastRhythmHiIdx !== curIdx) {
+          state.practice._lastRhythmHiIdx = curIdx;
+          highlightStep();
+        }
 
-        if (t > expected + tol) {
-          const req = new Set(step.pitches || []);
+        // Catch up if we've already passed one or more timing windows (e.g., user paused / lag / count-in drift)
+        let safety = 0;
+        while (safety++ < 12) {
+          const idx = state.practice.stepIndex;
+          const step = steps[idx];
+          if (!step) { stopPractice(); return; }
+
+          const expected = getScaledTimeMs(step.timeMs || 0);
+          const tol = getRhythmTol(idx);
+
+          // Window still open => wait for user input
+          if (t <= expected + tol) break;
+
+          const reqArr = (step.pitches || []);
+          const req = new Set(reqArr);
+
           const played = new Set(state.practice.windowPressed);
-          const missing = [...req].filter(p => !played.has(p));
+          const missing = reqArr.filter(p => !played.has(p));
           const extra = [...played].filter(p => !req.has(p));
           const ok = (missing.length === 0 && extra.length === 0);
+
           if (extra.length) state.practice.stats.wrongKeystrokes += extra.length;
 
           let delta = null;
-          const onsets = [...req].map(p => state.practice.windowOnsets.get(p)).filter(x => typeof x === 'number');
+          const onsets = reqArr.map(p => state.practice.windowOnsets.get(p)).filter(x => typeof x === 'number');
           if (onsets.length) delta = Math.round(Math.min(...onsets) - expected);
 
           completeStep(ok, missing, extra, delta);
 
-          state.practice.windowPressed = new Set();
-          state.practice.windowOnsets = new Map();
+          if (!state.practice.running) break; // stopPractice might have been called
+
+          // Ensure highlight reflects the new step after auto-advance
+          if (state.practice._lastRhythmHiIdx !== state.practice.stepIndex) {
+            state.practice._lastRhythmHiIdx = state.practice.stepIndex;
+            highlightStep();
+          }
         }
 
         rhythmRAF = requestAnimationFrame(tick);
       };
+
       rhythmRAF = requestAnimationFrame(tick);
     };
 
