@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -424,6 +423,7 @@
     <div class="mode-pill" title="Coach Mode">
       <button id="mode-beginner" class="active"><i class="fa-solid fa-circle-check"></i> Beginner</button>
       <button id="mode-flow"><i class="fa-solid fa-forward"></i> Flow</button>
+      <button id="mode-structure"><i class="fa-solid fa-diagram-project"></i> Structure</button>
       <button id="mode-rhythm"><i class="fa-solid fa-stopwatch"></i> Rhythm</button>
     </div>
 
@@ -573,6 +573,10 @@
                 <div class="coachInline"><span class="lab">MISSING</span><span class="val" id="coachMiss">—</span></div>
                 <div class="coachInline"><span class="lab">EXTRA</span><span class="val" id="coachExtra">—</span></div>
               </div>
+              <div class="coachRow">
+                <div class="coachInline"><span class="lab">TIMING</span><span class="val" id="coachTime">—</span></div>
+                <div class="coachInline"><span class="lab">QUALITY</span><span class="val" id="coachQual">—</span></div>
+              </div>
           </div>
 
           <div id="zoomCtrl" class="ctrl">
@@ -605,6 +609,13 @@
               <option value="160" selected>Normal</option>
               <option value="90">Tight</option>
             </select>
+
+            <label style="margin-left:8px;">Structure</label>
+            <select id="shapeSel" title="Structure strictness (relative rhythm)">
+              <option value="loose">Loose</option>
+              <option value="normal" selected>Normal</option>
+              <option value="tight">Tight</option>
+            </select>
           </div>
 
           <div class="ctrl">
@@ -612,6 +623,13 @@
             <select id="arpSel">
               <option value="1" selected>On</option>
               <option value="0">Off</option>
+            </select>
+
+            <label style="margin-left:8px;">Chord strict</label>
+            <select id="chordSel" title="How strict 'together' chords are (Beginner/Structure)">
+              <option value="160">Loose</option>
+              <option value="120" selected>Normal</option>
+              <option value="90">Tight</option>
             </select>
 
             <label style="margin-left:8px;">Theme</label>
@@ -672,8 +690,12 @@
           <div class="v" style="font-size:13px; font-weight:800;">Chơi liên tục, sai vẫn chạy. Luyện đọc trôi.</div>
         </div>
         <div class="stat" style="min-width:unset;">
+          <div class="k">Structure</div>
+          <div class="v" style="font-size:13px; font-weight:800;">Chấm “hình dáng nhịp” (tỉ lệ trường độ trong ô nhịp/câu). Cho phép nhanh/chậm, nhưng sai cấu trúc sẽ bị tính lỗi.</div>
+        </div>
+        <div class="stat" style="min-width:unset;">
           <div class="k">Rhythm</div>
-          <div class="v" style="font-size:13px; font-weight:800;">Chấm theo nhịp: bấm quá sớm/trễ sẽ bị tính sai.</div>
+          <div class="v" style="font-size:13px; font-weight:800;">Chấm theo BPM: bấm quá sớm/trễ sẽ bị tính sai.</div>
         </div>
         <div class="stat" style="min-width:unset;">
           <div class="k">Phím tắt</div>
@@ -1082,7 +1104,7 @@
         visualObj: null,
         baseBpm: 80,
       },
-      mode: 'beginner', // beginner|flow|rhythm
+      mode: 'beginner', // beginner|flow|structure|rhythm
       activeKeys: new Set(),
       midi: {
         access: null,
@@ -1093,6 +1115,8 @@
         bpm: 80,
         countInBars: 2,
         toleranceMs: 160,
+        structureStrict: 'normal',
+        structureMinMs: 55,
         chordWindowMs: 240,
         allowArpeggio: true,
         chordTogetherMs: 120,
@@ -1109,6 +1133,13 @@
         chordTimer: null,
         windowPressed: new Set(),      // rhythm
         windowOnsets: new Map(),       // pitch->timeMs within window
+        structPressed: new Set(),      // structure mode
+        structOnsets: new Map(),       // structure mode: pitch->perfNow
+        structExtras: new Set(),       // structure mode: wrong pitches pressed in this step
+        structure: { barIndex: null, barStartPerf: 0, barStartExp: 0, k: null, kSamples: 0, lastPerf: null, lastExp: null },
+        lastTimingText: '—',
+        lastQualText: '—',
+        pendingQualText: null,
         stepHadError: false,
         stepCountedWrong: false,
         results: [],
@@ -1999,6 +2030,9 @@ V:LH clef=bass name="LH"
       } else if (m === 'flow') {
         const acc = Math.round((s.correctSteps / Math.max(1, s.done)) * 100);
         text = `Acc ${acc}% • Done ${s.done}/${s.total} • Wrong ${s.wrongSteps}`;
+      } else if (m === 'structure') {
+        const shape = Math.round((s.correctSteps / Math.max(1, s.done)) * 100);
+        text = `Shape ${shape}% • Done ${s.done}/${s.total} • Wrong ${s.wrongSteps}`;
       } else {
         const ok = Math.round((s.correctSteps / Math.max(1, s.done)) * 100);
         text = `OK ${ok}% • Done ${s.done}/${s.total} • Miss ${s.wrongSteps}`;
@@ -2013,23 +2047,39 @@ V:LH clef=bass name="LH"
       const steps = state.practice.expectedSteps;
       const step = steps[i];
       const total = steps.length;
+
       $('coachStep').textContent = `${Math.min(i+1,total)}/${total}`;
+
+      // Timing/quality are updated by the scoring engines (structure/rhythm/chord tiers)
+      const timeEl = $('coachTime');
+      const qualEl = $('coachQual');
+      if (timeEl) timeEl.textContent = state.practice.lastTimingText || '—';
+      if (qualEl) qualEl.textContent = state.practice.lastQualText || '—';
+
       if (!step) {
         $('coachPlay').textContent = '—';
         $('coachMiss').textContent = '—';
         $('coachExtra').textContent = '—';
         return;
       }
+
       const req = uniq(step.pitches || []).sort((a,b)=>a-b);
       const reqNames = req.map(midiToName).join(' ');
       $('coachPlay').textContent = `${reqNames || '—'}`;
 
-      const pressed = new Set([...state.practice.currentPressed, ...state.activeKeys]);
+      let pressed;
+      if (state.mode === 'rhythm') {
+        pressed = new Set([...state.practice.windowPressed, ...state.activeKeys]);
+      } else if (state.mode === 'structure') {
+        pressed = new Set([...state.practice.structPressed, ...state.activeKeys]);
+      } else {
+        pressed = new Set([...state.practice.currentPressed, ...state.activeKeys]);
+      }
+
       const miss = req.filter(p => !pressed.has(p));
       $('coachMiss').textContent = `${miss.length ? miss.map(midiToName).join(' ') : '—'}`;
       $('coachExtra').textContent = `${extraText || '—'}`;
     };
-
     const highlightStep = () => {
       clearCurrentMark();
       const step = state.practice.expectedSteps[state.practice.stepIndex];
@@ -2037,10 +2087,12 @@ V:LH clef=bass name="LH"
       markStep(step, 'note-current');
 
 
-      if (state.mode === 'beginner' && step.pitches && step.pitches.length > 1) {
-        const pressed = new Set([...state.activeKeys]);
+      if ((state.mode === 'beginner' || state.mode === 'structure') && step.pitches && step.pitches.length > 1) {
+        const pressed = (state.mode === 'structure')
+          ? new Set([...state.practice.structPressed, ...state.activeKeys])
+          : new Set([...state.activeKeys]);
         const miss = step.pitches.filter(p => !pressed.has(p));
-if (miss.length > 0 && miss.length < step.pitches.length) {
+        if (miss.length > 0 && miss.length < step.pitches.length) {
           markStep(step, 'note-partial');
         }
       }
@@ -2120,7 +2172,23 @@ if (miss.length > 0 && miss.length < step.pitches.length) {
         `;
       }
 
-      $('resultSub').textContent = sub;
+      
+      // Timing summary (only for Structure/Rhythm)
+      if (m === 'rhythm' || m === 'structure') {
+        const deltas = (state.practice.results || []).map(r => r && r.deltaMs).filter(v => typeof v === 'number' && isFinite(v));
+        if (deltas.length) {
+          const abs = deltas.map(v => Math.abs(v)).sort((a,b) => a-b);
+          const medianAbs = abs[Math.floor(abs.length / 2)];
+          const mean = Math.round(deltas.reduce((a,b)=>a+b,0) / deltas.length);
+
+          statsHtml += `
+            <div class="stat"><div class="k">Median |Δ|</div><div class="v">${medianAbs}ms</div></div>
+            <div class="stat"><div class="k">Bias</div><div class="v">${mean}ms</div></div>
+          `;
+        }
+      }
+
+$('resultSub').textContent = sub;
       $('resultBody').innerHTML = statsHtml;
       openModal('resultModal');
     };
@@ -2129,6 +2197,7 @@ if (miss.length > 0 && miss.length < step.pitches.length) {
       if (!state.practice.running) return;
       state.practice.running = false;
       state.practice.status = 'finished';
+      if (rhythmRAF) { try { cancelAnimationFrame(rhythmRAF); } catch(e) {} rhythmRAF = null; }
       finishPractice();
     };
 
@@ -2148,7 +2217,19 @@ if (miss.length > 0 && miss.length < step.pitches.length) {
       state.practice.stepIndex = idx;
       state.practice.currentPressed = new Set();
       
-      state.practice.chordOnsets = new Map();state.practice.stepHadError = false;
+      state.practice.chordOnsets = new Map();
+      if (state.practice.chordTimer) { try { clearTimeout(state.practice.chordTimer); } catch(e) {} state.practice.chordTimer = null; }
+      state.practice.chordPressed = new Set();
+      state.practice.windowPressed = new Set();
+      state.practice.windowOnsets = new Map();
+      state.practice.structPressed = new Set();
+      state.practice.structOnsets = new Map();
+      state.practice.structExtras = new Set();
+      state.practice.structure = { barIndex: null, barStartPerf: 0, barStartExp: 0, k: null, kSamples: 0, lastPerf: null, lastExp: null };
+      state.practice.lastTimingText = '—';
+      state.practice.lastQualText = '—';
+      state.practice.pendingQualText = null;
+      state.practice.stepHadError = false;
       state.practice.stepCountedWrong = false;
       highlightStep();
       updateHint('—');
@@ -2173,6 +2254,12 @@ if (miss.length > 0 && miss.length < step.pitches.length) {
       
       state.practice.chordOnsets = new Map();state.practice.windowPressed = new Set();
       state.practice.windowOnsets = new Map();
+      state.practice.structPressed = new Set();
+      state.practice.structOnsets = new Map();
+      state.practice.structExtras = new Set();
+      state.practice.structure = { barIndex: null, barStartPerf: 0, barStartExp: 0, k: null, kSamples: 0, lastPerf: null, lastExp: null };
+      state.practice.lastTimingText = '—';
+      state.practice.lastQualText = '—';
       state.practice.stepHadError = false;
       state.practice.stepCountedWrong = false;
       state.practice.results = [];
@@ -2197,7 +2284,7 @@ if (miss.length > 0 && miss.length < step.pitches.length) {
       if (Metro.enabled) { Metro.syncToPractice({ countInBars: bars }); }
 
       state.practice.startPerf = performance.now();
-      if (state.mode === 'rhythm' && bars > 0) {
+      if ((state.mode === 'rhythm' || state.mode === 'structure') && bars > 0) {
         showToast(`Count-in: ${bars} bar(s)`);
         const msPerBeat = 60000 / state.settings.bpm;
         const meter = parseMetaFromAbc(state.currentSong.workingABC).meter || '4/4';
@@ -2208,7 +2295,7 @@ if (miss.length > 0 && miss.length < step.pitches.length) {
           state.practice.status = 'running';
           state.practice.startPerf = performance.now();
           showToast('Go!');
-          startRhythmLoop();
+          if (state.mode === 'rhythm') startRhythmLoop();
         }, Math.max(200, countMs));
       } else {
         state.practice.status = 'running';
@@ -2253,7 +2340,29 @@ if (miss.length > 0 && miss.length < step.pitches.length) {
       state.practice.chordPressed = new Set();
       state.practice.windowPressed = new Set();
       state.practice.windowOnsets = new Map();
+      state.practice.structPressed = new Set();
+      state.practice.structOnsets = new Map();
+      state.practice.structExtras = new Set();
 
+      // Update coach timing feedback for the step that just completed
+      if (deltaMs === null || deltaMs === undefined) {
+        state.practice.lastTimingText = '—';
+      } else {
+        const ad = Math.abs(deltaMs);
+        if (ad <= 12) state.practice.lastTimingText = 'On time';
+        else state.practice.lastTimingText = (deltaMs < 0 ? `Early ${ad}ms` : `Late ${ad}ms`);
+      }
+
+      // Allow caller to override quality text (e.g., chord tier)
+      if (state.practice.pendingQualText) {
+        state.practice.lastQualText = state.practice.pendingQualText;
+        state.practice.pendingQualText = null;
+      } else {
+        if (state.mode === 'structure') state.practice.lastQualText = ok ? 'Shape OK' : 'Shape off';
+        else if (state.mode === 'rhythm') state.practice.lastQualText = ok ? 'OK' : 'Off';
+        else if (state.mode === 'flow') state.practice.lastQualText = ok ? 'OK' : 'Wrong';
+        else state.practice.lastQualText = ok ? 'OK' : 'Wrong';
+      }
       state.practice.stepHadError = false;
       state.practice.stepCountedWrong = false;
 
@@ -2282,7 +2391,27 @@ if (miss.length > 0 && miss.length < step.pitches.length) {
       return Math.min(baseTol, cap);
     };
 
-    const handleNoteOn = (pitch, vel=100) => {
+    
+    const getStructureTolMul = () => {
+      const s = (state.settings.structureStrict || 'normal');
+      if (s === 'tight') return 0.18;
+      if (s === 'loose') return 0.45;
+      return 0.30; // normal
+    };
+
+    const evalChordTogether = (spreadMs) => {
+      const base = Math.max(60, Number(state.settings.chordTogetherMs || 120));
+      const perfect = base;
+      const ok = Math.round(base * 1.8);
+      const pass = Math.round(base * 2.6);
+
+      if (spreadMs <= perfect) return { pass: true, quality: `Chord perfect (${spreadMs}ms)`, hadError: false };
+      if (spreadMs <= ok) return { pass: true, quality: `Chord OK (+${spreadMs}ms)`, hadError: true };
+      if (spreadMs <= pass) return { pass: true, quality: `Chord late (+${spreadMs}ms)`, hadError: true };
+      return { pass: false, quality: `Chord not together (+${spreadMs}ms)`, hadError: true };
+    };
+
+const handleNoteOn = (pitch, vel=100) => {
       if (!state.practice.running || state.practice.status !== 'running') return;
       const steps = state.practice.expectedSteps;
       const idx = state.practice.stepIndex;
@@ -2328,7 +2457,21 @@ if (miss.length > 0 && miss.length < step.pitches.length) {
             const times = reqArr.map(p => state.practice.chordOnsets.get(p)).filter(t => typeof t === 'number');
             const spread = (times.length === reqArr.length) ? (Math.max(...times) - Math.min(...times)) : Infinity;
 
-            if (spread <= (state.settings.chordTogetherMs || 120)) {
+            const spreadMs = (isFinite(spread) ? Math.round(spread) : 999999);
+            const chordEval = evalChordTogether(spreadMs);
+            state.practice.lastTimingText = '—';
+            state.practice.lastQualText = chordEval.quality;
+
+            if (chordEval.pass) {
+              // Non-perfect chord counts as an "error" for beginner stats, but we still advance.
+              if (chordEval.hadError) {
+                state.practice.stepHadError = true;
+                if (!state.practice.stepCountedWrong) {
+                  state.practice.stats.wrongSteps += 1;
+                  state.practice.stepCountedWrong = true;
+                }
+              }
+
               // Success
               if (!state.practice.stepHadError) state.practice.stats.perfectSteps += 1;
 
@@ -2352,7 +2495,7 @@ if (miss.length > 0 && miss.length < step.pitches.length) {
               return;
             }
 
-            // Too wide => count as wrong step once and force retry
+            // Not together => count as wrong step once and force retry
             if (!state.practice.stepCountedWrong) {
               state.practice.stats.wrongSteps += 1;
               state.practice.stepCountedWrong = true;
@@ -2361,7 +2504,7 @@ if (miss.length > 0 && miss.length < step.pitches.length) {
             markStep(step, 'note-wrong');
             setTimeout(() => unmarkStep(step,'note-wrong'), 160);
             state.practice.chordOnsets = new Map();
-            updateHint('Chord not together');
+            updateHint(chordEval.quality);
             buildHud();
             return;
           } else {
@@ -2478,6 +2621,118 @@ if (miss.length > 0 && miss.length < step.pitches.length) {
         }
 
         updateHint(midiToName(pitch));
+        return;
+      }
+
+
+      if (state.mode === 'structure') {
+        const now = performance.now();
+        const steps = state.practice.expectedSteps;
+        const idx = state.practice.stepIndex;
+        const step = steps[idx];
+        if (!step) return;
+
+        const expMs = getScaledTimeMs(step.timeMs || 0);
+
+        const reqArr = (step.pitches || []);
+        const req = new Set(reqArr);
+
+        // Track what user played for THIS step (like rhythm window, but without absolute BPM window)
+        if (!req.has(pitch)) {
+          state.practice.stats.wrongKeystrokes += 1;
+          state.practice.stepHadError = true;
+          state.practice.structExtras.add(pitch);
+          markStep(step, 'note-wrong');
+          setTimeout(() => unmarkStep(step,'note-wrong'), 120);
+          updateHint(midiToName(pitch) + ' (extra)');
+          buildHud();
+          return;
+        }
+
+        state.practice.structPressed.add(pitch);
+        if (!state.practice.structOnsets.has(pitch)) state.practice.structOnsets.set(pitch, now);
+
+        updateHint(midiToName(pitch));
+        buildHud();
+
+        // Complete as soon as all required pitches have been played (chord OK handled below)
+        const missing = reqArr.filter(p => !state.practice.structPressed.has(p));
+        if (missing.length !== 0 || reqArr.length === 0) return;
+
+        // Step onset = earliest required onset
+        const onsets = reqArr.map(p => state.practice.structOnsets.get(p)).filter(t => typeof t === 'number');
+        const stepOnsetPerf = onsets.length ? Math.min(...onsets) : now;
+
+        // ---- Chord together tier (same philosophy as Beginner) ----
+        let chordOk = true;
+        if (reqArr.length > 1) {
+          const spread = onsets.length === reqArr.length ? Math.round(Math.max(...onsets) - Math.min(...onsets)) : 999999;
+          const chordEval = evalChordTogether(spread);
+          state.practice.pendingQualText = chordEval.quality;
+          if (!chordEval.pass) chordOk = false;
+          if (chordEval.hadError) state.practice.stepHadError = true;
+        } else {
+          state.practice.pendingQualText = null;
+        }
+
+        // ---- Structure timing: keep the 'shape' within a bar, allow tempo flex ----
+        const st = state.practice.structure || (state.practice.structure = { barIndex: null, barStartPerf: 0, barStartExp: 0, k: null, kSamples: 0, lastPerf: null, lastExp: null });
+        const bar = step.barIndex ?? step.bar ?? 0;
+
+        const firstIdx = state.practice.barFirstIdx.get(bar) ?? idx;
+        const firstStep = steps[firstIdx] || step;
+        const barStartExp = getScaledTimeMs(firstStep.timeMs || 0);
+
+        let delta = null;
+        let timingOk = true;
+
+        if (st.barIndex !== bar) {
+          // New bar: reset the local tempo tracker. First note of bar defines the new reference.
+          st.barIndex = bar;
+          st.barStartPerf = stepOnsetPerf;
+          st.barStartExp = barStartExp;
+          st.k = null;
+          st.kSamples = 0;
+          st.lastPerf = stepOnsetPerf;
+          st.lastExp = expMs;
+        } else {
+          // Predict current onset using the tempo estimate from previous notes
+          if (st.k !== null && isFinite(st.k)) {
+            const tPred = st.barStartPerf + st.k * (expMs - st.barStartExp);
+            delta = Math.round(stepOnsetPerf - tPred);
+
+            const tolMul = getStructureTolMul();
+            const minMs = Math.max(30, Number(state.settings.structureMinMs || 55));
+
+            const dtExpPrev = (st.lastExp !== null) ? (expMs - st.lastExp) : 0;
+            const dtPred = Math.max(1, Math.abs(st.k * (dtExpPrev || (expMs - st.barStartExp))));
+            const allowed = Math.max(minMs, Math.round(dtPred * tolMul));
+
+            timingOk = (Math.abs(delta) <= allowed);
+          }
+
+          // Update tempo estimate AFTER judging (so delta isn't trivially zero)
+          if (st.lastPerf !== null && st.lastExp !== null) {
+            const dtExp = expMs - st.lastExp;
+            const dtUser = stepOnsetPerf - st.lastPerf;
+
+            if (dtExp > 0 && dtUser > 0 && isFinite(dtExp) && isFinite(dtUser)) {
+              let kNew = dtUser / dtExp;
+              // Clamp to ignore huge pauses / wild spikes
+              kNew = Math.min(3.5, Math.max(0.35, kNew));
+              st.k = (st.k === null) ? kNew : (0.7 * st.k + 0.3 * kNew);
+              st.kSamples = (st.kSamples || 0) + 1;
+            }
+          }
+
+          st.lastPerf = stepOnsetPerf;
+          st.lastExp = expMs;
+        }
+
+        const extra = [...state.practice.structExtras];
+        const ok = chordOk && timingOk && (extra.length === 0);
+
+        completeStep(ok, [], extra, delta);
         return;
       }
 
@@ -2906,11 +3161,13 @@ if (miss.length > 0 && miss.length < step.pitches.length) {
       state.mode = mode;
       $('mode-beginner').classList.toggle('active', mode === 'beginner');
       $('mode-flow').classList.toggle('active', mode === 'flow');
+      $('mode-structure').classList.toggle('active', mode === 'structure');
       $('mode-rhythm').classList.toggle('active', mode === 'rhythm');
 
       if (mode === 'beginner') showToast('Beginner: đúng mới qua');
       if (mode === 'flow') showToast('Flow: chơi liên tục');
-      if (mode === 'rhythm') showToast('Rhythm: chấm sớm/trễ');
+      if (mode === 'structure') showToast('Structure: đúng “hình dáng nhịp”');
+      if (mode === 'rhythm') showToast('Rhythm: chấm theo BPM');
 
       if (state.practice.running) {
         showToast('Mode changed → stop practice');
@@ -2973,6 +3230,7 @@ $('tab-abc').onclick = () => switchTab('abc');
 
       $('mode-beginner').onclick = () => setMode('beginner');
       $('mode-flow').onclick = () => setMode('flow');
+      $('mode-structure').onclick = () => setMode('structure');
       $('mode-rhythm').onclick = () => setMode('rhythm');
 
       $('bpmRange').addEventListener('input', () => {
@@ -2986,8 +3244,10 @@ $('tab-abc').onclick = () => switchTab('abc');
         renderAbcDebounced();
       });
       $('tolSel').addEventListener('change', () => { state.settings.toleranceMs = parseInt($('tolSel').value, 10); });
+      $('shapeSel').addEventListener('change', () => { state.settings.structureStrict = $('shapeSel').value; });
       $('countInSel').addEventListener('change', () => { state.settings.countInBars = parseInt($('countInSel').value, 10); });
       $('arpSel').addEventListener('change', () => { state.settings.allowArpeggio = $('arpSel').value === '1'; });
+      $('chordSel').addEventListener('change', () => { state.settings.chordTogetherMs = parseInt($('chordSel').value, 10) || 120; });
       $('themeSel').addEventListener('change', () => { setTheme($('themeSel').value); });
       $('btnToggleTheme').onclick = () => {
         const next = state.settings.theme === 'retro' ? 'ocean' : (state.settings.theme === 'ocean' ? 'coder' : 'retro');
