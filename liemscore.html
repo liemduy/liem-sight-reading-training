@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -545,6 +546,7 @@ Tay trai: La3-trang, 7-trang; La3-trang, 7-trang;`;
             const textAreaRef = useRef(null);
             const renderAreaRef = useRef(null);
             const previewWrapRef = useRef(null);
+            const previewScrollRef = useRef(null);
             const synthRef = useRef(null);
 
             // Audio playback controller (for repeat + synced cursor)
@@ -988,6 +990,41 @@ Tay trai: La3-trang, 7-trang; La3-trang, 7-trang;`;
                 return out;
             };
 
+            // --- Auto scroll during playback: keep current note visible in the preview ---
+            const pendingAutoScrollRef = useRef(false);
+            const lastAutoScrollElRef = useRef(null);
+
+            const ensureNoteVisible = (el) => {
+                const container = previewScrollRef.current;
+                if (!container || !el || !el.getBoundingClientRect) return;
+
+                const c = container.getBoundingClientRect();
+                const r = el.getBoundingClientRect();
+
+                const margin = 120; // px: keep some breathing room above/below
+
+                if (r.top < c.top + margin) {
+                    container.scrollTop -= (c.top + margin - r.top);
+                } else if (r.bottom > c.bottom - margin) {
+                    container.scrollTop += (r.bottom - (c.bottom - margin));
+                }
+            };
+
+            const requestAutoScrollTo = (el) => {
+                if (!el) return;
+                if (lastAutoScrollElRef.current === el) return;
+                lastAutoScrollElRef.current = el;
+
+                if (pendingAutoScrollRef.current) return;
+                pendingAutoScrollRef.current = true;
+
+                requestAnimationFrame(() => {
+                    pendingAutoScrollRef.current = false;
+                    try { ensureNoteVisible(el); } catch (e) {}
+                });
+            };
+
+
             const ensureSynthController = () => {
                 if (!window.ABCJS || !window.ABCJS.synth || !window.ABCJS.synth.supportsAudio || !window.ABCJS.synth.supportsAudio()) return null;
                 if (synthControlRef.current) return synthControlRef.current;
@@ -1035,7 +1072,9 @@ Tay trai: La3-trang, 7-trang; La3-trang, 7-trang;`;
                                 el.classList.add('note-current');
                             } catch (e) {}
                         });
-                    }
+                                            // auto scroll: keep current note visible
+                        try { if (els && els.length) requestAutoScrollTo(els[0]); } catch (e) {}
+}
                 };
 
                 const sc = new window.ABCJS.synth.SynthController();
@@ -4322,7 +4361,7 @@ window.onload=()=>{setTimeout(()=>{window.focus();window.print();},50);}
                                 </div>
                             </div>
                             
-                            <div className="flex-1 p-3 md:p-4 overflow-auto bg-[#F8FAFC]">
+                            <div ref={previewScrollRef} className="flex-1 p-3 md:p-4 overflow-auto bg-[#F8FAFC]">
                                 <div ref={previewWrapRef} className="abcjs-wrap bg-white shadow-md border border-slate-200 rounded-lg min-h-full p-0 transition-all duration-300 overflow-hidden relative">
                                     {currentBg && (
                                         <div
