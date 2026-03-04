@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -159,6 +160,8 @@
     .pill.primary { background:var(--primary); border-color:transparent; color:white; }
     .pill.danger { background:var(--danger); border-color:transparent; color:white; }
     .pill.ghost:hover { background:rgba(0,0,0,0.06); }
+    .pill.toggleOn{ background:var(--bg-panel); box-shadow: inset 0 0 0 1px var(--border); color:var(--primary); }
+
 
     .mode-pill{
       display:inline-flex; border:1px solid var(--border); border-radius:999px; overflow:hidden;
@@ -449,6 +452,7 @@
 
       <button id="btnToggleTheme" class="pill ghost" title="Theme"><i class="fa-solid fa-palette"></i></button>
       <button id="btnInstructions" class="pill ghost" title="Instructions"><i class="fa-solid fa-circle-info"></i> Instructions</button>
+      <button id="btnAutoScroll" class="pill ghost" title="Auto-scroll sheet to current note"><i class="fa-solid fa-arrows-up-down"></i></button>
       <button id="btnFocusBack" class="pill ghost" style="display:none;"><i class="fa-solid fa-arrow-left"></i> Back</button>
       
       <div id="practiceControls" class="practiceControls">
@@ -1121,6 +1125,8 @@
         allowArpeggio: true,
         chordTogetherMs: 120,
                 theme: 'retro',
+        autoScroll: true,
+
       },
       practice: {
         running: false,
@@ -1240,6 +1246,7 @@ let currentKey = keySigFromName((abc.match(/^K:.*$/mi) || ['K:C'])[0]);
     const voiceOrder = [];
     const voiceCursors = {};
     const eventsByVoice = {};
+    const markers = { repeat: [], endings: [] };
 
     // Per-voice tie carry and tuplet state (minimal ABC support for rhythm accuracy)
     const tieCarryByVoice = {}; // voice -> Set(midi)
@@ -1286,7 +1293,8 @@ let currentKey = keySigFromName((abc.match(/^K:.*$/mi) || ['K:C'])[0]);
         }
     });
 
-    let currentVoice = voiceOrder.length ? voiceOrder[0] : '1';
+    const primaryVoice = voiceOrder.length ? voiceOrder[0] : '1';
+    let currentVoice = primaryVoice;
     ensureVoice(currentVoice);
 
     // Tokenizer theo dòng (không dùng regex toàn cục kiểu cũ để tránh lệch khi 2 voice xen kẽ/chord)
@@ -1346,10 +1354,29 @@ let currentKey = keySigFromName((abc.match(/^K:.*$/mi) || ['K:C'])[0]);
                 }
             }
 
-            // Barline
+            // Repeat end :| (also handles :||)
+            if (ch === ':' && line[i+1] === '|') {
+                ensureVoice(currentVoice);
+                if (currentVoice === primaryVoice) markers.repeat.push({ type: 'end', t: Math.round(voiceCursors[currentVoice] || 0) });
+                barAccidentals = { ...currentKey };
+                i += 2;
+                if (line[i] === '|') i++; // swallow :||
+                continue;
+            }
+
+            // Barline / repeat start |: (also handles ||, |], |:)
             if (ch === '|') {
+                ensureVoice(currentVoice);
+                if (line[i+1] === ':') {
+                    if (currentVoice === primaryVoice) markers.repeat.push({ type: 'start', t: Math.round(voiceCursors[currentVoice] || 0) });
+                    barAccidentals = { ...currentKey };
+                    i += 2;
+                    continue;
+                }
                 barAccidentals = { ...currentKey };
                 i++;
+                // swallow double bar or end barline
+                if (line[i] === '|' || line[i] === ']') i++;
                 continue;
             }
 
@@ -1379,6 +1406,24 @@ let currentKey = keySigFromName((abc.match(/^K:.*$/mi) || ['K:C'])[0]);
                 voiceCursors[currentVoice] += dur * 100;
                 i = j;
                 continue;
+            }
+
+            // Volta/ending markers: [1, [2, [[1, [[2 ... (NOT chords)
+            if (ch === '[') {
+                const a = line[i+1];
+                const b = line[i+2];
+                if (a === '[' && /[1-9]/.test(b)) {
+                    ensureVoice(currentVoice);
+                    if (currentVoice === primaryVoice) markers.endings.push({ num: parseInt(b, 10), t: Math.round(voiceCursors[currentVoice] || 0) });
+                    i += 3;
+                    continue;
+                }
+                if (/[1-9]/.test(a)) {
+                    ensureVoice(currentVoice);
+                    if (currentVoice === primaryVoice) markers.endings.push({ num: parseInt(a, 10), t: Math.round(voiceCursors[currentVoice] || 0) });
+                    i += 2;
+                    continue;
+                }
             }
 
             // Chord: [CEG]2, ... (không phải [V:..])
@@ -1529,17 +1574,90 @@ let currentKey = keySigFromName((abc.match(/^K:.*$/mi) || ['K:C'])[0]);
         }
     });
 
-    return { voiceOrder, eventsByVoice };
+    return { voiceOrder, eventsByVoice, markers };
 
 };
 
+
+
+// ---------- Repeat/Volta expansion (simple, single-repeat support) ----------
+const lowerBoundStepsByTime = (steps, tMs) => {
+  let lo = 0, hi = steps.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if ((steps[mid].timeMs || 0) < tMs) lo = mid + 1;
+    else hi = mid;
+  }
+  return lo;
+};
+
+const expandRepeatsAndVoltas = (steps, markers, tickMsBase) => {
+  try {
+    if (!markers || !markers.repeat || markers.repeat.length === 0) return steps;
+
+    const rep = (markers.repeat || []).map(r => ({ ...r, ms: Math.round((r.t || 0) * tickMsBase) }))
+                                     .sort((a,b)=>a.ms-b.ms);
+    const starts = rep.filter(r => r.type === 'start');
+    const ends   = rep.filter(r => r.type === 'end');
+    if (!starts.length || !ends.length) return steps;
+
+    // pick the first start and the first end after it
+    const startMs = starts[0].ms;
+    const endObj = ends.find(e => e.ms > startMs + 1);
+    if (!endObj) return steps;
+    const endMs = endObj.ms;
+
+    const startIdx = lowerBoundStepsByTime(steps, startMs);
+    const endIdx   = lowerBoundStepsByTime(steps, endMs);
+    if (!Number.isFinite(startIdx) || !Number.isFinite(endIdx) || endIdx <= startIdx) return steps;
+
+    const endings = (markers.endings || []).map(e => ({ ...e, ms: Math.round((e.t || 0) * tickMsBase) }));
+    const e1 = endings.find(e => e.num === 1 && e.ms >= startMs && e.ms < endMs);
+    const e2 = endings.find(e => e.num === 2 && e.ms >= endMs - 1);
+
+    const e1Idx = e1 ? lowerBoundStepsByTime(steps, e1.ms) : null;
+    const e2Idx = e2 ? lowerBoundStepsByTime(steps, e2.ms) : endIdx;
+
+    const seg2End = (e1Idx !== null && e1Idx > startIdx && e1Idx <= endIdx) ? e1Idx : endIdx;
+
+    // Build expanded play order: pre + (repeat once) + body-only pass + post (starting at 2nd ending if present)
+    const order = [];
+    for (let i=0; i<startIdx; i++) order.push(i);
+    for (let i=startIdx; i<endIdx; i++) order.push(i);           // pass 1: as written (includes [1)
+    for (let i=startIdx; i<seg2End; i++) order.push(i);         // pass 2: skip [1 by stopping at [1 marker
+    for (let i=e2Idx; i<steps.length; i++) order.push(i);       // continue from [2 (or end of repeat)
+
+    // Clone steps and rebuild monotonic timeMs using deltas from original score order.
+    const expanded = [];
+    let t = 0;
+    for (let k=0; k<order.length; k++) {
+      const oi = order[k];
+      const base = steps[oi];
+      const clone = { ...base, timeMs: t, __origIdx: oi };
+      expanded.push(clone);
+
+      if (k < order.length - 1) {
+        const oiNext = order[k+1];
+        let delta = 0;
+        if (oiNext === oi + 1) delta = (steps[oiNext].timeMs || 0) - (steps[oi].timeMs || 0);
+        else delta = (oi + 1 < steps.length) ? (steps[oi+1].timeMs || 0) - (steps[oi].timeMs || 0) : 0;
+        if (!Number.isFinite(delta)) delta = 0;
+        t += Math.max(0, delta);
+      }
+    }
+    return expanded;
+  } catch (e) {
+    console.warn('expandRepeatsAndVoltas failed:', e);
+    return steps;
+  }
+};
 
 const extractSteps = () => {
     const abc = state.currentSong.workingABC;
     if (!abc) return [];
 
     // 1) Parse -> eventsByVoice + voiceOrder
-    const { voiceOrder, eventsByVoice } = parseVoiceEvents(abc);
+    const { voiceOrder, eventsByVoice, markers } = parseVoiceEvents(abc);
     // Timing: parser uses "ticks" where 100 ticks = 1 *default note length* (L:), NOT real milliseconds.
     // Convert ticks -> real milliseconds at the song's base tempo so Rhythm mode can compare against performance.now().
     const meta = parseMetaFromAbc(abc);
@@ -1610,6 +1728,10 @@ const extractSteps = () => {
     // 4) Sort + filter out steps không có pitch
     let steps = Array.from(stepsByTime.values()).sort((a, b) => a.timeMs - b.timeMs);
     steps = steps.filter(s => s.pitches && s.pitches.length > 0);
+
+    // 5) Expand repeats/voltas so Practice/Play highlight follows the written repeat structure.
+    steps = expandRepeatsAndVoltas(steps, markers, tickMsBase);
+
     return steps;
 };
 
@@ -1856,6 +1978,65 @@ V:LH clef=bass name="LH"
       step.elements.forEach(el => el.classList.remove(cls));
     };
 
+    // --- Auto-scroll sheet so current note is never hidden (Play & Practice) ---
+    let lastAutoScrollKey = null;
+    let lastAutoScrollAt = 0;
+
+    const syncAutoScrollUI = () => {
+      const btn = $('btnAutoScroll');
+      if (!btn) return;
+      btn.classList.toggle('toggleOn', !!state.settings.autoScroll);
+      btn.title = state.settings.autoScroll ? 'Auto-scroll: ON' : 'Auto-scroll: OFF';
+    };
+
+    const ensureStepVisible = (step, key, behavior = 'smooth', opts = {}) => {
+      if (!state.settings.autoScroll) return;
+      const wrap = $('sheetWrap');
+      if (!wrap || !step || !step.elements || step.elements.length === 0) return;
+
+      // Guard against accidental rapid re-scroll for the same key (e.g. re-rendering)
+      const now = performance.now();
+      if (key && key === lastAutoScrollKey && (now - lastAutoScrollAt) < 250) return;
+      lastAutoScrollKey = key || null;
+      lastAutoScrollAt = now;
+
+      const target = step.elements.find(el => el && typeof el.getBoundingClientRect === 'function');
+      if (!target) return;
+
+      const wrapRect = wrap.getBoundingClientRect();
+      const elRect = target.getBoundingClientRect();
+      const h = Math.max(1, wrapRect.height);
+
+      // "Look-ahead" scrolling: keep the focus note in the upper part of the viewport,
+      // so the player can see upcoming notes BEFORE reaching them.
+      const targetRatio = (opts && typeof opts.targetRatio === 'number') ? opts.targetRatio : 0.32; // where to place the focus note (0..1)
+      const topBand = (opts && typeof opts.topBand === 'number') ? opts.topBand : 0.18;            // don't scroll while the note is inside this band
+      const bottomBand = (opts && typeof opts.bottomBand === 'number') ? opts.bottomBand : 0.62;
+
+      const elCenter = (elRect.top + elRect.bottom) / 2;
+      const topBound = wrapRect.top + h * topBand;
+      const bottomBound = wrapRect.top + h * bottomBand;
+      const desired = wrapRect.top + h * targetRatio;
+
+      if (elCenter >= topBound && elCenter <= bottomBound) return;
+
+      const delta = elCenter - desired;
+
+      const maxTop = Math.max(0, wrap.scrollHeight - wrap.clientHeight);
+      let newTop = wrap.scrollTop + delta;
+      newTop = Math.max(0, Math.min(maxTop, newTop));
+
+      if (Math.abs(newTop - wrap.scrollTop) < 2) return;
+
+      try {
+        wrap.scrollTo({ top: newTop, behavior });
+      } catch (e) {
+        wrap.scrollTop = newTop;
+      }
+    };
+
+
+
     const renderAbc = () => {
       let abc = $('abcInput').value.trim();
       if (!abc) return;
@@ -2085,7 +2266,7 @@ V:LH clef=bass name="LH"
       const step = state.practice.expectedSteps[state.practice.stepIndex];
       if (!step) return;
       markStep(step, 'note-current');
-
+      ensureStepVisible(step, `practice:${state.practice.stepIndex}`, 'smooth', { targetRatio: 0.30, topBand: 0.14, bottomBand: 0.58 });
 
       if ((state.mode === 'beginner' || state.mode === 'structure') && step.pitches && step.pitches.length > 1) {
         const pressed = (state.mode === 'structure')
@@ -2907,6 +3088,7 @@ const handleNoteOn = (pitch, vel=100) => {
         if (!el) return;
         el.classList.add('note-playback');
       });
+      ensureStepVisible(step, `preview:${idx}`, 'smooth', { targetRatio: 0.28, topBand: 0.10, bottomBand: 0.55 });
     };
 
     const previewVizTick = () => {
@@ -3256,8 +3438,10 @@ $('tab-abc').onclick = () => switchTab('abc');
       };
 
       $('btnInstructions').onclick = () => openModal('instrModal');
+      $('btnAutoScroll').onclick = () => { state.settings.autoScroll = !state.settings.autoScroll; syncAutoScrollUI(); showToast(`Auto-scroll: ${state.settings.autoScroll ? 'ON' : 'OFF'}`); };
       $('btnInstrClose').onclick = () => closeModal('instrModal');
       wireMetroPopover();
+      syncAutoScrollUI();
 
       $('midiBadge').onclick = async () => { openModal('midiModal'); await refreshMidiList(); };
       $('btnRefreshMidi').onclick = refreshMidiList;
