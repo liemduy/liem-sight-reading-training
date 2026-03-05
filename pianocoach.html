@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -272,6 +273,7 @@
       border-top:1px solid var(--border);
       overflow:auto;
       position:relative;
+      text-align:center; /* keep sheet centered even when zooming */
     }
 
     /* Compact coach strip */
@@ -324,7 +326,10 @@
     #paper{
       padding:14px 16px;
       min-width: 720px;
-      transform-origin: 0 0;
+      width: fit-content;
+      display:inline-block; /* pairs with #sheetWrap{text-align:center} */
+      margin: 0 auto;
+      transform-origin: 50% 0; /* center on zoom */
       transition: transform 200ms ease;
     }
 
@@ -1498,7 +1503,7 @@ let currentKey = keySigFromName((abc.match(/^K:.*$/mi) || ['K:C'])[0]);
                         const onsetPitches = pitches.filter(p => !tieCarry.has(p));
 
                         // Keep an event even if onsetPitches is empty (tie continuation) so DOM mapping indices stay aligned
-                        eventsByVoice[currentVoice].push({ voice: currentVoice, timeMs: t, pitches: onsetPitches });
+                        eventsByVoice[currentVoice].push({ voice: currentVoice, timeMs: t, pitches: onsetPitches, durT: dur * 100 });
                         voiceCursors[currentVoice] += dur * 100;
 
                         // Consume tie-in then set tie-out
@@ -1558,7 +1563,7 @@ let currentKey = keySigFromName((abc.match(/^K:.*$/mi) || ['K:C'])[0]);
                 const onsetPitches = tieCarry.has(midi) ? [] : [midi];
 
                 // Keep an event even if onsetPitches is empty (tie continuation) so DOM mapping indices stay aligned
-                eventsByVoice[currentVoice].push({ voice: currentVoice, timeMs: t, pitches: onsetPitches });
+                eventsByVoice[currentVoice].push({ voice: currentVoice, timeMs: t, pitches: onsetPitches, durT: dur * 100 });
                 voiceCursors[currentVoice] += dur * 100;
 
                 // Consume tie-in then set tie-out
@@ -1633,7 +1638,7 @@ const expandRepeatsAndVoltas = (steps, markers, tickMsBase) => {
     for (let k=0; k<order.length; k++) {
       const oi = order[k];
       const base = steps[oi];
-      const clone = { ...base, timeMs: t, __origIdx: oi };
+      const clone = { ...base, timeMs: t, __origIdx: oi, holds: base.holds ? base.holds.slice() : base.holds };
       expanded.push(clone);
 
       if (k < order.length - 1) {
@@ -1672,7 +1677,7 @@ const extractSteps = () => {
     const stepsByTime = new Map(); // timeMs -> step
     const addEventToStep = (evt) => {
         const t = Math.round(evt.timeMs * tickMsBase);
-        if (!stepsByTime.has(t)) stepsByTime.set(t, { timeMs: t, pitches: [], elements: [], elementPitches: [] });
+        if (!stepsByTime.has(t)) stepsByTime.set(t, { timeMs: t, pitches: [], elements: [], elementPitches: [], holds: [] });
         const step = stepsByTime.get(t);
         step.pitches.push(...evt.pitches);
     };
@@ -1723,6 +1728,12 @@ const extractSteps = () => {
         try { el.dataset.pitches = (evt.pitches || []).join(','); } catch(e) {}
         try { el.dataset.noteNames = (evt.pitches || []).filter(Number.isFinite).map(midiToName).join(' '); } catch(e) {}
         step.elementPitches.push({ el, pitches: evt.pitches });
+        // sustain duration (ms) for this SVG note group
+        const durMs = Math.round(((evt.durT || 0)) * tickMsBase);
+        if (!step.holds) step.holds = [];
+        step.holds.push({ el, durMs });
+        try { el.dataset.durMs = String(durMs); } catch(e) {}
+
     });
 
     // 4) Sort + filter out steps không có pitch
@@ -1961,8 +1972,11 @@ V:LH clef=bass name="LH"
 
     const clearAllMarks = () => {
       document.querySelectorAll('g.abcjs-note').forEach(el => {
-        el.classList.remove('note-current','note-correct','note-wrong','note-partial','note-had-error');
+        el.classList.remove('note-current','note-correct','note-wrong','note-partial','note-had-error','note-playback');
       });
+    
+      try { clearActive(activePractice, 'note-current'); } catch(e) {}
+      try { clearActive(activePreview, 'note-playback'); } catch(e) {}
     };
     const clearCurrentMark = () => {
       document.querySelectorAll('g.abcjs-note.note-current, g.abcjs-note.note-partial').forEach(el => {
@@ -1976,6 +1990,47 @@ V:LH clef=bass name="LH"
     const unmarkStep = (step, cls) => {
       if (!step || !step.elements) return;
       step.elements.forEach(el => el.classList.remove(cls));
+    };
+
+
+    // --- Sustain highlight: keep active notes colored until their duration ends ---
+    const ACTIVE_EPS = 1; // ms tolerance
+    const activePractice = new Map(); // el -> endMs (note-current)
+    const activePreview  = new Map(); // el -> endMs (note-playback)
+
+    const removeClassSafe = (el, cls) => {
+      try { if (el && el.classList) el.classList.remove(cls); } catch(e) {}
+    };
+
+    const expireActive = (activeMap, nowMs, cls) => {
+      if (!activeMap || activeMap.size === 0) return;
+      for (const [el, endMs] of Array.from(activeMap.entries())) {
+        if (!el || !Number.isFinite(endMs) || endMs <= (nowMs + ACTIVE_EPS)) {
+          removeClassSafe(el, cls);
+          activeMap.delete(el);
+        }
+      }
+    };
+
+    const activateStep = (activeMap, step, cls) => {
+      if (!step) return;
+      const start = (typeof step.timeMs === 'number') ? step.timeMs : 0;
+      const holds = (step.holds && step.holds.length) ? step.holds : (step.elements || []).map(el => ({ el, durMs: 0 }));
+      holds.forEach(h => {
+        const el = (h && h.el) ? h.el : h;
+        if (!el) return;
+        const durMs = (h && Number.isFinite(h.durMs)) ? Math.max(0, h.durMs) : 0;
+        const endMs = start + durMs;
+        const prev = activeMap.get(el);
+        if (!prev || endMs > prev) activeMap.set(el, endMs);
+        try { el.classList.add(cls); } catch(e) {}
+      });
+    };
+
+    const clearActive = (activeMap, cls) => {
+      if (!activeMap) return;
+      for (const [el] of Array.from(activeMap.entries())) removeClassSafe(el, cls);
+      activeMap.clear();
     };
 
     // --- Auto-scroll sheet so current note is never hidden (Play & Practice) ---
@@ -2000,7 +2055,9 @@ V:LH clef=bass name="LH"
       lastAutoScrollKey = key || null;
       lastAutoScrollAt = now;
 
-      const target = step.elements.find(el => el && typeof el.getBoundingClientRect === 'function');
+      const target = (opts && opts.targetEl && typeof opts.targetEl.getBoundingClientRect === 'function')
+        ? opts.targetEl
+        : step.elements.find(el => el && typeof el.getBoundingClientRect === 'function');
       if (!target) return;
 
       const wrapRect = wrap.getBoundingClientRect();
@@ -2261,12 +2318,60 @@ V:LH clef=bass name="LH"
       $('coachMiss').textContent = `${miss.length ? miss.map(midiToName).join(' ') : '—'}`;
       $('coachExtra').textContent = `${extraText || '—'}`;
     };
-    const highlightStep = () => {
-      clearCurrentMark();
-      const step = state.practice.expectedSteps[state.practice.stepIndex];
+    
+    // Choose a stable scroll anchor in PRACTICE to avoid up/down jitter between treble/bass.
+    // Heuristic: prefer the highest active note near the current step's vertical system.
+    const pickPracticeScrollAnchor = (step, activeMap) => {
+      const wrap = $('sheetWrap');
+      if (!wrap || !step || !step.elements || step.elements.length === 0) return null;
+
+      const stepEls = (step.elements || []).filter(el => el && typeof el.getBoundingClientRect === 'function');
+      if (!stepEls.length) return null;
+
+      // Current step "system" center (in viewport coords)
+      let stepCenter = 0;
+      try {
+        const ys = stepEls.map(el => {
+          const r = el.getBoundingClientRect();
+          return (r.top + r.bottom) / 2;
+        });
+        stepCenter = ys.reduce((a,b)=>a+b,0) / Math.max(1, ys.length);
+      } catch (e) {
+        stepCenter = 0;
+      }
+
+      const act = activeMap ? Array.from(activeMap.keys()) : [];
+      const actRects = act
+        .filter(el => el && typeof el.getBoundingClientRect === 'function')
+        .map(el => ({ el, r: el.getBoundingClientRect() }));
+
+      if (!actRects.length) return stepEls[0];
+
+      const SYSTEM_THRESH_PX = 220; // keep anchor within same staff system when possible
+      let candidates = actRects.filter(o => Math.abs(((o.r.top + o.r.bottom) / 2) - stepCenter) < SYSTEM_THRESH_PX);
+
+      // If we have no nearby active notes (e.g., long tie across a line break), follow the current step instead.
+      if (!candidates.length) return stepEls[0];
+
+      candidates.sort((a,b) => a.r.top - b.r.top); // highest = treble preference
+      return candidates[0].el || stepEls[0];
+    };
+
+const highlightStep = () => {
+      // Keep 'note-current' on active notes until their duration ends.
+      // Only clear transient partial marks each refresh.
+      try { document.querySelectorAll('g.abcjs-note.note-partial').forEach(el => el.classList.remove('note-partial')); } catch(e) {}
+
+      const steps = state.practice.expectedSteps || [];
+      const step = steps[state.practice.stepIndex];
       if (!step) return;
-      markStep(step, 'note-current');
-      ensureStepVisible(step, `practice:${state.practice.stepIndex}`, 'smooth', { targetRatio: 0.30, topBand: 0.14, bottomBand: 0.58 });
+
+      const nowMs = (typeof step.timeMs === 'number') ? step.timeMs : 0;
+      expireActive(activePractice, nowMs, 'note-current');
+      activateStep(activePractice, step, 'note-current');
+
+      const anchor = pickPracticeScrollAnchor(step, activePractice);
+      ensureStepVisible(step, `practice:${state.practice.stepIndex}`, 'smooth', { targetRatio: 0.30, topBand: 0.12, bottomBand: 0.80, targetEl: anchor });
 
       if ((state.mode === 'beginner' || state.mode === 'structure') && step.pitches && step.pitches.length > 1) {
         const pressed = (state.mode === 'structure')
@@ -2322,6 +2427,9 @@ V:LH clef=bass name="LH"
     };
 
     const finishPractice = () => {
+      try { clearActive(activePractice, 'note-current'); } catch(e) {}
+      try { document.querySelectorAll('g.abcjs-note.note-partial').forEach(el => el.classList.remove('note-partial')); } catch(e) {}
+
       state.practice.running = false;
       state.practice.status = 'finished';
       document.body.classList.remove('practice-focus');
@@ -2659,7 +2767,7 @@ const handleNoteOn = (pitch, vel=100) => {
               state.practice.stats.done += 1;
               state.practice.stats.correctSteps += 1;
 
-              unmarkStep(step,'note-current'); unmarkStep(step,'note-partial'); unmarkStep(step,'note-wrong');
+              /* keep note-current until its duration ends */ unmarkStep(step,'note-partial'); unmarkStep(step,'note-wrong');
               markStep(step,'note-correct');
               if (state.practice.stepHadError) markStep(step,'note-had-error');
 
@@ -2709,7 +2817,7 @@ const handleNoteOn = (pitch, vel=100) => {
           state.practice.stats.done += 1;
           state.practice.stats.correctSteps += 1;
 
-          unmarkStep(step,'note-current'); unmarkStep(step,'note-partial'); unmarkStep(step,'note-wrong');
+          /* keep note-current until its duration ends */ unmarkStep(step,'note-partial'); unmarkStep(step,'note-wrong');
           markStep(step,'note-correct');
           if (state.practice.stepHadError) markStep(step,'note-had-error');
 
@@ -3050,15 +3158,17 @@ const handleNoteOn = (pitch, vel=100) => {
     // --- Preview -> highlight notes on the sheet as the audio plays ---
     let previewVizTimer = null;
     let previewVizLastIdx = -1;
+    let previewVizLastAddedIdx = -1;
 
     const clearPreviewVizTimer = () => {
       if (previewVizTimer) { clearTimeout(previewVizTimer); previewVizTimer = null; }
     };
 
     const clearPreviewVizHighlight = () => {
-      try {
-        document.querySelectorAll('g.abcjs-note.note-playback').forEach(el => el.classList.remove('note-playback'));
-      } catch(e) {}
+      try { document.querySelectorAll('g.abcjs-note.note-playback').forEach(el => el.classList.remove('note-playback')); } catch(e) {}
+      try { clearActive(activePreview, 'note-playback'); } catch(e) {}
+      previewVizLastIdx = -1;
+      previewVizLastAddedIdx = -1;
     };
 
     const getPreviewElapsedMs = () => {
@@ -3077,18 +3187,39 @@ const handleNoteOn = (pitch, vel=100) => {
       return ans;
     };
 
-    const setPreviewVizIdx = (steps, idx) => {
-      if (idx === previewVizLastIdx) return;
-      previewVizLastIdx = idx;
+    const setPreviewVizIdx = (steps, idx, nowMs) => {
+      if (!steps || steps.length === 0) return;
+      if (idx < 0) {
+        // before first note
+        clearPreviewVizHighlight();
+        return;
+      }
 
-      clearPreviewVizHighlight();
-      const step = steps[idx];
-      if (!step || !step.elements) return;
-      step.elements.forEach(el => {
-        if (!el) return;
-        el.classList.add('note-playback');
-      });
-      ensureStepVisible(step, `preview:${idx}`, 'smooth', { targetRatio: 0.28, topBand: 0.10, bottomBand: 0.55 });
+      // If playback jumps backwards, rebuild active highlights from scratch.
+      if (idx < previewVizLastAddedIdx) {
+        try { clearActive(activePreview, 'note-playback'); } catch(e) {}
+        previewVizLastAddedIdx = -1;
+      }
+
+      // Add newly-started notes (may include multiple steps if we jumped forward).
+      const from = Math.max(0, previewVizLastAddedIdx + 1);
+      for (let i = from; i <= idx; i++) {
+        const st = steps[i];
+        if (!st) continue;
+        activateStep(activePreview, st, 'note-playback');
+      }
+      previewVizLastAddedIdx = Math.max(previewVizLastAddedIdx, idx);
+
+      // Expire notes whose duration ended.
+      const tNow = (Number.isFinite(nowMs)) ? nowMs : ((steps[idx] && steps[idx].timeMs) ? steps[idx].timeMs : 0);
+      expireActive(activePreview, tNow, 'note-playback');
+
+      // Scroll following the current onset index (not every frame)
+      if (idx !== previewVizLastIdx) {
+        previewVizLastIdx = idx;
+        const step = steps[idx];
+        ensureStepVisible(step, `preview:${idx}`, 'smooth', { targetRatio: 0.28, topBand: 0.10, bottomBand: 0.55 });
+      }
     };
 
     const previewVizTick = () => {
@@ -3102,19 +3233,36 @@ const handleNoteOn = (pitch, vel=100) => {
       const t = getPreviewElapsedMs();
       const idx = findLastStepAtOrBefore(steps, t);
 
-      if (idx >= 0) setPreviewVizIdx(steps, idx);
+      if (idx >= 0) setPreviewVizIdx(steps, idx, t);
       else {
-        // before first note: clear highlight
-        previewVizLastIdx = -1;
-        clearPreviewVizHighlight();
+        // before first note: clear highlight but keep ticking until the first onset
+        setPreviewVizIdx(steps, -1, t);
       }
 
-      const nextIdx = idx + 1;
-      if (nextIdx >= steps.length) return;
+      // Schedule next tick at the earliest of:
+      // - next onset time
+      // - any active note end time (so sustained notes can expire)
+      let nextT = Infinity;
 
-      const nextT = steps[nextIdx].timeMs || 0;
+      if (idx + 1 < steps.length) {
+        const n = steps[idx + 1] && typeof steps[idx + 1].timeMs === 'number' ? steps[idx + 1].timeMs : Infinity;
+        if (Number.isFinite(n)) nextT = Math.min(nextT, n);
+      } else if (idx < 0 && steps.length > 0) {
+        const n0 = steps[0] && typeof steps[0].timeMs === 'number' ? steps[0].timeMs : Infinity;
+        if (Number.isFinite(n0)) nextT = Math.min(nextT, n0);
+      }
+
+      // activePreview map stores endMs values
+      try {
+        for (const endMs of activePreview.values()) {
+          if (Number.isFinite(endMs) && endMs > t) nextT = Math.min(nextT, endMs);
+        }
+      } catch(e) {}
+
+      if (!Number.isFinite(nextT) || nextT === Infinity) return;
+
       const delay = Math.max(0, nextT - t);
-      // schedule close to the next note; cap to keep UI responsive
+      // cap to keep UI responsive even for very long notes
       previewVizTimer = setTimeout(previewVizTick, Math.min(250, delay + 5));
     };
 
