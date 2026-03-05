@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Piano Nhỏ - Học Đàn Thông Minh</title>
+    <!-- Tailwind CSS cho UI -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome cho Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- ABCJS cho Sheet nhạc và Audio -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/abcjs/6.2.2/abcjs-basic-min.js"></script>
+    <style>
+        /* Tùy chỉnh ABCJS SVG để dễ dàng đổi màu */
+        .abcjs-note path { transition: fill 0.2s ease; }
+        .note-current path { fill: #3b82f6 !important; } /* Màu xanh lam (đang chờ/đang chơi) */
+        .note-correct path { fill: #22c55e !important; } /* Màu xanh lá (đúng) */
+        .note-wrong path { fill: #ef4444 !important; }   /* Màu đỏ (sai) */
+        
+        /* Ẩn scrollbar nhưng vẫn scroll được cho mượt */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Smooth scroll */
+        html, body { overscroll-behavior-y: none; background-color: #f3f4f6; }
+    </style>
+</head>
+<body class="flex justify-center items-center h-screen">
+
+    <!-- App Container (Mobile App Ratio) -->
+    <div id="app" class="w-full max-w-md h-full sm:h-[90vh] bg-white sm:rounded-3xl sm:shadow-2xl overflow-hidden relative flex flex-col font-sans">
+        
+        <!-- ================= MÀN HÌNH 1: SETUP ================= -->
+        <div id="screen1" class="absolute inset-0 bg-white z-10 flex flex-col p-6 overflow-y-auto transition-transform duration-300">
+            <div class="text-center mt-8 mb-10">
+                <i class="fa-solid fa-music text-5xl text-blue-500 mb-4"></i>
+                <h1 class="text-3xl font-bold text-gray-800">Piano Nhỏ</h1>
+                <p class="text-gray-500 mt-2">Học piano theo nhịp độ của bạn</p>
+            </div>
+
+            <div class="space-y-6 flex-1">
+                <!-- Chọn bài nhạc -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Chọn bản nhạc</label>
+                    <div class="relative">
+                        <select id="song-select" class="w-full appearance-none bg-gray-50 border border-gray-300 text-gray-900 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="song1">Đàn Gà Con (Dễ)</option>
+                            <option value="song2">Happy Birthday (2 Tay)</option>
+                            <option value="song3">Ode to Joy - Beethoven</option>
+                            <option value="custom">Tự nhập ABC Notation...</option>
+                        </select>
+                        <i class="fa-solid fa-chevron-down absolute right-4 top-4 text-gray-400 pointer-events-none"></i>
+                    </div>
+                </div>
+
+                <!-- Textarea nhập ABC Custom (Ẩn mặc định) -->
+                <div id="custom-abc-container" class="hidden transition-all">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Nhập mã ABC của bạn</label>
+                    <textarea id="custom-abc" rows="6" class="w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-xl px-4 py-3 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="X:1&#10;T:Bài của tôi&#10;M:4/4..."></textarea>
+                </div>
+
+                <!-- Nút kết nối MIDI -->
+                <div class="pt-4 border-t border-gray-100">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Kết nối đàn (Tùy chọn)</label>
+                    <button id="midi-btn" onclick="connectMidi()" class="w-full flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-900 text-white font-semibold py-3 px-4 rounded-xl transition-colors">
+                        <i class="fa-solid fa-plug"></i> <span id="midi-btn-text">Kết nối MIDI</span>
+                    </button>
+                    <p id="midi-status" class="text-xs text-center text-gray-500 mt-2">Bấm nút trên, sau đó ấn 1 phím đàn để xác nhận.</p>
+                </div>
+            </div>
+
+            <!-- Nút Next -->
+            <button onclick="goToScreen2()" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-lg font-bold py-4 rounded-xl mt-6 shadow-lg shadow-blue-200 transition-transform active:scale-95">
+                Bắt đầu học <i class="fa-solid fa-arrow-right ml-2"></i>
+            </button>
+        </div>
+
+        <!-- ================= MÀN HÌNH 2: THỰC HÀNH ================= -->
+        <div id="screen2" class="absolute inset-0 bg-white z-0 flex flex-col translate-x-full transition-transform duration-300">
+            
+            <!-- Header (Khoảng 15%) -->
+            <header class="h-[15%] min-h-[80px] bg-slate-900 text-white flex items-center justify-between px-4 shadow-md z-20">
+                <div class="flex items-center gap-3">
+                    <button onclick="goToScreen1()" class="w-10 h-10 flex justify-center items-center rounded-full hover:bg-slate-800 transition">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </button>
+                    <!-- Playback Controls -->
+                    <div class="flex bg-slate-800 rounded-full p-1">
+                        <button id="btn-play" onclick="togglePlay()" class="w-12 h-12 flex justify-center items-center rounded-full bg-blue-500 hover:bg-blue-400 text-white transition shadow-sm">
+                            <i id="icon-play" class="fa-solid fa-play ml-1"></i>
+                        </button>
+                        <button onclick="stopPlayback()" class="w-12 h-12 flex justify-center items-center rounded-full text-gray-300 hover:text-white transition">
+                            <i class="fa-solid fa-stop"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Mode Switch -->
+                <div class="flex flex-col items-end">
+                    <span class="text-[10px] text-gray-400 uppercase tracking-wider mb-1 font-bold">Chế độ</span>
+                    <div class="bg-slate-800 rounded-lg p-1 flex text-sm font-semibold">
+                        <button id="mode-free" onclick="setMode('FREE')" class="px-3 py-1.5 rounded-md bg-white text-slate-900 shadow transition">Free</button>
+                        <button id="mode-rhythm" onclick="setMode('RHYTHM')" class="px-3 py-1.5 rounded-md text-gray-400 hover:text-white transition">Rhythm</button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Sheet Nhạc Container -->
+            <main id="sheet-container" class="flex-1 overflow-y-auto no-scrollbar p-2 bg-[#fdfdfb] relative scroll-smooth">
+                <!-- Nơi ABCJS render bản nhạc -->
+                <div id="paper" class="w-full"></div>
+            </main>
+        </div>
+    </div>
+
+    <!-- ================= DATA BÀI HÁT MẶC ĐỊNH ================= -->
+    <script>
+        const songs = {
+            song1: `X: 1
+T: Đàn Gà Con
+M: 2/4
+L: 1/4
+K: C
+V: 1 clef=treble
+C D | E C | D E | C2 | E F | G2 | E F | G2 |
+G/A/ G/F/ | E C | G/A/ G/F/ | E C | D G, | C2 | D G, | C2 |
+V: 2 clef=bass
+C,2 | C,2 | G,,2 | C,2 | C,2 | C,2 | C,2 | C,2 |
+C,2 | C,2 | C,2 | C,2 | G,,2 | C,2 | G,,2 | C,2 |`,
+            
+            song2: `X: 2
+T: Happy Birthday
+M: 3/4
+L: 1/8
+K: G
+V: 1 clef=treble
+D>D | E2 D2 G2 | F4 D>D | E2 D2 A2 | G4 D>D | d2 B2 G2 | F2 E2 c>c | B2 G2 A2 | G4 |
+V: 2 clef=bass
+z2 | G,,B,,D, G,,B,,D, | D,,F,,A, D,,F,,A, | D,,F,,A, D,,F,,A, | G,,B,,D, G,,B,,D, | G,,B,,D, G,,B,,D, | C,E,G, C,E,G, | D,,F,,A, D,,F,,A, | G,,B,,D, z2 |`,
+
+            song3: `X: 3
+T: Ode to Joy
+M: 4/4
+L: 1/4
+K: G
+V: 1 clef=treble
+B B c d | d c B A | G G A B | B>A A2 | B B c d | d c B A | G G A B | A>G G2 |
+V: 2 clef=bass
+G,, D, G,, D, | G,, D, G,, D, | G,, D, G,, D, | D,, A,, D,, A,, | G,, D, G,, D, | G,, D, G,, D, | G,, D, G,, D, | G,, D, G,,2 |`
+        };
+    </script>
+
+    <!-- ================= LOGIC JAVASCRIPT ================= -->
+    <script>
+        // --- Trạng thái hệ thống ---
+        let currentAbc = "";
+        let visualObj = null;
+        let synthControl = null;
+        let audioContext = null;
+        
+        let playState = 'STOPPED'; // STOPPED, PLAYING
+        let appMode = 'FREE'; // FREE, RHYTHM
+        
+        // --- MIDI & Free Mode State ---
+        let midiAccess = null;
+        let isMidiConnected = false;
+        let waitingForMidiConfirm = false;
+        
+        let practiceSequence = []; // Danh sách các hợp âm/nốt cần đánh theo thứ tự
+        let practiceIndex = 0;     // Vị trí hiện tại trong bài
+        let currentChordNotes = []; // Các nốt MIDI đang chờ được bấm trong nhịp hiện tại
+
+        // --- UI Interactions Screen 1 ---
+        document.getElementById('song-select').addEventListener('change', function(e) {
+            const customArea = document.getElementById('custom-abc-container');
+            if (e.target.value === 'custom') {
+                customArea.classList.remove('hidden');
+            } else {
+                customArea.classList.add('hidden');
+            }
+        });
+
+        async function connectMidi() {
+            if (navigator.requestMIDIAccess) {
+                try {
+                    document.getElementById('midi-btn-text').innerText = "Đang chờ ấn phím đàn...";
+                    waitingForMidiConfirm = true;
+                    midiAccess = await navigator.requestMIDIAccess();
+                    for (let input of midiAccess.inputs.values()) {
+                        input.onmidimessage = handleMidiMessage;
+                    }
+                } catch (e) {
+                    alert("Trình duyệt không hỗ trợ Web MIDI hoặc bạn đã từ chối quyền.");
+                }
+            } else {
+                alert("Trình duyệt của bạn (iOS Safari, vv) không hỗ trợ Web MIDI trực tiếp.");
+            }
+        }
+
+        // --- MIDI Xử lý tín hiệu ---
+        function handleMidiMessage(msg) {
+            const [command, note, velocity] = msg.data;
+            // command 144 = Note On. Đôi khi Note Off gửi cmd 144 với velocity 0
+            if (command === 144 && velocity > 0) {
+                
+                // Xác nhận kết nối ở Màn hình 1
+                if (waitingForMidiConfirm) {
+                    waitingForMidiConfirm = false;
+                    isMidiConnected = true;
+                    const btn = document.getElementById('midi-btn');
+                    btn.classList.remove('bg-gray-800', 'hover:bg-gray-900');
+                    btn.classList.add('bg-green-500', 'hover:bg-green-600');
+                    document.getElementById('midi-btn-text').innerText = "Đã kết nối MIDI";
+                    return;
+                }
+
+                // Chế độ Free: Nhận phím và kiểm tra
+                if (playState === 'STOPPED' && appMode === 'FREE' && practiceSequence.length > 0) {
+                    checkFreeModeNote(note);
+                }
+            }
+        }
+
+        // --- Chuyển màn hình và Khởi tạo bản nhạc ---
+        function goToScreen2() {
+            const selection = document.getElementById('song-select').value;
+            if (selection === 'custom') {
+                currentAbc = document.getElementById('custom-abc').value;
+                if (!currentAbc.trim()) { alert("Vui lòng nhập ABC Notation!"); return; }
+            } else {
+                currentAbc = songs[selection];
+            }
+
+            document.getElementById('screen1').style.transform = 'translateX(-100%)';
+            document.getElementById('screen2').style.transform = 'translateX(0)';
+            
+            renderSheetMusic();
+        }
+
+        function goToScreen1() {
+            stopPlayback();
+            document.getElementById('screen1').style.transform = 'translateX(0)';
+            document.getElementById('screen2').style.transform = 'translateX(100%)';
+        }
+
+        // --- Thiết lập chế độ ---
+        function setMode(mode) {
+            appMode = mode;
+            document.getElementById('mode-free').className = mode === 'FREE' 
+                ? 'px-3 py-1.5 rounded-md bg-white text-slate-900 shadow transition'
+                : 'px-3 py-1.5 rounded-md text-gray-400 hover:text-white transition cursor-pointer';
+            document.getElementById('mode-rhythm').className = mode === 'RHYTHM' 
+                ? 'px-3 py-1.5 rounded-md bg-white text-slate-900 shadow transition'
+                : 'px-3 py-1.5 rounded-md text-gray-400 hover:text-white transition cursor-pointer';
+            
+            stopPlayback();
+        }
+
+        // --- Rendering ABCJS ---
+        function renderSheetMusic() {
+            // Render bản nhạc với abcjs
+            visualObj = ABCJS.renderAbc("paper", currentAbc, {
+                responsive: "resize",
+                add_classes: true,
+                staffwidth: 740,
+                wrap: { minSpacing: 1.8, maxSpacing: 2.7 }
+            });
+
+            // Parse các nốt nhạc để tạo Sequence cho Free Mode
+            buildPracticeSequence();
+        }
+
+        // --- Xây dựng logic chơi Tự Do (Free Mode) ---
+        function buildPracticeSequence() {
+            practiceSequence = [];
+            practiceIndex = 0;
+            
+            if (!visualObj || !visualObj[0]) return;
+
+            let flatNotes = [];
+            
+            // Duyệt qua cấu trúc parse của abcjs để lấy ra các nốt và pitch
+            const lines = visualObj[0].lines;
+            for (let i = 0; i < lines.length; i++) {
+                const staffGroup = lines[i].staff;
+                if (!staffGroup) continue;
+                
+                for (let j = 0; j < staffGroup.length; j++) {
+                    const voices = staffGroup[j].voices;
+                    if (!voices) continue;
+
+                    for (let k = 0; k < voices.length; k++) {
+                        const elements = voices[k];
+                        for (let l = 0; l < elements.length; l++) {
+                            const elem = elements[l];
+                            // Chỉ lấy nốt nhạc có cao độ và có svg element
+                            if (elem.el_type === "note" && elem.pitches && elem.abselem && elem.abselem.elemset) {
+                                // ABCJS pitch: C4 (Middle C) = 0. MIDI Middle C = 60.
+                                let midiPitches = elem.pitches.map(p => p.pitch + 60);
+                                let svgElement = elem.abselem.elemset[0]; // Thẻ nhóm SVG chứa note
+                                
+                                flatNotes.push({
+                                    pitches: midiPitches,
+                                    element: svgElement,
+                                    x: elem.x // Tọa độ X để nhóm hợp âm
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Sắp xếp các nốt theo tọa độ X ngang (từ trái qua phải trên sheet)
+            flatNotes.sort((a, b) => a.x - b.x);
+
+            // Nhóm các nốt có cùng (hoặc rất gần) tọa độ X thành 1 hợp âm (chord/tick)
+            if (flatNotes.length > 0) {
+                let currentTick = { notes: [flatNotes[0]], x: flatNotes[0].x };
+                for (let i = 1; i < flatNotes.length; i++) {
+                    let note = flatNotes[i];
+                    // Nếu nốt chênh lệch X < 5px thì coi như cùng 1 nhịp đánh (hợp âm/2 tay)
+                    if (Math.abs(note.x - currentTick.x) < 5) {
+                        currentTick.notes.push(note);
+                    } else {
+                        practiceSequence.push(currentTick);
+                        currentTick = { notes: [note], x: note.x };
+                    }
+                }
+                practiceSequence.push(currentTick); // Push nhịp cuối
+            }
+
+            setupFreeModeStep();
+        }
+
+        // --- Logic Thực Hành Free Mode ---
+        function setupFreeModeStep() {
+            if (appMode !== 'FREE' || playState === 'PLAYING') return;
+
+            // Xóa highlight cũ
+            document.querySelectorAll('.abcjs-note').forEach(el => {
+                el.classList.remove('note-current', 'note-correct', 'note-wrong');
+            });
+
+            if (practiceIndex < practiceSequence.length) {
+                let tick = practiceSequence[practiceIndex];
+                currentChordNotes = [];
+                
+                tick.notes.forEach(noteObj => {
+                    noteObj.element.classList.add('note-current');
+                    // Lưu các mã MIDI cần đánh trong nhịp này
+                    noteObj.pitches.forEach(p => currentChordNotes.push({ pitch: p, element: noteObj.element, hit: false }));
+                });
+
+                // Auto Scroll đến nốt đang chờ
+                scrollToElement(tick.notes[0].element);
+            }
+        }
+
+        function checkFreeModeNote(playedMidi) {
+            let hitIndex = currentChordNotes.findIndex(n => n.pitch === playedMidi && !n.hit);
+            
+            if (hitIndex !== -1) {
+                // Đánh ĐÚNG nốt trong hợp âm hiện tại
+                currentChordNotes[hitIndex].hit = true;
+                currentChordNotes[hitIndex].element.classList.remove('note-current', 'note-wrong');
+                currentChordNotes[hitIndex].element.classList.add('note-correct');
+
+                // Kiểm tra xem đã đánh đủ hợp âm chưa
+                let allHit = currentChordNotes.every(n => n.hit);
+                if (allHit) {
+                    practiceIndex++;
+                    // Delay nhỏ để user thấy màu xanh trước khi nhảy sang nốt mới
+                    setTimeout(setupFreeModeStep, 150);
+                }
+            } else {
+                // Đánh SAI
+                // Đổi màu đỏ tạm thời cho cụm nốt hiện tại
+                practiceSequence[practiceIndex].notes.forEach(noteObj => {
+                    noteObj.element.classList.remove('note-current');
+                    noteObj.element.classList.add('note-wrong');
+                });
+                
+                // Trả lại màu chờ (xanh lam) sau 300ms
+                setTimeout(() => {
+                    if (playState === 'STOPPED' && practiceIndex < practiceSequence.length) {
+                         practiceSequence[practiceIndex].notes.forEach(noteObj => {
+                            noteObj.element.classList.remove('note-wrong');
+                            // Chỉ trả lại màu xanh lam nếu nốt đó chưa được đánh trúng trước đó
+                            // Lọc lại trạng thái hit
+                            let allHitsForThisElement = currentChordNotes.filter(n => n.element === noteObj.element);
+                            let isFullyHit = allHitsForThisElement.length > 0 && allHitsForThisElement.every(n => n.hit);
+                            
+                            if (isFullyHit) {
+                                noteObj.element.classList.add('note-correct');
+                            } else {
+                                noteObj.element.classList.add('note-current');
+                            }
+                        });
+                    }
+                }, 300);
+            }
+        }
+
+        // --- Playback & Auto Scroll (Audio/Rhythm) ---
+        function togglePlay() {
+            if (playState === 'STOPPED') {
+                startPlayback();
+            } else {
+                pausePlayback();
+            }
+        }
+
+        function startPlayback() {
+            if (!visualObj) return;
+
+            // Khởi tạo AudioContext nếu chưa có (yêu cầu thao tác user)
+            if (!audioContext) {
+                window.AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioContext = new window.AudioContext();
+            }
+
+            if (!synthControl) {
+                synthControl = new ABCJS.synth.CreateSynth();
+                synthControl.init({
+                    visualObj: visualObj[0],
+                    audioContext: audioContext,
+                    millisecondsPerMeasure: visualObj[0].getBarLength() * 1000 // Tốc độ mặc định
+                }).then(() => {
+                    synthControl.prime().then(() => {
+                        playSynth();
+                    });
+                });
+            } else {
+                playSynth();
+            }
+        }
+
+        function playSynth() {
+            synthControl.start();
+            playState = 'PLAYING';
+            updatePlayUI();
+            
+            // Xóa highlight của Free Mode
+            document.querySelectorAll('.abcjs-note').forEach(el => {
+                el.classList.remove('note-current', 'note-correct', 'note-wrong');
+            });
+
+            // Sử dụng TimingCallbacks để tô màu khi phát nhạc
+            new ABCJS.synth.TimingCallbacks(visualObj[0], {
+                eventCallback: function(ev) {
+                    if (!ev || !ev.elements) return;
+                    
+                    // Xóa màu note cũ
+                    document.querySelectorAll('.note-current').forEach(el => el.classList.remove('note-current'));
+                    
+                    // Tô màu note mới và scroll
+                    let targetEl = null;
+                    ev.elements.forEach(elemGroup => {
+                        elemGroup.forEach(el => {
+                            el.classList.add('note-current');
+                            if (!targetEl) targetEl = el;
+                        });
+                    });
+
+                    if (targetEl) scrollToElement(targetEl);
+                }
+            });
+        }
+
+        function pausePlayback() {
+            if (synthControl) synthControl.pause();
+            playState = 'STOPPED';
+            updatePlayUI();
+            
+            if (appMode === 'FREE') {
+                setupFreeModeStep(); // Quay lại mode chờ phím
+            }
+        }
+
+        function stopPlayback() {
+            if (synthControl) {
+                synthControl.stop();
+                synthControl = null; // Reset synth
+            }
+            playState = 'STOPPED';
+            updatePlayUI();
+            
+            // Cuộn lên đầu
+            document.getElementById('sheet-container').scrollTo({ top: 0, behavior: 'smooth' });
+            
+            // Reset Free Mode
+            practiceIndex = 0;
+            setupFreeModeStep();
+        }
+
+        function updatePlayUI() {
+            const icon = document.getElementById('icon-play');
+            const btn = document.getElementById('btn-play');
+            if (playState === 'PLAYING') {
+                icon.classList.replace('fa-play', 'fa-pause');
+                icon.classList.remove('ml-1');
+                btn.classList.replace('bg-blue-500', 'bg-amber-500');
+                btn.classList.replace('hover:bg-blue-400', 'hover:bg-amber-400');
+            } else {
+                icon.classList.replace('fa-pause', 'fa-play');
+                icon.classList.add('ml-1');
+                btn.classList.replace('bg-amber-500', 'bg-blue-500');
+                btn.classList.replace('hover:bg-amber-400', 'hover:bg-blue-400');
+            }
+        }
+
+        // --- Logic Auto Scroll ---
+        function scrollToElement(el) {
+            if (!el) return;
+            const container = document.getElementById('sheet-container');
+            const containerRect = container.getBoundingClientRect();
+            const elRect = el.getBoundingClientRect();
+            
+            // Tính toán vị trí của nốt nhạc so với container scrollable
+            const relativeTop = elRect.top - containerRect.top + container.scrollTop;
+            
+            // Scroll sao cho nốt nhạc nằm ở khoảng 30% từ trên xuống (để mắt dễ nhìn khoảng 2/3 không gian phía dưới)
+            const targetScroll = relativeTop - (container.clientHeight * 0.3);
+            
+            // Chỉ scroll nếu cần thiết (không cuộn lên âm)
+            if (Math.abs(container.scrollTop - targetScroll) > 20) {
+                 container.scrollTo({ top: Math.max(0, targetScroll), behavior: 'smooth' });
+            }
+        }
+
+    </script>
+</body>
+</html>
